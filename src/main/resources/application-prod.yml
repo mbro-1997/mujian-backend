@@ -1,0 +1,4 @@
+# 生产环境：通过环境变量或部署侧外部配置提供数据库、Redis 等连接信息。
+# 不导入 .local，不在此文件填写真实密码。HTTPS 入口仍由部署环境提供。
+mj:
+  environment: production

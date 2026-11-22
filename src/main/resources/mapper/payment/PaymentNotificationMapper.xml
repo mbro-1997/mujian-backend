@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.payment.mapper.PaymentNotificationMapper">
+
+  <insert id="insertNotification">
+    INSERT INTO payment_channel_notify_log(id,
+      notify_type,
+      pay_channel,
+      channel_event_id,
+      payment_order_id,
+      refund_order_id,
+      channel_out_trade_no,
+      channel_out_refund_no,
+      event_type,
+      signature_valid,
+      process_status,
+      raw_notify_json,
+      received_at,
+      created_at)
+    VALUES (#{notification.id},
+      #{notification.notifyType},
+      'wechat_pay',
+      #{notification.channelEventId},
+      #{notification.paymentOrderId},
+      #{notification.refundOrderId},
+      #{notification.channelOutTradeNo},
+      #{notification.channelOutRefundNo},
+      #{notification.eventType},
+      1,
+      'received',
+      #{notification.rawNotifyJson},
+      #{notification.receivedAt},
+      #{notification.createdAt}) ON DUPLICATE KEY
+    UPDATE id=id
+  </insert>
+
+  <select id="selectNotificationByEvent" resultType="com.mujian.backend.payment.domain.PaymentNotificationDO" useCache="false" flushCache="true">
+    SELECT
+      id,
+      notify_type,
+      channel_event_id,
+      payment_order_id,
+      refund_order_id,
+      channel_out_trade_no,
+      channel_out_refund_no,
+      event_type,
+      process_status,
+      raw_notify_json,
+      received_at,
+      processed_at,
+      process_message,
+      created_at
+    FROM payment_channel_notify_log
+    WHERE pay_channel='wechat_pay'
+      AND channel_event_id=#{event}
+  </select>
+
+  <select id="selectPendingNotifications" resultType="com.mujian.backend.payment.domain.PaymentNotificationDO">
+    SELECT
+      id,
+      notify_type,
+      channel_event_id,
+      payment_order_id,
+      refund_order_id,
+      channel_out_trade_no,
+      channel_out_refund_no,
+      event_type,
+      process_status,
+      raw_notify_json,
+      received_at,
+      processed_at,
+      process_message,
+      created_at
+    FROM payment_channel_notify_log
+    WHERE signature_valid=1
+      AND (process_status='received'
+      OR process_status='failed'
+      AND processed_at&lt;=#{before})
+    ORDER BY received_at,
+      id
+    LIMIT 100
+  </select>
+
+  <update id="markNotificationProcessed">
+    UPDATE payment_channel_notify_log
+    SET
+      process_status=#{status},
+      process_message=#{message},
+      processed_at=#{now}
+    WHERE id=#{id}
+      AND process_status IN ('received',
+      'failed')
+  </update>
+</mapper>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.factory.mapper.FactoryProfileMapper">
+  <select id="selectFactoryIdByOwner" resultType="string">
+    SELECT id FROM factory_profile WHERE owner_user_id=#{owner}
+  </select>
+<select id="selectFactoryProfileByOwner" resultType="com.mujian.backend.factory.projection.FactorySourceProjection" useCache="false" flushCache="true">
+    
+    SELECT 
+    <include refid="com.mujian.backend.factory.mapper.FactoryReviewMapper.columns_factory_profile" />
+     FROM 
+    factory_profile
+     WHERE owner_user_id=#{owner} 
+    <if test="lock">FOR UPDATE</if>
+  </select>
+  
+<select id="selectFactoryProfileCountByQuery" resultType="long" useCache="false" flushCache="true">
+    SELECT COUNT(*) FROM factory_profile s
+    <include refid="factoriesWhere" />
+  </select>
+  
+<select id="selectFactoryProfilePageByQuery" resultType="com.mujian.backend.factory.projection.FactorySourceProjection" useCache="false" flushCache="true">
+    SELECT 
+    s.id,s.owner_user_id,s.factory_name,s.factory_avatar_url,s.unified_social_credit_code,s.business_license_url,s.factory_photo_urls,s.contact_name,s.contact_phone,s.factory_address,s.main_business,s.worker_count,s.case_materials_json,s.specialty_category_ids_json,s.specialty_category_names_snapshot_json,s.profile_version,s.remark,s.factory_status,s.approved_audit_id,s.approved_by_admin_user_id,s.approved_at,s.created_at,s.updated_at
+     FROM factory_profile s
+    <include refid="factoriesWhere" />
+     ORDER BY s.created_at DESC,s.id DESC LIMIT #{factoryPageQueryDTO.limit} OFFSET #{factoryPageQueryDTO.offset}
+  </select>
+  
+<insert id="insertFactoryProfile">INSERT INTO factory_profile (factory_name,unified_social_credit_code,factory_avatar_url,business_license_url,factory_photo_urls,contact_name,contact_phone,factory_address,main_business,worker_count,specialty_category_ids_json,specialty_category_names_snapshot_json,case_materials_json,remark,id,owner_user_id,profile_version,factory_status,approved_audit_id,approved_by_admin_user_id,approved_at,created_at,updated_at) VALUES (#{factoryProfileDO.factoryName},#{factoryProfileDO.unifiedSocialCreditCode},#{factoryProfileDO.factoryAvatarUrl},#{factoryProfileDO.businessLicenseUrl},#{factoryProfileDO.factoryPhotoUrls},#{factoryProfileDO.contactName},#{factoryProfileDO.contactPhone},#{factoryProfileDO.factoryAddress},#{factoryProfileDO.mainBusiness},#{factoryProfileDO.workerCount},#{factoryProfileDO.specialtyCategoryIdsJson},#{factoryProfileDO.specialtyCategoryNamesSnapshotJson},#{factoryProfileDO.caseMaterialsJson},#{factoryProfileDO.remark},#{factoryProfileDO.id},#{factoryProfileDO.ownerUserId},#{factoryProfileDO.profileVersion},#{factoryProfileDO.factoryStatus},#{factoryProfileDO.approvedAuditId},#{factoryProfileDO.approvedByAdminUserId},#{factoryProfileDO.approvedAt},#{factoryProfileDO.createdAt},#{factoryProfileDO.updatedAt})</insert>
+  
+<update id="updateFactoryProfileMaterials">UPDATE factory_profile SET factory_name=#{factoryProfileDO.factoryName},unified_social_credit_code=#{factoryProfileDO.unifiedSocialCreditCode},factory_avatar_url=#{factoryProfileDO.factoryAvatarUrl},business_license_url=#{factoryProfileDO.businessLicenseUrl},factory_photo_urls=#{factoryProfileDO.factoryPhotoUrls},contact_name=#{factoryProfileDO.contactName},contact_phone=#{factoryProfileDO.contactPhone},factory_address=#{factoryProfileDO.factoryAddress},main_business=#{factoryProfileDO.mainBusiness},worker_count=#{factoryProfileDO.workerCount},specialty_category_ids_json=#{factoryProfileDO.specialtyCategoryIdsJson},specialty_category_names_snapshot_json=#{factoryProfileDO.specialtyCategoryNamesSnapshotJson},case_materials_json=#{factoryProfileDO.caseMaterialsJson},remark=#{factoryProfileDO.remark},profile_version=#{factoryProfileDO.profileVersion},updated_at=#{factoryProfileDO.updatedAt} WHERE id=#{factoryProfileDO.id}</update>
+  
+
+<sql id="factoriesWhere">
+     WHERE 1=1
+    <if test="factoryPageQueryDTO.from != null"> AND s.created_at&gt;=#{factoryPageQueryDTO.from}</if>
+    <if test="factoryPageQueryDTO.to != null"> AND s.created_at&lt;#{factoryPageQueryDTO.to}</if>
+    <if test="factoryPageQueryDTO.status != null"> AND s.factory_status=#{factoryPageQueryDTO.status}</if>
+    <if test="factoryPageQueryDTO.keyword != null"> AND LOCATE(#{factoryPageQueryDTO.keyword},s.factory_name)&gt;0</if>
+  </sql>
+</mapper>

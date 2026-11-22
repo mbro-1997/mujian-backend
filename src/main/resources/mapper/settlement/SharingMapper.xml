@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.settlement.mapper.SharingMapper">
+  <select id="selectWechatProfitSharingOrderDueForProcessing" resultType="string">SELECT id FROM wechat_profit_sharing_order WHERE id&gt;#{after} AND sharing_status IN ('processing','pending') AND next_attempt_at&lt;=#{at} AND (lease_until IS NULL OR lease_until&lt;=#{at}) ORDER BY id LIMIT 100</select>
+  <select id="selectWechatProfitSharingOrderState" resultType="com.mujian.backend.settlement.mapper.SharingMapper$State">SELECT w.id,w.settlement_batch_id batchId,COALESCE(w.rental_order_id,w.custom_order_id) orderId,w.custom_order_id IS NOT NULL custom,w.payment_channel_suborder_id suborderId,p.channel_mch_id platform,s.sub_mchid_snapshot merchant,s.channel_sub_transaction_id transactionId,w.channel_out_order_no shareNo,w.finish_out_order_no finishNo,w.platform_commission_amount_fen fee,w.factory_unlock_amount_fen unlockFen,w.commission_status commission,w.unfreeze_status unfreeze,w.commission_retry_count commissionRetries,w.unfreeze_retry_count unfreezeRetries,w.sharing_status status,w.exception_code exceptionCode,s.channel_unfrozen_at IS NOT NULL autoUnfrozen,w.next_attempt_at due,w.lease_until lease,w.version,
+    COALESCE(w.commission_status='pending' AND w.channel_result_snapshot_json->>'$.outcome'='RETRYABLE'
+      AND JSON_TYPE(JSON_EXTRACT(w.channel_result_snapshot_json,'$.channelNo'))='STRING',FALSE) retryHasChannelOrder
+    FROM wechat_profit_sharing_order w JOIN payment_channel_suborder s ON s.id=w.payment_channel_suborder_id JOIN payment_order p ON p.id=s.payment_order_id WHERE w.id=#{id}</select>
+  <select id="lockOrder" resultType="string" useCache="false" flushCache="true">SELECT id FROM rental_order WHERE id=#{id} FOR UPDATE</select>
+  <select id="lockSource" resultType="string" useCache="false" flushCache="true">SELECT id FROM payment_channel_suborder WHERE id=#{id} FOR UPDATE</select>
+  <select id="lockBatch" resultType="string">SELECT id FROM factory_settlement_batch WHERE id=#{id} FOR UPDATE</select>
+  <update id="updateWechatProfitSharingOrderLease">UPDATE wechat_profit_sharing_order SET version=version+1,sharing_status='processing',
+    commission_status=IF(#{finish},commission_status,'processing'),unfreeze_status=IF(#{finish},'processing',unfreeze_status),
+    lease_until=TIMESTAMPADD(SECOND,30,#{at}),requested_at=COALESCE(requested_at,#{at}),updated_at=#{at}
+    WHERE id=#{row.id} AND version=#{row.version} AND next_attempt_at&lt;=#{at} AND (lease_until IS NULL OR lease_until&lt;=#{at}) AND sharing_status IN ('pending','processing')</update>
+  <update id="updateWechatProfitSharingOrderApplication">UPDATE wechat_profit_sharing_order SET commission_status=#{write.commission},unfreeze_status=#{write.unfreeze},sharing_status=#{write.status},
+    commission_retry_count=#{write.commissionRetries},unfreeze_retry_count=#{write.unfreezeRetries},actual_commission_amount_fen=COALESCE(#{write.actualFee},actual_commission_amount_fen),actual_unlock_amount_fen=COALESCE(#{write.actualUnlock},actual_unlock_amount_fen),
+    channel_sharing_no=COALESCE(#{write.channelShare},channel_sharing_no),channel_finish_no=COALESCE(#{write.channelFinish},channel_finish_no),exception_code=#{write.exception},alert_status=IF(#{write.exception} IS NULL,IF(alert_status='open','resolved',alert_status),'open'),
+    channel_result_snapshot_json=#{write.snapshot},lease_until=NULL,next_attempt_at=#{write.due},last_queried_at=IF(#{write.query},#{write.at},last_queried_at),success_at=IF(#{write.status}='success',#{write.at},NULL),failed_at=IF(#{write.status}='failed',#{write.at},NULL),version=version+1,updated_at=#{write.at}
+    WHERE id=#{id} AND version=#{version} AND sharing_status='processing'</update>
+  <update id="settledSource">UPDATE payment_channel_suborder SET channel_suborder_status='settled',version=version+1,updated_at=#{at} WHERE id=#{id} AND channel_suborder_status='sharing'</update>
+  <update id="reconcileDetails">UPDATE factory_settlement_detail d SET detail_status='settled',updated_at=#{at} WHERE settlement_batch_id=#{id} AND detail_status='included'
+    AND EXISTS(SELECT 1 FROM wechat_profit_sharing_order w WHERE w.settlement_detail_id=d.id)
+    AND NOT EXISTS(SELECT 1 FROM wechat_profit_sharing_order w WHERE w.settlement_detail_id=d.id AND w.sharing_status&lt;&gt;'success')</update>
+  <update id="reconcileCommissions">UPDATE platform_commission_record c JOIN factory_settlement_detail d ON d.id=c.settlement_detail_id SET c.commission_status='confirmed',c.updated_at=#{at} WHERE d.settlement_batch_id=#{id} AND c.commission_status='pending'
+    AND NOT EXISTS(SELECT 1 FROM wechat_profit_sharing_order w WHERE w.settlement_detail_id=d.id AND w.commission_status NOT IN ('success','not_required'))</update>
+  <update id="reconcilePayment">UPDATE factory_settlement_payment p JOIN (SELECT settlement_batch_id,SUM(actual_unlock_amount_fen) paid,MIN(sharing_status='success') done,MAX(sharing_status='failed') failed FROM wechat_profit_sharing_order WHERE settlement_batch_id=#{id} GROUP BY settlement_batch_id) w ON w.settlement_batch_id=p.settlement_batch_id
+    SET p.actual_paid_amount_fen=w.paid,p.payment_status=IF(w.done AND w.paid=p.payable_amount_fen,'success',IF(w.failed,'failed','processing')),p.paid_at=IF(w.done AND w.paid=p.payable_amount_fen,#{at},NULL),p.updated_at=#{at}
+    WHERE p.settlement_batch_id=#{id} AND p.payment_status IN ('processing','failed')</update>
+  <update id="reconcileBatch">UPDATE factory_settlement_batch b JOIN factory_settlement_payment p ON p.settlement_batch_id=b.id AND p.payment_status IN ('success','failed') SET b.settlement_status=IF(p.payment_status='success','settled','failed'),b.settled_at=IF(p.payment_status='success',#{at},NULL),b.updated_at=#{at} WHERE b.id=#{id} AND b.settlement_status='processing'</update>
+  <select id="lockCustom" resultType="string" flushCache="true" useCache="false">SELECT id FROM custom_order WHERE id=#{id} FOR UPDATE</select>
+  <select id="customEligible" resultType="boolean">SELECT EXISTS(SELECT 1 FROM custom_order o WHERE o.id=#{id} AND o.order_status='completed' AND o.acceptance_status='accepted'
+    AND NOT EXISTS(SELECT 1 FROM custom_after_sale_request a WHERE a.active_order_guard=o.id)
+    AND NOT EXISTS(SELECT 1 FROM refund_order r WHERE r.biz_order_type='custom_order' AND r.biz_order_id=o.id AND r.refund_status NOT IN ('success','cancelled'))
+    AND NOT EXISTS(SELECT 1 FROM admin_case_relation cr JOIN admin_case c ON c.id=cr.admin_case_id WHERE cr.relation_type='custom_order' AND cr.relation_id=o.id AND c.case_status NOT IN ('closed','cancelled')))</select>
+  <update id="reconcileCustom">UPDATE custom_order_settlement d JOIN wechat_profit_sharing_order w ON w.custom_settlement_id=d.id JOIN platform_commission_record c ON c.custom_settlement_id=d.id
+    SET d.settlement_status=IF(w.sharing_status='success','settled',d.settlement_status),d.updated_at=#{at},c.commission_status=IF(w.commission_status IN ('success','not_required'),'confirmed',c.commission_status),c.updated_at=#{at}
+    WHERE d.settlement_batch_id=#{id}</update>
+</mapper>

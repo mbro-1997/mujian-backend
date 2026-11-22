@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.prop.mapper.PropSkuStockMapper">
+<sql id="columns_prop_sku_stock">id,sku_id,total_quantity,rentable_base_quantity,available_quantity,locked_quantity,renting_quantity,lost_quantity,scrapped_quantity,last_counted_at,last_counted_by,created_at,updated_at</sql>
+<sql id="aliased_prop_sku_stock">s.id,s.sku_id,s.total_quantity,s.rentable_base_quantity,s.available_quantity,s.locked_quantity,s.renting_quantity,s.lost_quantity,s.scrapped_quantity,s.last_counted_at,s.last_counted_by,s.created_at,s.updated_at</sql>
+<select id="selectPropSkuStockListBySkuId" resultType="com.mujian.backend.prop.domain.PropSkuStockDO" useCache="false" flushCache="true">
+    
+    SELECT id,sku_id,total_quantity,rentable_base_quantity,available_quantity,locked_quantity,renting_quantity,lost_quantity,scrapped_quantity,last_counted_at,last_counted_by,created_at,updated_at FROM prop_sku_stock WHERE sku_id=#{skuId} 
+    <if test="lock">FOR UPDATE</if>
+  </select>
+<sql id="stockOccupancyPeaks">WITH ranges AS (
+ SELECT sku_id,quantity,occupy_start_date,<include refid="com.mujian.backend.prop.mapper.InventoryReservationMapper.effectiveOccupyEnd"><property name="alias" value=""/></include> AS effective_end_date
+ FROM inventory_reservation WHERE sku_id IN
+ <foreach collection="skuIds" item="item" open="(" separator="," close=")">#{item}</foreach>
+ AND sn_id IS NULL AND reservation_status IN ('held','paid_locked','renting','overdue_holding','disputed_holding')
+), events AS (
+ SELECT sku_id,GREATEST(occupy_start_date,#{startDate}) AS day,CAST(quantity AS DECIMAL(30,0)) AS delta
+ FROM ranges WHERE occupy_start_date&lt;=#{endDate} AND effective_end_date&gt;=#{startDate}
+ UNION ALL
+ SELECT sku_id,DATE_ADD(NULLIF(effective_end_date,CAST('9999-12-31' AS DATE)),INTERVAL 1 DAY),-CAST(quantity AS DECIMAL(30,0))
+ FROM ranges WHERE occupy_start_date&lt;=#{endDate} AND effective_end_date&gt;=#{startDate} AND effective_end_date&lt;#{endDate}
+), daily AS (SELECT sku_id,day,SUM(delta) delta FROM events GROUP BY sku_id,day), running AS (
+ SELECT sku_id,SUM(delta) OVER(PARTITION BY sku_id ORDER BY day ROWS UNBOUNDED PRECEDING) occupied FROM daily
+), peaks AS (SELECT sku_id,MAX(occupied) peak FROM running GROUP BY sku_id)</sql>
+<select id="selectStockOccupancyListBySkuIdsAndDates" resultType="com.mujian.backend.prop.projection.PropQuantityProjection" useCache="false" flushCache="true">
+    
+<include refid="stockOccupancyPeaks"/>
+SELECT s.sku_id,GREATEST(CAST(s.rentable_base_quantity AS DECIMAL(30,0))-COALESCE(p.peak,0),0) AS amount FROM prop_sku_stock s LEFT JOIN peaks p ON p.sku_id=s.sku_id WHERE s.sku_id IN 
+    <foreach collection="skuIds" item="item" open="(" separator="," close=")">#{item}</foreach>
+  </select>
+<select id="selectPropSkuStock" resultType="com.mujian.backend.prop.domain.PropSkuStockDO" useCache="false" flushCache="true">
+    SELECT id,sku_id,total_quantity,rentable_base_quantity,available_quantity,locked_quantity,renting_quantity,lost_quantity,scrapped_quantity,last_counted_at,last_counted_by,created_at,updated_at FROM prop_sku_stock WHERE id=#{id} <if test="lock">FOR UPDATE</if>
+  </select>
+<insert id="insertPropSkuStock">INSERT INTO prop_sku_stock
+<trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="row.id != null">id,</if>
+<if test="row.skuId != null">sku_id,</if>
+<if test="row.totalQuantity != null">total_quantity,</if>
+<if test="row.rentableBaseQuantity != null">rentable_base_quantity,</if>
+<if test="row.availableQuantity != null">available_quantity,</if>
+<if test="row.lockedQuantity != null">locked_quantity,</if>
+<if test="row.rentingQuantity != null">renting_quantity,</if>
+<if test="row.lostQuantity != null">lost_quantity,</if>
+<if test="row.scrappedQuantity != null">scrapped_quantity,</if>
+<if test="row.lastCountedAt != null">last_counted_at,</if>
+<if test="row.lastCountedBy != null">last_counted_by,</if>
+<if test="row.createdAt != null">created_at,</if>
+<if test="row.updatedAt != null">updated_at,</if>
+</trim> VALUES
+<trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="row.id != null">#{row.id},</if>
+<if test="row.skuId != null">#{row.skuId},</if>
+<if test="row.totalQuantity != null">#{row.totalQuantity},</if>
+<if test="row.rentableBaseQuantity != null">#{row.rentableBaseQuantity},</if>
+<if test="row.availableQuantity != null">#{row.availableQuantity},</if>
+<if test="row.lockedQuantity != null">#{row.lockedQuantity},</if>
+<if test="row.rentingQuantity != null">#{row.rentingQuantity},</if>
+<if test="row.lostQuantity != null">#{row.lostQuantity},</if>
+<if test="row.scrappedQuantity != null">#{row.scrappedQuantity},</if>
+<if test="row.lastCountedAt != null">#{row.lastCountedAt},</if>
+<if test="row.lastCountedBy != null">#{row.lastCountedBy},</if>
+<if test="row.createdAt != null">#{row.createdAt},</if>
+<if test="row.updatedAt != null">#{row.updatedAt},</if>
+</trim></insert>
+<update id="updatePropSkuStockByVersion">UPDATE prop_sku_stock SET total_quantity=#{row.totalQuantity},rentable_base_quantity=#{row.rentableBaseQuantity},available_quantity=#{row.availableQuantity},locked_quantity=#{row.lockedQuantity},renting_quantity=#{row.rentingQuantity},lost_quantity=#{row.lostQuantity},scrapped_quantity=#{row.scrappedQuantity},last_counted_at=#{row.lastCountedAt},last_counted_by=#{row.lastCountedBy},updated_at=#{row.updatedAt} WHERE id=#{row.id}</update>
+ <update id="refreshCurrentQuantities">
+ UPDATE prop_sku_stock s LEFT JOIN (
+ <include refid="currentStockOccupancy"/>
+ ) r ON r.sku_id=s.sku_id SET s.locked_quantity=COALESCE(r.locked,0),s.renting_quantity=COALESCE(r.renting,0),s.available_quantity=GREATEST(s.rentable_base_quantity-COALESCE(r.locked,0)-COALESCE(r.renting,0),0),s.updated_at=#{now} WHERE s.sku_id=#{sku}
+ </update>
+<select id="selectStockBalanceBySkuIdsAndDates" resultType="com.mujian.backend.prop.projection.PropQuantityProjection">
+ <include refid="stockOccupancyPeaks"/> SELECT s.sku_id,CAST(s.rentable_base_quantity AS DECIMAL(30,0))-COALESCE(p.peak,0) amount FROM prop_sku_stock s LEFT JOIN peaks p ON p.sku_id=s.sku_id WHERE s.sku_id IN <foreach collection="skuIds" item="item" open="(" separator="," close=")">#{item}</foreach>
+ </select>
+<sql id="currentStockOccupancy"> SELECT sku_id,SUM(CASE WHEN reservation_status IN ('held','paid_locked') THEN quantity ELSE 0 END) locked,SUM(CASE WHEN reservation_status IN ('renting','overdue_holding','disputed_holding') THEN quantity ELSE 0 END) renting
+ FROM inventory_reservation WHERE sku_id=#{sku} AND sn_id IS NULL AND reservation_status IN ('held','paid_locked','renting','overdue_holding','disputed_holding') AND occupy_start_date&lt;=#{today} AND <include refid="com.mujian.backend.prop.mapper.InventoryReservationMapper.effectiveOccupyEnd"><property name="alias" value=""/></include>&gt;=#{today} GROUP BY sku_id</sql>
+<select id="selectCurrentStockQuantities" resultType="com.mujian.backend.prop.projection.CurrentStockQuantityProjection" useCache="false" flushCache="true">
+ SELECT GREATEST(CAST(s.rentable_base_quantity AS DECIMAL(30,0))-COALESCE(r.locked,0)-COALESCE(r.renting,0),0) available,COALESCE(r.locked,0) locked,COALESCE(r.renting,0) renting
+ FROM prop_sku_stock s LEFT JOIN (<include refid="currentStockOccupancy"/>) r ON r.sku_id=s.sku_id WHERE s.sku_id=#{sku}
+</select>
+</mapper>

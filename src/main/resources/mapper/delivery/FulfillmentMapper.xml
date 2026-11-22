@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.delivery.mapper.FulfillmentMapper">
+<resultMap id="OrderOutboundDO" type="com.mujian.backend.delivery.domain.OrderOutboundDO"><constructor>
+<arg column="id" javaType="java.lang.String"/>
+<arg column="rental_order_id" javaType="java.lang.String"/>
+<arg column="outbound_transport_leg_id" javaType="java.lang.String"/>
+<arg column="factory_id" javaType="java.lang.String"/>
+<arg column="outbound_status" javaType="java.lang.String"/>
+<arg column="outbound_service_mode" javaType="java.lang.String"/>
+<arg column="transport_requirement_snapshot" javaType="java.lang.String"/>
+<arg column="outbound_photo_count" javaType="java.lang.Integer"/>
+<arg column="operator_user_id" javaType="java.lang.String"/>
+<arg column="outbound_at" javaType="java.time.LocalDateTime"/>
+<arg column="dispatch_at" javaType="java.time.LocalDateTime"/>
+<arg column="remark" javaType="java.lang.String"/>
+<arg column="version" javaType="java.lang.Integer"/>
+<arg column="created_at" javaType="java.time.LocalDateTime"/>
+<arg column="updated_at" javaType="java.time.LocalDateTime"/>
+</constructor></resultMap>
+<select id="selectOrderOutboundDOByOrder" resultMap="OrderOutboundDO" useCache="false" flushCache="true">SELECT id,rental_order_id,outbound_transport_leg_id,factory_id,outbound_status,outbound_service_mode,transport_requirement_snapshot,outbound_photo_count,operator_user_id,outbound_at,dispatch_at,remark,version,created_at,updated_at FROM order_outbound_record WHERE rental_order_id=#{orderId}</select>
+<insert id="insertOutbound">INSERT INTO order_outbound_record(id,rental_order_id,outbound_transport_leg_id,factory_id,outbound_status,outbound_service_mode,transport_requirement_snapshot,outbound_photo_count,operator_user_id,outbound_at,dispatch_at,remark,version,created_at,updated_at) VALUES(#{row.id},#{row.rentalOrderId},#{row.outboundTransportLegId},#{row.factoryId},#{row.outboundStatus},#{row.outboundServiceMode},#{row.transportRequirementSnapshot},#{row.outboundPhotoCount},#{row.operatorUserId},#{row.outboundAt},#{row.dispatchAt},#{row.remark},#{row.version},#{row.createdAt},#{row.updatedAt})</insert>
+<resultMap id="OrderReceiptDO" type="com.mujian.backend.delivery.domain.OrderReceiptDO"><constructor>
+<arg column="id" javaType="java.lang.String"/>
+<arg column="rental_order_id" javaType="java.lang.String"/>
+<arg column="outbound_transport_leg_id" javaType="java.lang.String"/>
+<arg column="buyer_user_id" javaType="java.lang.String"/>
+<arg column="check_status" javaType="java.lang.String"/>
+<arg column="start_at" javaType="java.time.LocalDateTime"/>
+<arg column="deadline_at" javaType="java.time.LocalDateTime"/>
+<arg column="confirmed_at" javaType="java.time.LocalDateTime"/>
+<arg column="version" javaType="java.lang.Integer"/>
+<arg column="created_at" javaType="java.time.LocalDateTime"/>
+<arg column="updated_at" javaType="java.time.LocalDateTime"/>
+</constructor></resultMap>
+<select id="selectOrderReceiptDOByOrder" resultMap="OrderReceiptDO" useCache="false" flushCache="true">SELECT id,rental_order_id,outbound_transport_leg_id,buyer_user_id,check_status,start_at,deadline_at,confirmed_at,version,created_at,updated_at FROM order_receipt_check WHERE rental_order_id=#{orderId}</select>
+<resultMap id="OrderReturnShipmentDO" type="com.mujian.backend.delivery.domain.OrderReturnShipmentDO"><constructor>
+<arg column="id" javaType="java.lang.String"/>
+<arg column="rental_order_id" javaType="java.lang.String"/>
+<arg column="return_transport_leg_id" javaType="java.lang.String"/>
+<arg column="buyer_user_id" javaType="java.lang.String"/>
+<arg column="operator_user_id" javaType="java.lang.String"/>
+<arg column="operator_role" javaType="java.lang.String"/>
+<arg column="shipment_status" javaType="java.lang.String"/>
+<arg column="return_method" javaType="java.lang.String"/>
+<arg column="tracking_no" javaType="java.lang.String"/>
+<arg column="carrier_name" javaType="java.lang.String"/>
+<arg column="sent_at" javaType="java.time.LocalDateTime"/>
+<arg column="expected_arrival_at" javaType="java.time.LocalDateTime"/>
+<arg column="expected_check_start_at" javaType="java.time.LocalDateTime"/>
+<arg column="packaging_photo_count" javaType="java.lang.Integer"/>
+<arg column="remark" javaType="java.lang.String"/>
+<arg column="version" javaType="java.lang.Integer"/>
+<arg column="created_at" javaType="java.time.LocalDateTime"/>
+<arg column="updated_at" javaType="java.time.LocalDateTime"/>
+</constructor></resultMap>
+<select id="selectOrderReturnShipmentDOByOrder" resultMap="OrderReturnShipmentDO" useCache="false" flushCache="true">SELECT id,rental_order_id,return_transport_leg_id,buyer_user_id,operator_user_id,operator_role,shipment_status,return_method,tracking_no,carrier_name,sent_at,expected_arrival_at,expected_check_start_at,packaging_photo_count,remark,version,created_at,updated_at FROM order_return_shipment WHERE rental_order_id=#{orderId}</select>
+<resultMap id="OrderReturnCheckDO" type="com.mujian.backend.delivery.domain.OrderReturnCheckDO"><constructor>
+<arg column="id" javaType="java.lang.String"/>
+<arg column="rental_order_id" javaType="java.lang.String"/>
+<arg column="factory_id" javaType="java.lang.String"/>
+<arg column="return_shipment_id" javaType="java.lang.String"/>
+<arg column="check_status" javaType="java.lang.String"/>
+<arg column="check_start_source" javaType="java.lang.String"/>
+<arg column="check_start_at" javaType="java.time.LocalDateTime"/>
+<arg column="warning_at" javaType="java.time.LocalDateTime"/>
+<arg column="auto_close_at" javaType="java.time.LocalDateTime"/>
+<arg column="checked_at" javaType="java.time.LocalDateTime"/>
+<arg column="operator_user_id" javaType="java.lang.String"/>
+<arg column="problem_summary" javaType="java.lang.String"/>
+<arg column="claim_created" javaType="java.lang.Integer"/>
+<arg column="close_reason_code" javaType="java.lang.String"/>
+<arg column="close_reason" javaType="java.lang.String"/>
+<arg column="closed_by_user_id" javaType="java.lang.String"/>
+<arg column="closed_at" javaType="java.time.LocalDateTime"/>
+<arg column="version" javaType="java.lang.Integer"/>
+<arg column="created_at" javaType="java.time.LocalDateTime"/>
+<arg column="updated_at" javaType="java.time.LocalDateTime"/>
+</constructor></resultMap>
+<select id="selectOrderReturnCheckDOByOrder" resultMap="OrderReturnCheckDO" useCache="false" flushCache="true">SELECT id,rental_order_id,factory_id,return_shipment_id,check_status,check_start_source,check_start_at,warning_at,auto_close_at,checked_at,operator_user_id,problem_summary,claim_created,close_reason_code,close_reason,closed_by_user_id,closed_at,version,created_at,updated_at FROM order_return_check WHERE rental_order_id=#{orderId}</select>
+<resultMap id="Metadata" type="com.mujian.backend.delivery.projection.FulfillmentMetadata"><constructor>
+ <arg column="outbound_leg_id" javaType="java.lang.String"/><arg column="outbound_mode" javaType="java.lang.String"/><arg column="outbound_status" javaType="java.lang.String"/>
+ <arg column="return_leg_id" javaType="java.lang.String"/><arg column="return_mode" javaType="java.lang.String"/><arg column="return_status" javaType="java.lang.String"/>
+ <arg column="transport_requirement" javaType="java.lang.String"/><arg column="deposit_status" javaType="java.lang.String"/><arg column="inventory_released" javaType="_boolean"/>
+</constructor></resultMap>
+<select id="selectMetadataByOrder" resultMap="Metadata" useCache="false" flushCache="true">
+ SELECT a.id outbound_leg_id,a.service_mode outbound_mode,a.leg_status outbound_status,
+ b.id return_leg_id,b.service_mode return_mode,b.leg_status return_status,d.transport_requirement_snapshot transport_requirement,o.deposit_status,
+ EXISTS(SELECT 1 FROM <include refid="com.mujian.backend.prop.mapper.InventoryReservationMapper.all_reservations"/> r WHERE r.rental_order_id=o.id AND r.reservation_status='completed')
+ AND NOT EXISTS(SELECT 1 FROM inventory_reservation r WHERE r.rental_order_id=o.id AND r.reservation_status IN ('held','paid_locked','renting','overdue_holding','disputed_holding')) inventory_released
+ FROM rental_order o JOIN rental_order_delivery d ON d.rental_order_id=o.id
+ JOIN order_transport_leg a ON a.rental_order_id=o.id AND a.leg_type='outbound'
+ JOIN order_transport_leg b ON b.rental_order_id=o.id AND b.leg_type='return' WHERE o.id=#{orderId}
+</select>
+<resultMap id="CheckItem" type="com.mujian.backend.delivery.vo.FulfillmentViews$CheckItem"><constructor>
+ <arg column="id" javaType="java.lang.String"/><arg column="item_id" javaType="java.lang.String"/><arg column="sku_id" javaType="java.lang.String"/>
+ <arg column="name" javaType="java.lang.String"/><arg column="asset_type" javaType="java.lang.String"/>
+ <arg column="expected_quantity" javaType="_int"/><arg column="checked_quantity" javaType="_int"/><arg column="version" javaType="_int"/><arg column="complete" javaType="_boolean"/>
+</constructor></resultMap>
+<select id="selectCheckItemsByOrder" resultMap="CheckItem" useCache="false" flushCache="true">
+ SELECT c.id,i.id item_id,i.sku_id,i.prop_name_snapshot name,i.asset_type_snapshot asset_type,i.quantity expected_quantity,
+ COALESCE(c.checked_quantity,0) checked_quantity,COALESCE(c.version,0) version,COALESCE(c.checked_quantity,0)=i.quantity complete
+ FROM rental_order_item i
+ <choose><when test="returning">LEFT JOIN order_return_check r ON r.rental_order_id=i.rental_order_id
+ LEFT JOIN order_return_item_check c ON c.return_check_id=r.id AND c.rental_order_item_id=i.id</when>
+ <otherwise>LEFT JOIN order_outbound_item_check c ON c.rental_order_id=i.rental_order_id AND c.rental_order_item_id=i.id</otherwise></choose>
+ WHERE i.rental_order_id=#{orderId} ORDER BY i.id
+</select>
+<insert id="insertOutboundItem">
+ INSERT INTO order_outbound_item_check(id,outbound_record_id,rental_order_id,rental_order_item_id,sku_id,asset_type,expected_quantity,checked_quantity,check_status,version,created_at,updated_at)
+ SELECT #{id},#{rootId},i.rental_order_id,i.id,i.sku_id,i.asset_type_snapshot,i.quantity,0,'pending',0,#{now},#{now}
+ FROM rental_order_item i WHERE i.id=#{itemId} AND i.rental_order_id=#{orderId}
+</insert>
+<update id="saveOutboundRemark">UPDATE order_outbound_record SET remark=#{remark},operator_user_id=#{actor},version=version+1,updated_at=#{now}
+ WHERE id=#{rootId} AND version=#{version} AND outbound_status='pending'</update>
+<update id="advanceOutboundVersion">UPDATE order_outbound_record SET operator_user_id=#{actor},version=version+1,updated_at=#{now}
+ WHERE id=#{rootId} AND version=#{version} AND outbound_status='pending'</update>
+<update id="setOutboundQuantity">UPDATE order_outbound_item_check SET checked_quantity=#{quantity},
+ check_status=CASE WHEN #{quantity}=expected_quantity THEN 'completed' WHEN #{quantity}=0 THEN 'pending' ELSE 'partial' END,
+ completed_at=CASE WHEN #{quantity}=expected_quantity THEN #{now} ELSE NULL END,operator_user_id=#{actor},version=version+1,updated_at=#{now}
+ WHERE outbound_record_id=#{rootId} AND rental_order_item_id=#{itemId} AND asset_type='B_CONSUMABLE' AND #{quantity} BETWEEN 0 AND expected_quantity</update>
+<select id="hasOutboundScan" resultType="boolean" useCache="false" flushCache="true">SELECT EXISTS(SELECT 1 FROM order_outbound_scan_record WHERE outbound_record_id=#{rootId} AND prop_sn_id=#{snId})</select>
+<insert id="insertOutboundScan">INSERT INTO order_outbound_scan_record(id,scan_request_id,outbound_record_id,rental_order_id,rental_order_item_id,prop_qr_code_id,prop_sn_id,operator_user_id,scanned_at,created_at)
+ VALUES(#{row.id},#{row.requestId},#{row.rootId},#{row.orderId},#{row.itemId},#{row.qrId},#{row.snId},#{row.actor},#{row.at},#{row.at})</insert>
+<update id="incrementOutboundQuantity">UPDATE order_outbound_item_check SET
+ check_status=CASE WHEN checked_quantity+1=expected_quantity THEN 'completed' ELSE 'partial' END,
+ completed_at=CASE WHEN checked_quantity+1=expected_quantity THEN #{now} ELSE NULL END,
+ checked_quantity=checked_quantity+1,operator_user_id=#{actor},version=version+1,updated_at=#{now}
+ WHERE outbound_record_id=#{rootId} AND rental_order_item_id=#{itemId} AND asset_type='A_ASSET' AND checked_quantity&lt;expected_quantity</update>
+<resultMap id="ScanRecord" type="com.mujian.backend.delivery.vo.FulfillmentViews$ScanRecord"><constructor>
+ <arg column="id" javaType="java.lang.String"/><arg column="item_id" javaType="java.lang.String"/><arg column="sn_id" javaType="java.lang.String"/>
+ <arg column="sn_code" javaType="java.lang.String"/><arg column="qr_id" javaType="java.lang.String"/><arg column="scanned_at" javaType="java.time.LocalDateTime"/>
+</constructor></resultMap>
+<select id="selectOutboundScans" resultMap="ScanRecord">
+ SELECT r.id,r.rental_order_item_id item_id,r.prop_sn_id sn_id,s.sn_code,r.prop_qr_code_id qr_id,
+ r.scanned_at
+ FROM order_outbound_scan_record r JOIN prop_sn_instance s ON s.id=r.prop_sn_id
+ WHERE r.rental_order_id=#{orderId} ORDER BY r.scanned_at DESC,r.id DESC LIMIT #{query.pageSize} OFFSET #{query.offset}
+</select>
+<select id="countOutboundScans" resultType="long">SELECT COUNT(*) FROM order_outbound_scan_record WHERE rental_order_id=#{orderId}</select>
+</mapper>

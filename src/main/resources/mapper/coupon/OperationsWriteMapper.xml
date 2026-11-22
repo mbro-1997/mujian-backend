@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC '-//mybatis.org//DTD Mapper 3.0//EN' 'https://mybatis.org/dtd/mybatis-3-mapper.dtd'>
+<mapper namespace="com.mujian.backend.coupon.mapper.OperationsWriteMapper">
+  <select id="countFactories" resultType="int">SELECT COUNT(*) FROM factory_profile WHERE id IN <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach></select>
+  <select id="nextTemplateVersion" resultType="int">SELECT COALESCE(MAX(template_version),0)+1 FROM coupon_template WHERE template_code=#{code}</select>
+  <insert id="insertTemplate">
+    INSERT INTO coupon_template(id,template_code,template_name,template_version,coupon_type,face_amount_fen,discount_rate_bps,
+      threshold_rent_amount_fen,applicable_scope_type,cost_bearer,validity_type,valid_days,valid_start_at,valid_end_at,refund_return_policy,
+      return_extension_days,template_status,created_by_admin_user_id,created_at,updated_at)
+    VALUES(#{id},#{input.templateCode},#{input.templateName},#{version},#{input.couponType},#{input.faceAmountFen},#{input.discountRateBps},
+      #{input.thresholdRentAmountFen},#{input.applicableScopeType},'shared_by_settlement_ratio',#{input.validityType},#{input.validDays},
+      #{input.startLocal},#{input.endLocal},'return_with_extension',7,'draft',#{actor},#{at},#{at})
+  </insert>
+  <update id="updateTemplate">UPDATE coupon_template SET template_name=#{input.templateName},coupon_type=#{input.couponType},
+    face_amount_fen=#{input.faceAmountFen},discount_rate_bps=#{input.discountRateBps},threshold_rent_amount_fen=#{input.thresholdRentAmountFen},
+    applicable_scope_type=#{input.applicableScopeType},validity_type=#{input.validityType},valid_days=#{input.validDays},
+    valid_start_at=#{input.startLocal},valid_end_at=#{input.endLocal},updated_at=#{at} WHERE id=#{id} AND template_status='draft'</update>
+  <delete id="removeScope">DELETE FROM coupon_scope_target WHERE coupon_template_id=#{id}</delete>
+  <insert id="insertScope">INSERT INTO coupon_scope_target(id,coupon_template_id,scope_type,target_id,created_at) VALUES
+    <foreach collection="scopes" item="s" separator=",">(#{s.id},#{id},'factory',#{s.factoryId},#{at})</foreach></insert>
+  <update id="setTemplateStatus">UPDATE coupon_template SET template_status=#{status},published_at=IFNULL(published_at,#{at}),updated_at=#{at} WHERE id=#{id}</update>
+  <insert id="insertActivity">INSERT INTO coupon_distribution(id,request_id,request_digest,template_id,mode,config_json,starts_at,ends_at,
+    status,created_by_admin_user_id,created_at) VALUES(#{id},#{key},#{digest},#{input.templateId},'conditional_claim',
+    JSON_OBJECT('schema_version',1,'condition',#{input.condition},'reason',#{input.reason}),#{input.startLocal},#{input.endLocal},'draft',#{actor},#{at})</insert>
+  <update id="updateActivity">UPDATE coupon_distribution SET template_id=#{input.templateId},config_json=JSON_OBJECT('schema_version',1,'condition',#{input.condition},'reason',#{input.reason}),
+    starts_at=#{input.startLocal},ends_at=#{input.endLocal},version=version+1 WHERE id=#{id} AND version=#{input.version} AND status='draft'</update>
+  <update id="setActivityStatus">UPDATE coupon_distribution SET status=#{status},version=version+1,published_at=IF(#{status}='active',#{at},published_at)
+    WHERE id=#{id} AND version=#{version}</update>
+  <select id="nextRuleVersion" resultType="int">SELECT COALESCE(MAX(rule_version),0)+1 FROM coupon_reward_rule WHERE event_type=#{event}</select>
+  <insert id="insertRule">INSERT INTO coupon_reward_rule(id,event_type,rule_version,template_id,status,created_by_admin_user_id,created_at)
+    VALUES(#{id},#{input.eventType},#{version},#{input.templateId},'draft',#{actor},#{at})</insert>
+  <update id="updateRule">UPDATE coupon_reward_rule SET template_id=#{templateId} WHERE id=#{id} AND status='draft'</update>
+  <update id="endActiveRule">UPDATE coupon_reward_rule SET status='ended',ended_at=#{at} WHERE event_type=#{event} AND status='active'</update>
+  <update id="setRuleStatus">UPDATE coupon_reward_rule SET status=#{status},activated_at=IF(#{status}='active',#{at},activated_at),
+    ended_at=IF(#{status}='ended',#{at},ended_at) WHERE id=#{id}</update>
+</mapper>

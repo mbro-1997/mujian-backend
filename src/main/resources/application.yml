@@ -1,0 +1,57 @@
+spring:
+  servlet:
+    multipart:
+      max-file-size: 6MB
+      max-request-size: 6MB
+      file-size-threshold: 0
+  application:
+    name: mujian-backend
+  profiles:
+    group:
+      # 保留既有 StartupVerification 对 production 环境的安全检查。
+      prod: production
+  datasource:
+    hikari:
+      connection-timeout: 2500
+      validation-timeout: 1000
+      minimum-idle: 1
+      maximum-pool-size: 8
+    url: ${MJ_DB_URL}
+    username: ${MJ_DB_USER}
+    password: ${MJ_DB_PASSWORD}
+  flyway:
+    enabled: false # 仅独立 DatabaseMigrationCli 持有迁移凭据。
+  data:
+    redis:
+      timeout: 2s
+      connect-timeout: 2s
+      host: ${MJ_REDIS_HOST:127.0.0.1}
+      port: ${MJ_REDIS_PORT:6379}
+      password: ${MJ_REDIS_PASSWORD:}
+  session:
+    data:
+      redis:
+        namespace: ${MJ_SESSION_NAMESPACE:mujian:${mj.environment}:session}
+        repository-type: indexed
+server:
+  address: 127.0.0.1
+  port: ${MJ_HTTP_PORT:18080}
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    arg-name-based-constructor-auto-mapping: true
+mj:
+  reward:
+    recovery-enabled: ${MJ_REWARD_RECOVERY_ENABLED:false}
+  factory-phone:
+    enabled: false
+  environment: ${MJ_ENVIRONMENT:production}
+
+# COS SDK transport exceptions include Authorization headers. Use sanitized application events only.
+logging:
+  level:
+    com.qcloud.cos: "OFF"
+    org.apache.http: "OFF"
+
+# D2-B改号渠道未启用；不存在以替身伪装真实发送的运行模式。

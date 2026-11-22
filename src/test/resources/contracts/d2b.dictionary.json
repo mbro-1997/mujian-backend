@@ -1,0 +1,1497 @@
+{
+  "status": "SPECIFIED_NOT_EXECUTED",
+  "tables": [
+    {
+      "name": "option_dictionary",
+      "module": "02",
+      "file": "v2.0数据库设计/02-道具库存租期模型-数据库设计.md",
+      "line": 363,
+      "fields": [
+        {
+          "field": "id",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "chinese": "选项 ID",
+          "note": "主键",
+          "line": 370,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "option_group",
+          "type": "VARCHAR(64)",
+          "required": "是",
+          "chinese": "选项组",
+          "note": "例如 prop_sku-type",
+          "line": 371,
+          "storageType": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "option_code",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "chinese": "选项编码",
+          "note": "SKU 表实际存储的值",
+          "line": 372,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "option_label",
+          "type": "VARCHAR(64)",
+          "required": "是",
+          "chinese": "选项中文名",
+          "note": "页面展示文案",
+          "line": 373,
+          "storageType": "VARCHAR(64)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "sort_order",
+          "type": "INT",
+          "required": "是",
+          "chinese": "排序",
+          "note": "数字越小越靠前",
+          "line": 374,
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": "0",
+          "generatedSql": null
+        },
+        {
+          "field": "enabled",
+          "type": "TINYINT",
+          "required": "是",
+          "chinese": "是否启用",
+          "note": "1 启用；0 停用",
+          "line": 375,
+          "storageType": "TINYINT",
+          "nullable": false,
+          "defaultSql": "1",
+          "generatedSql": null
+        },
+        {
+          "field": "remark",
+          "type": "VARCHAR(255)",
+          "required": "否",
+          "chinese": "备注",
+          "note": "",
+          "line": 376,
+          "storageType": "VARCHAR(255)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "created_at",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "chinese": "创建时间",
+          "note": "",
+          "line": 377,
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "updated_at",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "chinese": "更新时间",
+          "note": "",
+          "line": 378,
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "group_code",
+          [
+            "option_group",
+            "option_code"
+          ]
+        ],
+        [
+          "K",
+          "choices",
+          [
+            "option_group",
+            "enabled",
+            "sort_order",
+            "id"
+          ]
+        ]
+      ],
+      "foreignKeys": {},
+      "checks": [
+        "enabled IN (0,1)",
+        "sort_order>=0",
+        "CHAR_LENGTH(option_group)>0 AND CHAR_LENGTH(option_code)>0 AND CHAR_LENGTH(option_label)>0",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`option_code` IS NULL OR REGEXP_LIKE(`option_code`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')"
+      ]
+    },
+    {
+      "name": "factory_invite_code",
+      "module": "01",
+      "file": "v2.0数据库设计/01-登录账号角色权限模型-数据库设计.md",
+      "line": 436,
+      "fields": [
+        {
+          "field": "id",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "chinese": "邀请码 ID",
+          "note": "主键",
+          "line": 440,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "code_hash",
+          "type": "VARCHAR(128)",
+          "required": "是",
+          "chinese": "邀请码哈希",
+          "note": "不长期保存明文",
+          "line": 441,
+          "storageType": "VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "create_request_id",
+          "type": "VARCHAR(64)",
+          "required": "是",
+          "chinese": "生成请求编号",
+          "note": "管理员生成命令的幂等键，与创建人联合唯一",
+          "line": 442,
+          "storageType": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "request_hash",
+          "type": "VARCHAR(64)",
+          "required": "是",
+          "chinese": "生成内容摘要",
+          "note": "规范化生成参数SHA-256，不含邀请码明文",
+          "line": 443,
+          "storageType": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "code_suffix",
+          "type": "VARCHAR(16)",
+          "required": "是",
+          "chinese": "邀请码后缀",
+          "note": "管理端识别",
+          "line": 444,
+          "storageType": "VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "invite_status",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "chinese": "邀请码状态",
+          "note": "见状态字典",
+          "line": 445,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "expire_at",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "chinese": "过期时间",
+          "note": "",
+          "line": 446,
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "created_by_admin_user_id",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "chinese": "创建管理员 ID",
+          "note": "",
+          "line": 447,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "locked_by_user_id",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "chinese": "锁定用户 ID",
+          "note": "校验成功后写入",
+          "line": 448,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "locked_at",
+          "type": "DATETIME(3)",
+          "required": "否",
+          "chinese": "锁定时间",
+          "note": "",
+          "line": 449,
+          "storageType": "DATETIME(3)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "used_by_user_id",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "chinese": "使用用户 ID",
+          "note": "审核完成后写入",
+          "line": 450,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "used_at",
+          "type": "DATETIME(3)",
+          "required": "否",
+          "chinese": "使用时间",
+          "note": "",
+          "line": 451,
+          "storageType": "DATETIME(3)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "revoked_by_admin_user_id",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "chinese": "作废管理员 ID",
+          "note": "",
+          "line": 452,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "revoked_at",
+          "type": "DATETIME(3)",
+          "required": "否",
+          "chinese": "作废时间",
+          "note": "",
+          "line": 453,
+          "storageType": "DATETIME(3)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "remark",
+          "type": "VARCHAR(255)",
+          "required": "否",
+          "chinese": "备注",
+          "note": "管理员备注",
+          "line": 454,
+          "storageType": "VARCHAR(255)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "created_at",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "chinese": "创建时间",
+          "note": "",
+          "line": 455,
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "updated_at",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "chinese": "更新时间",
+          "note": "",
+          "line": 456,
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "code",
+          [
+            "code_hash"
+          ]
+        ],
+        [
+          "U",
+          "request",
+          [
+            "created_by_admin_user_id",
+            "create_request_id"
+          ]
+        ],
+        [
+          "K",
+          "owner",
+          [
+            "locked_by_user_id",
+            "invite_status"
+          ]
+        ],
+        [
+          "K",
+          "queue",
+          [
+            "invite_status",
+            "created_at",
+            "id"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "created_by_admin_user_id": "sys_user",
+        "locked_by_user_id": "sys_user",
+        "used_by_user_id": "sys_user",
+        "revoked_by_admin_user_id": "sys_user"
+      },
+      "checks": [
+        "invite_status IN ('unused','locked','used','revoked')",
+        "expire_at>created_at",
+        "CHAR_LENGTH(code_suffix)=4",
+        "REGEXP_LIKE(code_hash,'^[0-9a-f]{64}$','c')",
+        "(locked_by_user_id IS NULL AND locked_at IS NULL) OR (locked_by_user_id IS NOT NULL AND locked_at IS NOT NULL)",
+        "(invite_status='used' AND used_by_user_id IS NOT NULL AND used_at IS NOT NULL AND locked_by_user_id IS NOT NULL AND used_by_user_id=locked_by_user_id) OR (invite_status<>'used' AND used_by_user_id IS NULL AND used_at IS NULL)",
+        "(invite_status='revoked' AND revoked_by_admin_user_id IS NOT NULL AND revoked_at IS NOT NULL) OR (invite_status<>'revoked' AND revoked_by_admin_user_id IS NULL AND revoked_at IS NULL)",
+        "invite_status<>'locked' OR locked_by_user_id IS NOT NULL",
+        "invite_status<>'unused' OR locked_by_user_id IS NULL",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "REGEXP_LIKE(request_hash,'^[0-9a-f]{64}$','c')",
+        "`invite_status` IS NULL OR REGEXP_LIKE(`invite_status`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`created_by_admin_user_id` IS NULL OR REGEXP_LIKE(`created_by_admin_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`locked_by_user_id` IS NULL OR REGEXP_LIKE(`locked_by_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`used_by_user_id` IS NULL OR REGEXP_LIKE(`used_by_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`revoked_by_admin_user_id` IS NULL OR REGEXP_LIKE(`revoked_by_admin_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')"
+      ]
+    },
+    {
+      "name": "factory_onboarding_audit",
+      "module": "01",
+      "file": "v2.0数据库设计/01-登录账号角色权限模型-数据库设计.md",
+      "line": 470,
+      "fields": [
+        {
+          "field": "id",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "chinese": "审核单 ID",
+          "note": "主键",
+          "line": 474,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "application_no",
+          "type": "VARCHAR(64)",
+          "required": "是",
+          "chinese": "入驻申请编号",
+          "note": "每次提交唯一，供管理端检索",
+          "line": 475,
+          "storageType": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "submit_request_id",
+          "type": "VARCHAR(64)",
+          "required": "是",
+          "chinese": "提交请求编号",
+          "note": "与申请用户联合唯一，查询全历史恢复原申请",
+          "line": 476,
+          "storageType": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "request_hash",
+          "type": "VARCHAR(64)",
+          "required": "是",
+          "chinese": "提交内容摘要",
+          "note": "规范化客户端提交内容摘要，同键异内容拒绝",
+          "line": 477,
+          "storageType": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "accepted_rule_document_ids_json",
+          "type": "JSON",
+          "required": "是",
+          "chinese": "本次确认工厂规则版本",
+          "note": "恰好两个platform_rule_document.id，保存本次申请采用的具体版本；确认事实复用user_rule_acceptance，不复制正文",
+          "line": 478,
+          "storageType": "JSON",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "previous_application_id",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "chinese": "上次驳回申请",
+          "note": "首次NULL；重提必须是本人最近一份已驳回申请",
+          "line": 479,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "applicant_user_id",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "chinese": "申请用户 ID",
+          "note": "当前微信账号用户",
+          "line": 480,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "invite_code_id",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "chinese": "邀请码 ID",
+          "note": "对应 factory_invite_code.id",
+          "line": 481,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "factory_name",
+          "type": "VARCHAR(128)",
+          "required": "是",
+          "chinese": "工厂名称",
+          "note": "申请资料",
+          "line": 482,
+          "storageType": "VARCHAR(128)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "factory_avatar_url",
+          "type": "VARCHAR(500)",
+          "required": "是",
+          "chinese": "工厂头像",
+          "note": "上传 1 张",
+          "line": 483,
+          "storageType": "VARCHAR(500)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "unified_social_credit_code",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "chinese": "统一社会信用代码",
+          "note": "审核关键字段",
+          "line": 484,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "business_license_url",
+          "type": "VARCHAR(500)",
+          "required": "是",
+          "chinese": "营业执照",
+          "note": "上传 1 张",
+          "line": 485,
+          "storageType": "VARCHAR(500)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "factory_photo_urls",
+          "type": "JSON",
+          "required": "是",
+          "chinese": "厂房照片",
+          "note": "至少 1 张，最多 3 张",
+          "line": 486,
+          "storageType": "JSON",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "contact_name",
+          "type": "VARCHAR(64)",
+          "required": "是",
+          "chinese": "联系人姓名",
+          "note": "",
+          "line": 487,
+          "storageType": "VARCHAR(64)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "contact_phone",
+          "type": "VARCHAR(20)",
+          "required": "是",
+          "chinese": "联系人手机号",
+          "note": "默认取当前账号已验证手机号",
+          "line": 488,
+          "storageType": "VARCHAR(20) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "factory_address",
+          "type": "VARCHAR(255)",
+          "required": "是",
+          "chinese": "工厂地址",
+          "note": "不单独前端展示城市字段",
+          "line": 489,
+          "storageType": "VARCHAR(255)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "main_business",
+          "type": "VARCHAR(255)",
+          "required": "否",
+          "chinese": "主营道具类型",
+          "note": "选填",
+          "line": 490,
+          "storageType": "VARCHAR(255)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "worker_count",
+          "type": "INT",
+          "required": "是",
+          "chinese": "提交时工人数量",
+          "note": "非负整数，0也须明确填写",
+          "line": 491,
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "specialty_category_ids_json",
+          "type": "JSON",
+          "required": "是",
+          "chinese": "提交时擅长品类ID",
+          "note": "非空去重option_dictionary.id数组，固定prop_sku-type组；新选必须启用，未改旧项可保留",
+          "line": 492,
+          "storageType": "JSON",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "specialty_category_names_snapshot_json",
+          "type": "JSON",
+          "required": "是",
+          "chinese": "擅长品类名称快照",
+          "note": "与ID对应，不以后来改名覆盖申请",
+          "line": 493,
+          "storageType": "JSON",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "case_materials_json",
+          "type": "JSON",
+          "required": "是",
+          "chinese": "提交时案例资料",
+          "note": "最多10组{title,description,image_object_keys}；标题≤128字、描述≤2000字、图片0～3张，每组至少有文字或图片；无案例[]，文件私有受控",
+          "line": 494,
+          "storageType": "JSON",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "remark",
+          "type": "VARCHAR(500)",
+          "required": "否",
+          "chinese": "备注说明",
+          "note": "选填",
+          "line": 495,
+          "storageType": "VARCHAR(500)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "audit_status",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "chinese": "审核状态",
+          "note": "见状态字典",
+          "line": 496,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "pending_applicant_guard",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "chinese": "待审核申请人唯一守卫",
+          "note": "生成列；仅待审核时取 applicant_user_id",
+          "line": 497,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": "CASE WHEN audit_status='pending' THEN applicant_user_id ELSE NULL END"
+        },
+        {
+          "field": "audit_remark",
+          "type": "VARCHAR(500)",
+          "required": "否",
+          "chinese": "审核备注",
+          "note": "管理员备注",
+          "line": 498,
+          "storageType": "VARCHAR(500)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "reject_reason",
+          "type": "VARCHAR(500)",
+          "required": "否",
+          "chinese": "驳回原因",
+          "note": "驳回展示",
+          "line": 499,
+          "storageType": "VARCHAR(500)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "reviewed_by_admin_user_id",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "chinese": "审核管理员 ID",
+          "note": "",
+          "line": 500,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "submitted_at",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "chinese": "提交时间",
+          "note": "",
+          "line": 501,
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "reviewed_at",
+          "type": "DATETIME(3)",
+          "required": "否",
+          "chinese": "审核时间",
+          "note": "",
+          "line": 502,
+          "storageType": "DATETIME(3)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "created_factory_id",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "chinese": "创建的工厂 ID",
+          "note": "审核通过后写入",
+          "line": 503,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "version",
+          "type": "INT",
+          "required": "是",
+          "chinese": "乐观锁版本",
+          "note": "默认 0，审核并发条件更新",
+          "line": 504,
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": "0",
+          "generatedSql": null
+        },
+        {
+          "field": "created_at",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "chinese": "创建时间",
+          "note": "",
+          "line": 505,
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "updated_at",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "chinese": "更新时间",
+          "note": "",
+          "line": 506,
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "number",
+          [
+            "application_no"
+          ]
+        ],
+        [
+          "U",
+          "request",
+          [
+            "applicant_user_id",
+            "submit_request_id"
+          ]
+        ],
+        [
+          "U",
+          "pending",
+          [
+            "pending_applicant_guard"
+          ]
+        ],
+        [
+          "K",
+          "queue",
+          [
+            "audit_status",
+            "submitted_at",
+            "id"
+          ]
+        ],
+        [
+          "K",
+          "owner",
+          [
+            "applicant_user_id",
+            "submitted_at",
+            "id"
+          ]
+        ],
+        [
+          "K",
+          "invite",
+          [
+            "invite_code_id"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "applicant_user_id": "sys_user",
+        "invite_code_id": "factory_invite_code",
+        "previous_application_id": "factory_onboarding_audit",
+        "reviewed_by_admin_user_id": "sys_user",
+        "created_factory_id": "factory_profile"
+      },
+      "checks": [
+        "audit_status IN ('pending','approved','rejected','cancelled')",
+        "version>=0",
+        "worker_count>=0",
+        "JSON_TYPE(factory_photo_urls)='ARRAY' AND JSON_LENGTH(factory_photo_urls) BETWEEN 1 AND 3",
+        "JSON_TYPE(specialty_category_ids_json)='ARRAY' AND JSON_LENGTH(specialty_category_ids_json) BETWEEN 1 AND 100",
+        "JSON_TYPE(specialty_category_names_snapshot_json)='ARRAY' AND JSON_LENGTH(specialty_category_names_snapshot_json)=JSON_LENGTH(specialty_category_ids_json)",
+        "JSON_TYPE(case_materials_json)='ARRAY' AND JSON_LENGTH(case_materials_json)<=10",
+        "JSON_TYPE(accepted_rule_document_ids_json)='ARRAY' AND JSON_LENGTH(accepted_rule_document_ids_json)=2",
+        "(audit_status='approved' AND created_factory_id IS NOT NULL) OR (audit_status<>'approved' AND created_factory_id IS NULL)",
+        "(audit_status='pending' AND reviewed_by_admin_user_id IS NULL AND reviewed_at IS NULL AND version=0) OR (audit_status<>'pending' AND reviewed_by_admin_user_id IS NOT NULL AND reviewed_at IS NOT NULL AND version>=1 AND reviewed_at>=submitted_at)",
+        "(audit_status='rejected' AND reject_reason IS NOT NULL AND CHAR_LENGTH(TRIM(reject_reason))>0) OR (audit_status<>'rejected' AND reject_reason IS NULL)",
+        "created_at=submitted_at AND updated_at>=created_at",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "REGEXP_LIKE(request_hash,'^[0-9a-f]{64}$','c')",
+        "`previous_application_id` IS NULL OR REGEXP_LIKE(`previous_application_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`applicant_user_id` IS NULL OR REGEXP_LIKE(`applicant_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`invite_code_id` IS NULL OR REGEXP_LIKE(`invite_code_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`unified_social_credit_code` IS NULL OR REGEXP_LIKE(`unified_social_credit_code`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`audit_status` IS NULL OR REGEXP_LIKE(`audit_status`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`pending_applicant_guard` IS NULL OR REGEXP_LIKE(`pending_applicant_guard`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`reviewed_by_admin_user_id` IS NULL OR REGEXP_LIKE(`reviewed_by_admin_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`created_factory_id` IS NULL OR REGEXP_LIKE(`created_factory_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')"
+      ]
+    },
+    {
+      "name": "factory_profile",
+      "module": "01",
+      "file": "v2.0数据库设计/01-登录账号角色权限模型-数据库设计.md",
+      "line": 532,
+      "fields": [
+        {
+          "field": "id",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "chinese": "工厂 ID",
+          "note": "工厂业务主体主键",
+          "line": 536,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "owner_user_id",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "chinese": "主账号用户 ID",
+          "note": "当前工厂主账号",
+          "line": 537,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "factory_name",
+          "type": "VARCHAR(128)",
+          "required": "是",
+          "chinese": "工厂名称",
+          "note": "用户端展示",
+          "line": 538,
+          "storageType": "VARCHAR(128)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "factory_avatar_url",
+          "type": "VARCHAR(500)",
+          "required": "是",
+          "chinese": "工厂头像",
+          "note": "",
+          "line": 539,
+          "storageType": "VARCHAR(500)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "unified_social_credit_code",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "chinese": "统一社会信用代码",
+          "note": "建议唯一",
+          "line": 540,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "business_license_url",
+          "type": "VARCHAR(500)",
+          "required": "是",
+          "chinese": "营业执照",
+          "note": "审核材料",
+          "line": 541,
+          "storageType": "VARCHAR(500)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "factory_photo_urls",
+          "type": "JSON",
+          "required": "是",
+          "chinese": "厂房照片",
+          "note": "可后续拆附件表",
+          "line": 542,
+          "storageType": "JSON",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "contact_name",
+          "type": "VARCHAR(64)",
+          "required": "是",
+          "chinese": "联系人姓名",
+          "note": "可维护",
+          "line": 543,
+          "storageType": "VARCHAR(64)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "contact_phone",
+          "type": "VARCHAR(20)",
+          "required": "是",
+          "chinese": "联系人手机号",
+          "note": "可维护",
+          "line": 544,
+          "storageType": "VARCHAR(20) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "factory_address",
+          "type": "VARCHAR(255)",
+          "required": "是",
+          "chinese": "工厂地址",
+          "note": "",
+          "line": 545,
+          "storageType": "VARCHAR(255)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "main_business",
+          "type": "VARCHAR(255)",
+          "required": "否",
+          "chinese": "主营道具类型",
+          "note": "",
+          "line": 546,
+          "storageType": "VARCHAR(255)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "worker_count",
+          "type": "INT",
+          "required": "是",
+          "chinese": "工人数量",
+          "note": "非负整数；审核通过写入，不能仅保存在申请中",
+          "line": 547,
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "case_materials_json",
+          "type": "JSON",
+          "required": "是",
+          "chinese": "完整服务案例",
+          "note": "沿入驻案例结构及上限；展示摘要由DTO生成，不另存service_case",
+          "line": 548,
+          "storageType": "JSON",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "specialty_category_ids_json",
+          "type": "JSON",
+          "required": "是",
+          "chinese": "当前擅长品类ID",
+          "note": "非空去重option_dictionary.id数组，固定prop_sku-type组",
+          "line": 549,
+          "storageType": "JSON",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "specialty_category_names_snapshot_json",
+          "type": "JSON",
+          "required": "是",
+          "chinese": "擅长品类展示",
+          "note": "与批准时ID同序的名称快照；展示摘要由DTO生成，不另存specialty_category",
+          "line": 550,
+          "storageType": "JSON",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "profile_version",
+          "type": "BIGINT",
+          "required": "是",
+          "chinese": "生效资料版本",
+          "note": "初次批准为1，每次资料批准原子加1；时间戳不作并发版本",
+          "line": 551,
+          "storageType": "BIGINT",
+          "nullable": false,
+          "defaultSql": "1",
+          "generatedSql": null
+        },
+        {
+          "field": "remark",
+          "type": "VARCHAR(500)",
+          "required": "否",
+          "chinese": "工厂资料备注",
+          "note": "同其他资料一起审核生效",
+          "line": 552,
+          "storageType": "VARCHAR(500)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "factory_status",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "chinese": "工厂状态",
+          "note": "见状态字典",
+          "line": 553,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "approved_audit_id",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "chinese": "通过的审核单 ID",
+          "note": "追溯来源",
+          "line": 554,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "approved_by_admin_user_id",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "chinese": "审核管理员 ID",
+          "note": "",
+          "line": 555,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "approved_at",
+          "type": "DATETIME(3)",
+          "required": "否",
+          "chinese": "审核通过时间",
+          "note": "",
+          "line": 556,
+          "storageType": "DATETIME(3)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "created_at",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "chinese": "创建时间",
+          "note": "",
+          "line": 557,
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "updated_at",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "chinese": "更新时间",
+          "note": "",
+          "line": 558,
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "owner",
+          [
+            "owner_user_id"
+          ]
+        ],
+        [
+          "U",
+          "credit",
+          [
+            "unified_social_credit_code"
+          ]
+        ],
+        [
+          "K",
+          "queue",
+          [
+            "factory_status",
+            "created_at",
+            "id"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "owner_user_id": "sys_user",
+        "approved_audit_id": "factory_onboarding_audit",
+        "approved_by_admin_user_id": "sys_user"
+      },
+      "checks": [
+        "factory_status IN ('active','disabled','suspended')",
+        "profile_version>=1",
+        "worker_count>=0",
+        "JSON_TYPE(factory_photo_urls)='ARRAY' AND JSON_LENGTH(factory_photo_urls) BETWEEN 1 AND 3",
+        "JSON_TYPE(specialty_category_ids_json)='ARRAY' AND JSON_LENGTH(specialty_category_ids_json) BETWEEN 1 AND 100",
+        "JSON_TYPE(specialty_category_names_snapshot_json)='ARRAY' AND JSON_LENGTH(specialty_category_names_snapshot_json)=JSON_LENGTH(specialty_category_ids_json)",
+        "JSON_TYPE(case_materials_json)='ARRAY' AND JSON_LENGTH(case_materials_json)<=10",
+        "(approved_audit_id IS NULL AND approved_by_admin_user_id IS NULL AND approved_at IS NULL) OR (approved_audit_id IS NOT NULL AND approved_by_admin_user_id IS NOT NULL AND approved_at IS NOT NULL)",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`owner_user_id` IS NULL OR REGEXP_LIKE(`owner_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`unified_social_credit_code` IS NULL OR REGEXP_LIKE(`unified_social_credit_code`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`factory_status` IS NULL OR REGEXP_LIKE(`factory_status`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`approved_audit_id` IS NULL OR REGEXP_LIKE(`approved_audit_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`approved_by_admin_user_id` IS NULL OR REGEXP_LIKE(`approved_by_admin_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')"
+      ]
+    },
+    {
+      "name": "factory_profile_change_audit",
+      "module": "01",
+      "file": "v2.0数据库设计/01-登录账号角色权限模型-数据库设计.md",
+      "line": 575,
+      "fields": [
+        {
+          "field": "id",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "chinese": "审核 ID",
+          "note": "主键",
+          "line": 581,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "application_no",
+          "type": "VARCHAR(64)",
+          "required": "是",
+          "chinese": "变更申请编号",
+          "note": "展示检索唯一",
+          "line": 582,
+          "storageType": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "submit_request_id",
+          "type": "VARCHAR(64)",
+          "required": "是",
+          "chinese": "提交请求编号",
+          "note": "与工厂ID联合唯一，另校验实际申请人",
+          "line": 583,
+          "storageType": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "request_hash",
+          "type": "VARCHAR(64)",
+          "required": "是",
+          "chinese": "提交内容摘要",
+          "note": "规范化提交内容SHA-256",
+          "line": 584,
+          "storageType": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "factory_id",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "chinese": "工厂 ID",
+          "note": "对应 factory_profile.id",
+          "line": 585,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "applicant_user_id",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "chinese": "申请人用户 ID",
+          "note": "",
+          "line": 586,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "change_payload_json",
+          "type": "JSON",
+          "required": "是",
+          "chinese": "完整申请快照",
+          "note": "{schema_version,before,proposed,base_profile_version,previous_application_id}；before/proposed含全部可编辑资料及私有附件对象引用，提交后不可变；差异由服务端计算",
+          "line": 587,
+          "storageType": "JSON",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "audit_status",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "chinese": "审核状态",
+          "note": "pending、approved、rejected、cancelled",
+          "line": 588,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "reject_reason",
+          "type": "VARCHAR(255)",
+          "required": "否",
+          "chinese": "驳回原因",
+          "note": "",
+          "line": 589,
+          "storageType": "VARCHAR(255)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "reviewed_by_admin_user_id",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "chinese": "审核管理员 ID",
+          "note": "",
+          "line": 590,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "submitted_at",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "chinese": "提交时间",
+          "note": "",
+          "line": 591,
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "reviewed_at",
+          "type": "DATETIME(3)",
+          "required": "否",
+          "chinese": "审核时间",
+          "note": "待审NULL；终态为实际处理时间",
+          "line": 592,
+          "storageType": "DATETIME(3)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "version",
+          "type": "INT",
+          "required": "是",
+          "chinese": "申请审核版本",
+          "note": "默认0；审核pending加version条件更新",
+          "line": 593,
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": "0",
+          "generatedSql": null
+        },
+        {
+          "field": "pending_factory_guard",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "chinese": "同厂待审唯一守卫",
+          "note": "生成列；仅pending时为factory_id，建立唯一索引",
+          "line": 594,
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": "CASE WHEN audit_status='pending' THEN factory_id ELSE NULL END"
+        },
+        {
+          "field": "created_at",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "chinese": "创建时间",
+          "note": "同提交时刻",
+          "line": 595,
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        },
+        {
+          "field": "updated_at",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "chinese": "更新时间",
+          "note": "审核更新；材料快照不变",
+          "line": 596,
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "number",
+          [
+            "application_no"
+          ]
+        ],
+        [
+          "U",
+          "request",
+          [
+            "factory_id",
+            "submit_request_id"
+          ]
+        ],
+        [
+          "U",
+          "pending",
+          [
+            "pending_factory_guard"
+          ]
+        ],
+        [
+          "K",
+          "owner",
+          [
+            "factory_id",
+            "audit_status",
+            "submitted_at",
+            "id"
+          ]
+        ],
+        [
+          "K",
+          "queue",
+          [
+            "audit_status",
+            "submitted_at",
+            "id"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "factory_id": "factory_profile",
+        "applicant_user_id": "sys_user",
+        "reviewed_by_admin_user_id": "sys_user"
+      },
+      "checks": [
+        "audit_status IN ('pending','approved','rejected','cancelled')",
+        "version>=0",
+        "JSON_TYPE(change_payload_json)='OBJECT' AND JSON_CONTAINS_PATH(change_payload_json,'all','$.schema_version','$.before','$.proposed','$.base_profile_version','$.previous_application_id','$.phone_verification')=1",
+        "(audit_status='pending' AND reviewed_by_admin_user_id IS NULL AND reviewed_at IS NULL AND version=0) OR (audit_status<>'pending' AND reviewed_by_admin_user_id IS NOT NULL AND reviewed_at IS NOT NULL AND version>=1 AND reviewed_at>=submitted_at)",
+        "(audit_status='rejected' AND reject_reason IS NOT NULL AND CHAR_LENGTH(TRIM(reject_reason))>0) OR (audit_status<>'rejected' AND reject_reason IS NULL)",
+        "created_at=submitted_at AND updated_at>=created_at",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "REGEXP_LIKE(request_hash,'^[0-9a-f]{64}$','c')",
+        "`factory_id` IS NULL OR REGEXP_LIKE(`factory_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`applicant_user_id` IS NULL OR REGEXP_LIKE(`applicant_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`audit_status` IS NULL OR REGEXP_LIKE(`audit_status`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`reviewed_by_admin_user_id` IS NULL OR REGEXP_LIKE(`reviewed_by_admin_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`pending_factory_guard` IS NULL OR REGEXP_LIKE(`pending_factory_guard`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')"
+      ]
+    }
+  ],
+  "columnCount": 98
+}

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.dispute.mapper.ClaimStockMapper">
+  <select id="selectOrderClaimLines" resultType="com.mujian.backend.dispute.mapper.ClaimStockMapper$Line" flushCache="true" useCache="false">
+    SELECT r.id reservation_id,i.id item_id,r.sku_id,i.prop_name_snapshot name,r.sn_id,s.sn_code,r.quantity held_quantity,
+      r.quantity-COALESCE((SELECT SUM(f.quantity) FROM order_claim_stock_result f WHERE f.claim_id=c.id AND f.original_reservation_id=r.id AND f.result_status IN ('recorded','repair_pending')),0) unrecorded_quantity
+    FROM order_claim c JOIN inventory_reservation r ON r.rental_order_id=c.rental_order_id AND r.reservation_status='disputed_holding'
+    JOIN rental_order_item i ON i.id=r.rental_order_item_id LEFT JOIN prop_sn_instance s ON s.id=r.sn_id WHERE c.id=#{claim} AND c.claim_status IN ('submitted','admin_reviewing','supplement_required','waiting_user_response','user_appealed','executing') ORDER BY i.id,r.id</select>
+  <select id="selectOrderClaimStockResultFacts" resultType="com.mujian.backend.dispute.mapper.ClaimStockMapper$Fact" flushCache="true" useCache="false">SELECT f.id,f.claim_id,
+    f.original_reservation_id reservation_id,f.rental_order_item_id item_id,i.sku_id,f.sn_id,f.quantity,f.outcome,f.result_status status,f.recorded_by actor,
+    f.remark,f.source_type,f.decision_id,f.created_at,f.applied_at FROM order_claim_stock_result f JOIN rental_order_item i ON i.id=f.rental_order_item_id
+    WHERE f.claim_id=#{claim} ORDER BY f.created_at,f.id</select>
+  <insert id="insertClaimStockResult">INSERT INTO order_claim_stock_result(id,claim_id,rental_order_id,rental_order_item_id,original_reservation_id,sn_id,quantity,outcome,
+    source_type,decision_id,replaces_id,result_status,recorded_by,remark,created_at) SELECT #{fact.id},c.id,c.rental_order_id,#{fact.itemId},#{fact.reservationId},
+    #{fact.snId},#{fact.quantity},#{fact.outcome},#{fact.sourceType},#{fact.decisionId},#{replaces},'recorded',#{fact.actor},#{fact.remark},#{fact.createdAt} FROM order_claim c WHERE c.id=#{fact.claimId}</insert>
+  <update id="supersedeClaimStockResult">UPDATE order_claim_stock_result SET result_status='replaced' WHERE id=#{id} AND claim_id=#{claim} AND result_status='repair_pending'</update>
+  <update id="advanceClaimVersion">UPDATE order_claim SET version=version+1,updated_at=#{at} WHERE id=#{id} AND version=#{version}</update>
+  <insert id="insertInventoryReservationSplit">INSERT INTO inventory_reservation(id,sku_id,sn_id,quantity,checkout_batch_id,checkout_batch_item_snapshot_id,
+    rental_order_id,rental_order_item_id,source_type,source_id,rental_start_date,rental_end_date,occupy_start_date,occupy_end_date,
+    reservation_status,expires_at,idempotency_key,version,created_at,updated_at)
+    SELECT #{child},sku_id,NULL,#{fact.quantity},checkout_batch_id,checkout_batch_item_snapshot_id,rental_order_id,rental_order_item_id,'order_item',rental_order_item_id,
+    rental_start_date,rental_end_date,occupy_start_date,occupy_end_date,'completed',NULL,CONCAT('claim-part:',#{fact.id}),0,#{at},#{at} FROM inventory_reservation
+    WHERE id=#{fact.reservationId} AND sn_id IS NULL AND reservation_status IN ('disputed_holding','renting','overdue_holding') AND quantity&gt;#{fact.quantity}</insert>
+  <update id="updateInventoryReservationReduce">UPDATE inventory_reservation SET quantity=quantity-#{fact.quantity},version=version+1,updated_at=#{at}
+    WHERE id=#{fact.reservationId} AND reservation_status IN ('disputed_holding','renting','overdue_holding') AND quantity&gt;#{fact.quantity}</update>
+  <update id="updatePropSkuStockLoss">UPDATE prop_sku_stock SET total_quantity=total_quantity-#{quantity},rentable_base_quantity=rentable_base_quantity-#{quantity},
+    available_quantity=LEAST(available_quantity,rentable_base_quantity),
+    lost_quantity=lost_quantity+IF(#{lost},#{quantity},0),scrapped_quantity=scrapped_quantity+IF(#{scrap},#{quantity},0),updated_at=#{at}
+    WHERE sku_id=#{sku} AND total_quantity&gt;=#{quantity} AND rentable_base_quantity&gt;=#{quantity}</update>
+  <update id="updateOrderClaimStockResultApplied">UPDATE order_claim_stock_result SET result_status='applied',released_reservation_id=#{release},applied_at=#{at} WHERE id=#{id} AND result_status='recorded'</update>
+  <update id="repairPending">UPDATE order_claim_stock_result SET result_status='repair_pending' WHERE id=#{id} AND result_status='recorded'</update>
+  <select id="selectClaimIdsForRecovery" resultType="string">SELECT DISTINCT c.id FROM order_claim c WHERE c.claim_status='executing' AND c.id&gt;#{after}
+    AND (EXISTS(SELECT 1 FROM order_claim_stock_result f WHERE f.claim_id=c.id AND f.result_status='recorded')
+      OR NOT EXISTS(SELECT 1 FROM inventory_reservation r WHERE r.rental_order_id=c.rental_order_id AND r.reservation_status='disputed_holding')) ORDER BY c.id LIMIT 100</select>
+  <select id="arbitrationClosed" resultType="boolean">SELECT EXISTS(SELECT 1 FROM arbitration_case WHERE id=#{id} AND case_status='closed')</select>
+  <select id="selectClaimStockCloseable" resultType="boolean">SELECT EXISTS(SELECT 1 FROM order_claim c JOIN arbitration_case a ON a.claim_id=c.id AND a.case_status='closed'
+    WHERE c.id=#{id}) OR EXISTS(SELECT 1 FROM order_claim_stock_result WHERE claim_id=#{id} AND result_status='applied')</select>
+  <update id="replaceDisplaced">UPDATE order_claim_stock_result f SET result_status='replaced' WHERE claim_id=#{claim} AND original_reservation_id=#{reservation}
+    AND result_status IN ('recorded','repair_pending') AND (SELECT n FROM (SELECT COALESCE(SUM(quantity),0) n FROM order_claim_stock_result WHERE claim_id=#{claim}
+    AND original_reservation_id=#{reservation} AND result_status IN ('recorded','repair_pending')) AS prior)&gt;#{remaining}</update>
+  <select id="fundsComplete" resultType="boolean">SELECT EXISTS(SELECT 1 FROM rental_order o WHERE id=#{id}
+    AND deposit_paid_amount_fen=deposit_refunded_amount_fen+deposit_deducted_amount_fen AND NOT EXISTS(
+    SELECT 1 FROM refund_order r WHERE r.rental_order_id=o.id AND r.refund_status NOT IN ('success','cancelled')))</select>
+  <update id="closeCheck">UPDATE order_return_check SET checked_at=#{at},closed_at=#{at},operator_user_id=#{actor},closed_by_user_id=#{actor},remaining_close_ms=NULL,
+    auto_close_at=NULL,close_reason='索赔实物已逐项处置',version=version+1,updated_at=#{at} WHERE rental_order_id=#{order} AND check_status='claim_submitted' AND claim_created=1 AND closed_at IS NULL</update>
+</mapper>

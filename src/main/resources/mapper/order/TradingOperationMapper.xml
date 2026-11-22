@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.order.mapper.TradingOperationMapper">
+
+  <select id="selectOperationByActorAndRequest" resultType="com.mujian.backend.order.domain.TradingOperationDO" useCache="false" flushCache="true">
+    SELECT
+      id,
+      actor_user_id,
+      request_id,
+      operation_code,
+      request_hash,
+      resource_type,
+      resource_id,
+      result_json,
+      created_at
+    FROM trading_operation_record
+    WHERE actor_user_id=#{actor}
+      AND request_id=#{requestId}
+  </select>
+
+  <select id="selectEvidenceBinding" resultType="string" useCache="false" flushCache="true">
+    SELECT request_id FROM trading_operation_record WHERE actor_user_id=#{actor} AND operation_code=#{operation}
+      AND JSON_UNQUOTE(JSON_EXTRACT(result_json,'$.evidenceDigest'))=#{digest} LIMIT 1
+  </select>
+  <insert id="insertTradingOperation">
+    INSERT INTO trading_operation_record(id,
+      actor_user_id,
+      request_id,
+      operation_code,
+      request_hash,
+      resource_type,
+      resource_id,
+      result_json,
+      created_at)
+    VALUES (#{row.id},
+      #{row.actorUserId},
+      #{row.requestId},
+      #{row.operationCode},
+      #{row.requestHash},
+      #{row.resourceType},
+      #{row.resourceId},
+      #{row.resultJson},
+      #{row.createdAt})
+  </insert>
+</mapper>

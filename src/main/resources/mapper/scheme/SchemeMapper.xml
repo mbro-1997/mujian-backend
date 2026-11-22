@@ -1,0 +1,349 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.scheme.mapper.SchemeMapper">
+
+  <select id="selectOwnedSchemeById" resultType="com.mujian.backend.scheme.domain.SchemeDO" useCache="false" flushCache="true">
+    SELECT
+      id,
+      owner_user_id,
+      scheme_name,
+      description,
+      scheme_status,
+      active_slot_no,
+      content_version,
+      version,
+      share_enabled,
+      archived_at,
+      created_at,
+      updated_at
+    FROM scheme
+    WHERE owner_user_id=#{actor}
+      AND id=#{id}
+    <if test="lock">
+      FOR UPDATE
+    </if>
+  </select>
+
+  <select id="selectSchemeById" resultType="com.mujian.backend.scheme.domain.SchemeDO" useCache="false" flushCache="true">
+    SELECT
+      id,
+      owner_user_id,
+      scheme_name,
+      description,
+      scheme_status,
+      active_slot_no,
+      content_version,
+      version,
+      share_enabled,
+      archived_at,
+      created_at,
+      updated_at
+    FROM scheme
+    WHERE id=#{id}
+  </select>
+  <sql id="filter">
+    owner_user_id=#{query.actor}
+    <if test="query.scope != 'all'">
+        AND scheme_status=#{query.scope}
+    </if>
+  </sql>
+
+  <select id="selectSchemeCountByQuery" resultType="long" useCache="false" flushCache="true">
+    SELECT
+      COUNT(*)
+    FROM scheme
+    WHERE
+    <include refid="filter"/>
+  </select>
+
+  <select id="selectSchemePageByQuery" resultType="com.mujian.backend.scheme.domain.SchemeDO" useCache="false" flushCache="true">
+    SELECT
+      id,
+      owner_user_id,
+      scheme_name,
+      description,
+      scheme_status,
+      active_slot_no,
+      content_version,
+      version,
+      share_enabled,
+      archived_at,
+      created_at,
+      updated_at
+    FROM scheme
+    WHERE
+    <include refid="filter"/>
+    ORDER BY updated_at DESC,
+      id DESC
+    LIMIT #{query.limit}
+    OFFSET #{query.offset}
+  </select>
+
+  <select id="selectSchemeActiveSlotsByActor" resultType="int" useCache="false" flushCache="true">
+    SELECT
+      active_slot_no
+    FROM scheme
+    WHERE owner_user_id=#{actor}
+      AND active_slot_no IS NOT NULL
+    ORDER BY active_slot_no
+  </select>
+
+  <insert id="insertScheme">
+    INSERT INTO scheme (id,
+      owner_user_id,
+      scheme_name,
+      description,
+      scheme_status,
+      active_slot_no,
+      content_version,
+      version,
+      share_enabled,
+      archived_at,
+      created_at,
+      updated_at)
+    VALUES (#{row.id},
+      #{row.ownerUserId},
+      #{row.schemeName},
+      #{row.description},
+      #{row.schemeStatus},
+      #{row.activeSlotNo},
+      #{row.contentVersion},
+      #{row.version},
+      #{row.shareEnabled},
+      #{row.archivedAt},
+      #{row.createdAt},
+      #{row.updatedAt})
+  </insert>
+
+  <update id="updateScheme">
+    UPDATE scheme
+    SET
+      scheme_name=#{row.schemeName},
+      description=#{row.description},
+      scheme_status=#{row.schemeStatus},
+      active_slot_no=#{row.activeSlotNo},
+      content_version=#{row.contentVersion},
+      version=#{row.version},
+      archived_at=#{row.archivedAt},
+      updated_at=#{row.updatedAt}
+    WHERE id=#{row.id}
+  </update>
+
+  <select id="selectSchemeItemsBySchemeIds" resultType="com.mujian.backend.scheme.domain.SchemeItemDO" useCache="false" flushCache="true">
+    SELECT
+      id,
+      scheme_id,
+      sku_id,
+      factory_id,
+      quantity,
+      remark,
+      sort_order,
+      sku_snapshot_json,
+      created_at,
+      updated_at
+    FROM scheme_item
+    WHERE scheme_id IN
+    <foreach collection="ids" item="id" open="(" close=")" separator=",">
+      #{id}
+    </foreach>
+    ORDER BY scheme_id,
+      sort_order,
+      id
+  </select>
+
+  <select id="selectSchemeItemsBySchemeAndIds" resultType="com.mujian.backend.scheme.domain.SchemeItemDO" useCache="false" flushCache="true">
+    SELECT id, scheme_id, sku_id, factory_id, quantity, remark, sort_order,
+      sku_snapshot_json, created_at, updated_at
+    FROM scheme_item
+    WHERE scheme_id=#{schemeId} AND id IN
+    <foreach collection="ids" item="id" open="(" close=")" separator=",">#{id}</foreach>
+  </select>
+  <select id="selectExistingSkuIdsByScheme" resultType="string" useCache="false" flushCache="true">
+    SELECT sku_id FROM scheme_item WHERE scheme_id=#{schemeId} AND sku_id IN
+    <foreach collection="skuIds" item="skuId" open="(" close=")" separator=",">#{skuId}</foreach>
+  </select>
+  <select id="selectSchemeAmountsExcludingIds" resultType="com.mujian.backend.scheme.projection.SchemeAmountProjection" useCache="false" flushCache="true">
+    SELECT COALESCE(SUM(CAST(JSON_UNQUOTE(JSON_EXTRACT(sku_snapshot_json,'$.prices.dailyRentPriceFen')) AS DECIMAL(30,0))*quantity),0) AS daily_rent_fen,
+      COALESCE(SUM(CAST(JSON_UNQUOTE(JSON_EXTRACT(sku_snapshot_json,'$.prices.depositAmountFen')) AS DECIMAL(30,0))*quantity),0) AS deposit_fen
+    FROM scheme_item WHERE scheme_id=#{schemeId}
+    <if test="!excludedIds.isEmpty()">
+      AND id NOT IN <foreach collection="excludedIds" item="id" open="(" close=")" separator=",">#{id}</foreach>
+    </if>
+  </select>
+
+  <insert id="insertSchemeItem">
+    INSERT INTO scheme_item (id,
+      scheme_id,
+      sku_id,
+      factory_id,
+      quantity,
+      remark,
+      sort_order,
+      sku_snapshot_json,
+      created_at,
+      updated_at)
+    VALUES (#{row.id},
+      #{row.schemeId},
+      #{row.skuId},
+      #{row.factoryId},
+      #{row.quantity},
+      #{row.remark},
+      #{row.sortOrder},
+      #{row.skuSnapshotJson},
+      #{row.createdAt},
+      #{row.updatedAt})
+  </insert>
+
+  <update id="updateSchemeItemBySchemeAndId">
+    UPDATE scheme_item
+    SET quantity=#{row.quantity},
+      remark=#{row.remark},
+      sort_order=#{row.sortOrder},
+      updated_at=#{row.updatedAt}
+    WHERE scheme_id=#{row.schemeId}
+      AND id=#{row.id}
+  </update>
+  <delete id="deleteSchemeItemBySchemeAndId">
+    DELETE FROM scheme_item
+    WHERE scheme_id=#{schemeId}
+      AND id=#{id}
+  </delete>
+
+  <select id="selectSchemeShareBySchemeId" resultType="com.mujian.backend.scheme.domain.SchemeShareDO" useCache="false" flushCache="true">
+    SELECT
+      id,
+      scheme_id,
+      snapshot_id,
+      request_id,
+      share_token,
+      share_status,
+      hide_price,
+      expires_at,
+      view_count,
+      created_by,
+      created_at,
+      updated_at
+    FROM scheme_share
+    WHERE scheme_id=#{id}
+    ORDER BY created_at DESC,
+      id DESC
+    LIMIT 1
+  </select>
+
+  <select id="selectSchemeShareByToken" resultType="com.mujian.backend.scheme.domain.SchemeShareDO" useCache="false" flushCache="true">
+    SELECT
+      id,
+      scheme_id,
+      snapshot_id,
+      request_id,
+      share_token,
+      share_status,
+      hide_price,
+      expires_at,
+      view_count,
+      created_by,
+      created_at,
+      updated_at
+    FROM scheme_share
+    WHERE share_token=#{token}
+  </select>
+
+  <insert id="insertSchemeShare">
+    INSERT INTO scheme_share (id,
+      scheme_id,
+      snapshot_id,
+      request_id,
+      share_token,
+      share_status,
+      hide_price,
+      expires_at,
+      view_count,
+      created_by,
+      created_at,
+      updated_at)
+    VALUES (#{row.id},
+      #{row.schemeId},
+      #{row.snapshotId},
+      #{row.requestId},
+      #{row.shareToken},
+      #{row.shareStatus},
+      #{row.hidePrice},
+      #{row.expiresAt},
+      #{row.viewCount},
+      #{row.createdBy},
+      #{row.createdAt},
+      #{row.updatedAt})
+  </insert>
+
+  <update id="disableSchemeSharesBySchemeId">
+    UPDATE scheme_share
+    SET share_status='disabled',
+      updated_at=#{now}
+    WHERE scheme_id=#{id}
+      AND share_status='active'
+  </update>
+  <select id="selectSchemeShareByRequest" resultType="com.mujian.backend.scheme.domain.SchemeShareDO" useCache="false" flushCache="true">
+    SELECT id,
+      scheme_id,
+      snapshot_id,
+      request_id,
+      share_token,
+      share_status,
+      hide_price,
+      expires_at,
+      view_count,
+      created_by,
+      created_at,
+      updated_at
+    FROM scheme_share
+    WHERE created_by=#{actor}
+      AND request_id=#{requestId}
+  </select>
+  <select id="selectShareSnapshotByContent" resultType="com.mujian.backend.scheme.domain.SchemeShareSnapshotDO" useCache="false" flushCache="true">
+    SELECT id,
+      scheme_id,
+      content_version,
+      hide_price,
+      snapshot_json,
+      created_at
+    FROM scheme_share_snapshot
+    WHERE scheme_id=#{schemeId}
+      AND content_version=#{version}
+      AND hide_price=#{hidePrice}
+  </select>
+  <select id="selectShareSnapshotById" resultType="com.mujian.backend.scheme.domain.SchemeShareSnapshotDO" useCache="false" flushCache="true">
+    SELECT id,
+      scheme_id,
+      content_version,
+      hide_price,
+      snapshot_json,
+      created_at
+    FROM scheme_share_snapshot
+    WHERE id=#{id}
+  </select>
+  <insert id="insertShareSnapshot">
+    INSERT INTO scheme_share_snapshot (id,
+      scheme_id,
+      content_version,
+      hide_price,
+      snapshot_json,
+      created_at)
+    VALUES (#{row.id},
+      #{row.schemeId},
+      #{row.contentVersion},
+      #{row.hidePrice},
+      #{row.snapshotJson},
+      #{row.createdAt})
+  </insert>
+
+  <update id="incrementSchemeShareViewsByToken">
+    UPDATE scheme_share
+    SET
+      view_count=IF(view_count=2147483647,
+      view_count,
+      view_count+1)
+    WHERE id=#{id}
+      AND share_token=#{token}
+      AND share_status='active'
+  </update>
+</mapper>

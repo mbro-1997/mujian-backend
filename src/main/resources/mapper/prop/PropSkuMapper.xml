@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.prop.mapper.PropSkuMapper">
+  <sql id="candidateFrom">
+    FROM prop_sku s
+    JOIN factory_profile f ON f.id = s.factory_id
+    WHERE s.sku_status = 'online' AND f.factory_status = 'active'
+      AND NOT EXISTS (
+        SELECT 1 FROM prop_sku_audit a
+        WHERE a.sku_id = s.id AND a.audit_status = 'pending'
+      )
+    <if test="query.typeCode != null">AND s.type_code = #{query.typeCode}</if>
+    <if test="query.assetType != null">AND s.asset_type = #{query.assetType}</if>
+    <if test="query.styleCodes != null">
+      AND EXISTS (
+        SELECT 1 FROM prop_sku_style st
+        WHERE st.sku_id = s.id AND st.style_code IN
+        <foreach collection="query.styleCodes" item="style" open="(" separator="," close=")">#{style}</foreach>
+      )
+    </if>
+    <if test="query.keyword != null">
+      AND LOCATE(#{query.keyword}, s.prop_name) &gt; 0
+    </if>
+  </sql>
+  <sql id="cardColumns">
+    s.id AS sku_id, s.prop_name, s.asset_type, s.image_url AS image_key, s.type_code,
+    s.daily_rent_price_fen, s.deposit_amount_fen, s.factory_id, f.factory_name
+  </sql>
+  <select id="selectPropCountByQuery" resultType="long" useCache="false" flushCache="true">
+    SELECT COUNT(*) <include refid="candidateFrom"/>
+  </select>
+  <select id="selectPropPageByQuery" resultType="com.mujian.backend.prop.projection.PropBrowseProjection" useCache="false" flushCache="true">
+    SELECT <include refid="cardColumns"/> <include refid="candidateFrom"/>
+    ORDER BY s.created_at DESC, s.id DESC
+    LIMIT #{query.pageSize} OFFSET #{query.offset}
+  </select>
+  <!-- 租期入口取全体候选，必须先计算可租量和全局排序，再分页。 -->
+  <select id="selectPropCandidateListByQuery" resultType="com.mujian.backend.prop.projection.PropBrowseProjection" useCache="false" flushCache="true">
+    SELECT <include refid="cardColumns"/> <include refid="candidateFrom"/>
+    ORDER BY s.created_at DESC, s.id DESC
+  </select>
+
+<sql id="columns_prop_sku">id,factory_id,sku_code,prop_name,asset_type,image_url,type_code,size_desc,length_cm,width_cm,height_cm,material_desc,fire_resistant_code,weight_kg,packaging_factor_bps,transport_suggestion,daily_rent_price_fen,deposit_amount_fen,sku_status,fill_status,remark,created_at,version,updated_at</sql>
+<sql id="aliased_prop_sku">s.id,s.factory_id,s.sku_code,s.prop_name,s.asset_type,s.image_url,s.type_code,s.size_desc,s.length_cm,s.width_cm,s.height_cm,s.material_desc,s.fire_resistant_code,s.weight_kg,s.packaging_factor_bps,s.transport_suggestion,s.daily_rent_price_fen,s.deposit_amount_fen,s.sku_status,s.fill_status,s.remark,s.created_at,s.version,s.updated_at</sql>
+<select id="selectPropInventorySummaryListBySkuIds" resultType="com.mujian.backend.prop.projection.PropInventorySummaryProjection" useCache="false" flushCache="true">
+    
+    SELECT s.id,f.factory_name,EXISTS(SELECT 1 FROM prop_sku_audit a WHERE a.sku_id=s.id AND a.action_type='create' AND a.audit_status='approved') formed,st.id stock_id,st.total_quantity,GREATEST(CAST(st.rentable_base_quantity AS DECIMAL(30,0))-COALESCE(r.occupied,0),0) available_quantity,COALESCE(n.total,0) sn_total,COALESCE(n.available,0) sn_available FROM prop_sku s JOIN factory_profile f ON f.id=s.factory_id LEFT JOIN prop_sku_stock st ON st.sku_id=s.id LEFT JOIN (SELECT sn.sku_id,SUM(sn.instance_status IN ('idle','locked','renting','repairing')) total,SUM(sn.instance_status='idle' AND NOT EXISTS(SELECT 1 FROM inventory_reservation ir WHERE ir.sn_id=sn.id AND ir.reservation_status IN ('held','paid_locked','renting','overdue_holding','disputed_holding') AND ir.occupy_start_date&lt;=#{today} AND <include refid="com.mujian.backend.prop.mapper.InventoryReservationMapper.effectiveOccupyEnd"><property name="alias" value="ir."/></include>&gt;=#{today}) AND NOT EXISTS(SELECT 1 FROM prop_sn_adjustment_item i JOIN prop_sn_adjustment_audit a ON a.id=i.adjustment_audit_id WHERE i.sn_id=sn.id AND a.audit_status='pending')) available FROM prop_sn_instance sn WHERE sn.sku_id IN 
+    <foreach collection="ids" item="value" open="(" separator="," close=")">#{value}</foreach>
+     GROUP BY sn.sku_id) n ON n.sku_id=s.id LEFT JOIN (SELECT sku_id,SUM(CAST(quantity AS DECIMAL(30,0))) occupied FROM inventory_reservation WHERE sn_id IS NULL AND reservation_status IN ('held','paid_locked','renting','overdue_holding','disputed_holding') AND occupy_start_date&lt;=#{today} AND <include refid="com.mujian.backend.prop.mapper.InventoryReservationMapper.effectiveOccupyEnd"><property name="alias" value=""/></include>&gt;=#{today} AND sku_id IN <foreach collection="ids" item="value" open="(" separator="," close=")">#{value}</foreach> GROUP BY sku_id) r ON r.sku_id=s.id WHERE s.id IN 
+    <foreach collection="ids" item="value" open="(" separator="," close=")">#{value}</foreach>
+  </select>
+<sql id="skuFilters">
+    <if test="ownedQueryDTO.typeCode != null"> AND s.type_code=#{ownedQueryDTO.typeCode}</if>
+    <if test="ownedQueryDTO.assetType != null"> AND s.asset_type=#{ownedQueryDTO.assetType}</if>
+    <if test="ownedQueryDTO.styleCodes != null">
+       AND EXISTS(SELECT 1 FROM prop_sku_style st WHERE st.sku_id=s.id AND st.style_code IN 
+      <foreach collection="ownedQueryDTO.styleCodes" item="style" open="(" separator="," close=")">#{style}</foreach>
+      )
+    </if>
+  </sql>
+<select id="selectOwnedPropSkuCountByQuery" resultType="long" useCache="false" flushCache="true">
+        SELECT COUNT(*) FROM prop_sku s WHERE 1=1
+        <if test="ownedQueryDTO.ownerFactory != null"> AND s.factory_id=#{ownedQueryDTO.ownerFactory}</if>
+        <include refid="skuFilters"/>
+        <if test="ownedQueryDTO.factoryId != null"> AND s.factory_id=#{ownedQueryDTO.factoryId}</if>
+        <if test="ownedQueryDTO.skuStatus != null"> AND s.sku_status=#{ownedQueryDTO.skuStatus}</if>
+        <if test="ownedQueryDTO.keyword != null">
+           AND (LOCATE(#{ownedQueryDTO.keyword},s.prop_name)&gt;0 OR LOCATE(#{ownedQueryDTO.keyword},CONVERT(s.sku_code USING utf8mb4) COLLATE utf8mb4_bin)&gt;0
+          <if test="ownedQueryDTO.admin"> OR EXISTS(SELECT 1 FROM prop_sn_instance sn WHERE sn.sku_id=s.id AND LOCATE(#{ownedQueryDTO.keyword},CONVERT(sn.sn_code USING utf8mb4) COLLATE utf8mb4_bin)&gt;0)</if>
+          )
+        </if>
+        <if test="ownedQueryDTO.factoryKeyword != null"> AND EXISTS(SELECT 1 FROM factory_profile f WHERE f.id=s.factory_id AND LOCATE(#{ownedQueryDTO.factoryKeyword},f.factory_name)&gt;0)</if>
+        <if test="ownedQueryDTO.auditing != null">
+           AND 
+          <if test="!ownedQueryDTO.auditing">NOT</if>
+           EXISTS(SELECT 1 FROM prop_sku_audit a WHERE a.sku_id=s.id AND a.audit_status='pending')
+        </if>
+      </select>
+<select id="selectOwnedPropSkuPageByQuery" resultType="com.mujian.backend.prop.domain.PropSkuDO" useCache="false" flushCache="true">
+        SELECT s.id, s.asset_type, s.created_at, s.daily_rent_price_fen, s.deposit_amount_fen, s.factory_id, s.fill_status, s.fire_resistant_code, s.height_cm, s.length_cm, s.material_desc, s.packaging_factor_bps, s.prop_name, s.remark, s.size_desc, s.sku_code, s.sku_status, s.transport_suggestion, s.type_code, s.updated_at, s.version, s.weight_kg, s.width_cm FROM prop_sku s WHERE 1=1
+        <if test="ownedQueryDTO.ownerFactory != null"> AND s.factory_id=#{ownedQueryDTO.ownerFactory}</if>
+        <include refid="skuFilters"/>
+        <if test="ownedQueryDTO.factoryId != null"> AND s.factory_id=#{ownedQueryDTO.factoryId}</if>
+        <if test="ownedQueryDTO.skuStatus != null"> AND s.sku_status=#{ownedQueryDTO.skuStatus}</if>
+        <if test="ownedQueryDTO.keyword != null">
+           AND (LOCATE(#{ownedQueryDTO.keyword},s.prop_name)&gt;0 OR LOCATE(#{ownedQueryDTO.keyword},CONVERT(s.sku_code USING utf8mb4) COLLATE utf8mb4_bin)&gt;0
+          <if test="ownedQueryDTO.admin"> OR EXISTS(SELECT 1 FROM prop_sn_instance sn WHERE sn.sku_id=s.id AND LOCATE(#{ownedQueryDTO.keyword},CONVERT(sn.sn_code USING utf8mb4) COLLATE utf8mb4_bin)&gt;0)</if>
+          )
+        </if>
+        <if test="ownedQueryDTO.factoryKeyword != null"> AND EXISTS(SELECT 1 FROM factory_profile f WHERE f.id=s.factory_id AND LOCATE(#{ownedQueryDTO.factoryKeyword},f.factory_name)&gt;0)</if>
+        <if test="ownedQueryDTO.auditing != null">
+           AND 
+          <if test="!ownedQueryDTO.auditing">NOT</if>
+           EXISTS(SELECT 1 FROM prop_sku_audit a WHERE a.sku_id=s.id AND a.audit_status='pending')
+        </if>
+         ORDER BY s.created_at DESC,s.id DESC LIMIT #{ownedQueryDTO.limit} OFFSET #{ownedQueryDTO.offset}
+      </select>
+<select id="selectPropSku" resultType="com.mujian.backend.prop.domain.PropSkuDO" useCache="false" flushCache="true">
+    SELECT id,factory_id,sku_code,prop_name,asset_type,image_url,type_code,size_desc,length_cm,width_cm,height_cm,material_desc,fire_resistant_code,weight_kg,packaging_factor_bps,transport_suggestion,daily_rent_price_fen,deposit_amount_fen,sku_status,fill_status,remark,created_at,version,updated_at FROM prop_sku WHERE id=#{id} <if test="lock">FOR UPDATE</if>
+  </select>
+<insert id="insertPropSku">INSERT INTO prop_sku
+<trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="row.id != null">id,</if>
+<if test="row.factoryId != null">factory_id,</if>
+<if test="row.skuCode != null">sku_code,</if>
+<if test="row.propName != null">prop_name,</if>
+<if test="row.assetType != null">asset_type,</if>
+<if test="row.imageUrl != null">image_url,</if>
+<if test="row.typeCode != null">type_code,</if>
+<if test="row.sizeDesc != null">size_desc,</if>
+<if test="row.lengthCm != null">length_cm,</if>
+<if test="row.widthCm != null">width_cm,</if>
+<if test="row.heightCm != null">height_cm,</if>
+<if test="row.materialDesc != null">material_desc,</if>
+<if test="row.fireResistantCode != null">fire_resistant_code,</if>
+<if test="row.weightKg != null">weight_kg,</if>
+<if test="row.packagingFactorBps != null">packaging_factor_bps,</if>
+<if test="row.transportSuggestion != null">transport_suggestion,</if>
+<if test="row.dailyRentPriceFen != null">daily_rent_price_fen,</if>
+<if test="row.depositAmountFen != null">deposit_amount_fen,</if>
+<if test="row.skuStatus != null">sku_status,</if>
+<if test="row.fillStatus != null">fill_status,</if>
+<if test="row.remark != null">remark,</if>
+<if test="row.createdAt != null">created_at,</if>
+<if test="row.version != null">version,</if>
+<if test="row.updatedAt != null">updated_at,</if>
+</trim> VALUES
+<trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="row.id != null">#{row.id},</if>
+<if test="row.factoryId != null">#{row.factoryId},</if>
+<if test="row.skuCode != null">#{row.skuCode},</if>
+<if test="row.propName != null">#{row.propName},</if>
+<if test="row.assetType != null">#{row.assetType},</if>
+<if test="row.imageUrl != null">#{row.imageUrl},</if>
+<if test="row.typeCode != null">#{row.typeCode},</if>
+<if test="row.sizeDesc != null">#{row.sizeDesc},</if>
+<if test="row.lengthCm != null">#{row.lengthCm},</if>
+<if test="row.widthCm != null">#{row.widthCm},</if>
+<if test="row.heightCm != null">#{row.heightCm},</if>
+<if test="row.materialDesc != null">#{row.materialDesc},</if>
+<if test="row.fireResistantCode != null">#{row.fireResistantCode},</if>
+<if test="row.weightKg != null">#{row.weightKg},</if>
+<if test="row.packagingFactorBps != null">#{row.packagingFactorBps},</if>
+<if test="row.transportSuggestion != null">#{row.transportSuggestion},</if>
+<if test="row.dailyRentPriceFen != null">#{row.dailyRentPriceFen},</if>
+<if test="row.depositAmountFen != null">#{row.depositAmountFen},</if>
+<if test="row.skuStatus != null">#{row.skuStatus},</if>
+<if test="row.fillStatus != null">#{row.fillStatus},</if>
+<if test="row.remark != null">#{row.remark},</if>
+<if test="row.createdAt != null">#{row.createdAt},</if>
+<if test="row.version != null">#{row.version},</if>
+<if test="row.updatedAt != null">#{row.updatedAt},</if>
+</trim></insert>
+<update id="updatePropSkuStatusByVersion">UPDATE prop_sku SET sku_status=#{command.skuStatus},version=#{command.version},updated_at=#{command.updatedAt} WHERE id=#{command.id}</update>
+<update id="updatePropSkuOptionsByVersion">UPDATE prop_sku SET type_code=#{command.typeCode},transport_suggestion=#{command.transportSuggestion},version=#{command.version},updated_at=#{command.updatedAt} WHERE id=#{command.id}</update>
+<update id="updatePropSkuFields">UPDATE prop_sku SET prop_name=#{row.propName},type_code=#{row.typeCode},size_desc=#{row.sizeDesc},length_cm=#{row.lengthCm},width_cm=#{row.widthCm},height_cm=#{row.heightCm},material_desc=#{row.materialDesc},fire_resistant_code=#{row.fireResistantCode},weight_kg=#{row.weightKg},packaging_factor_bps=#{row.packagingFactorBps},transport_suggestion=#{row.transportSuggestion},daily_rent_price_fen=#{row.dailyRentPriceFen},deposit_amount_fen=#{row.depositAmountFen},remark=#{row.remark},image_url=#{row.imageUrl} WHERE id=#{row.id}</update>
+<select id="selectPropSkuListByIds" resultType="com.mujian.backend.prop.domain.PropSkuDO" useCache="false" flushCache="true">
+ SELECT <include refid="columns_prop_sku"/> FROM prop_sku WHERE id IN
+ <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+</select>
+<select id="selectPlanningFactsBySkuIds" resultType="com.mujian.backend.prop.projection.PropPlanningProjection" useCache="false" flushCache="true">
+ SELECT s.id sku_id,s.factory_id,f.factory_name,
+ (s.sku_status='online' AND f.factory_status='active' AND NOT EXISTS(SELECT 1 FROM prop_sku_audit a WHERE a.sku_id=s.id AND a.audit_status='pending')) public_visible
+ FROM prop_sku s JOIN factory_profile f ON f.id=s.factory_id WHERE s.id IN
+ <foreach collection="ids" item="id" open="(" close=")" separator=",">#{id}</foreach>
+</select>
+</mapper>

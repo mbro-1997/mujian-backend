@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.payment.mapper.PaymentOrderMapper">
+
+  <insert id="insertPayment">
+    INSERT INTO payment_order(id,
+      payment_no,
+      request_idempotency_key,
+      checkout_batch_id,
+      payment_scene,
+      buyer_user_id,
+      pay_channel,
+      channel_order_mode,
+      channel_app_id,
+      channel_mch_id,
+      channel_notify_url,
+      channel_combine_out_trade_no,
+      payer_openid,
+      payment_status,
+      payable_amount_fen,
+      paid_amount_fen,
+      refunded_amount_fen,
+      expire_at,
+      created_at,
+      updated_at,
+      next_attempt_at)
+    VALUES (#{payment.id},
+      #{payment.paymentNo},
+      #{payment.requestIdempotencyKey},
+      #{payment.checkoutBatchId},
+      'initial_order',
+      #{payment.buyerUserId},
+      'wechat_pay',
+      'combine_jsapi',
+      #{payment.channelAppId},
+      #{payment.channelMchId},
+      #{payment.channelNotifyUrl},
+      #{payment.channelCombineOutTradeNo},
+      #{payment.payerOpenid},
+      'pending',
+      #{payment.payableAmountFen},
+      0,
+      0,
+      #{payment.expireAt},
+      #{payment.createdAt},
+      #{payment.updatedAt},
+      #{payment.nextAttemptAt})
+  </insert>
+
+  <insert id="insertSuborder">
+    INSERT INTO payment_channel_suborder(id,
+      payment_order_id,
+      factory_id,
+      factory_wechat_account_id,
+      sub_mchid_snapshot,
+      channel_sub_order_no,
+      channel_suborder_amount_fen,
+      channel_suborder_status,
+      channel_description,
+      profit_sharing_flag,
+      payment_status,
+      paid_amount_fen,
+      refunded_amount_fen,
+      freeze_alert_status,
+      created_at,
+      updated_at)
+    VALUES (#{suborder.id},
+      #{suborder.paymentOrderId},
+      #{suborder.factoryId},
+      #{suborder.factoryWechatAccountId},
+      #{suborder.subMchidSnapshot},
+      #{suborder.channelSubOrderNo},
+      #{suborder.channelSuborderAmountFen},
+      'pending',
+      #{suborder.channelDescription},
+      1,
+      'pending',
+      0,
+      0,
+      'none',
+      #{suborder.createdAt},
+      #{suborder.updatedAt})
+  </insert>
+
+  <select id="selectPaymentByBatch" resultType="com.mujian.backend.payment.domain.PaymentOrderDO" useCache="false" flushCache="true">
+    SELECT
+      id,
+      payment_no,
+      request_idempotency_key,
+      checkout_batch_id,
+      buyer_user_id,
+      channel_app_id,
+      channel_mch_id,
+      channel_notify_url,
+      channel_prepay_id,
+      channel_combine_out_trade_no,
+      payer_openid,
+      channel_trade_state,
+      payment_status,
+      payable_amount_fen,
+      paid_amount_fen,
+      refunded_amount_fen,
+      expire_at,
+      paid_at,
+      closed_at,
+      version,
+      created_at,
+      updated_at,
+      next_attempt_at,
+      last_checked_at,
+      attempt_count,
+      last_error_code,
+      close_requested_at,
+      close_reason
+    FROM payment_order
+    WHERE checkout_batch_id=#{id}
+    <if test="lock">
+      FOR UPDATE
+    </if>
+  </select>
+
+  <select id="selectPaymentById" resultType="com.mujian.backend.payment.domain.PaymentOrderDO" useCache="false" flushCache="true">
+    SELECT
+      id,
+      payment_no,
+      request_idempotency_key,
+      checkout_batch_id,
+      buyer_user_id,
+      channel_app_id,
+      channel_mch_id,
+      channel_notify_url,
+      channel_prepay_id,
+      channel_combine_out_trade_no,
+      payer_openid,
+      channel_trade_state,
+      payment_status,
+      payable_amount_fen,
+      paid_amount_fen,
+      refunded_amount_fen,
+      expire_at,
+      paid_at,
+      closed_at,
+      version,
+      created_at,
+      updated_at,
+      next_attempt_at,
+      last_checked_at,
+      attempt_count,
+      last_error_code,
+      close_requested_at,
+      close_reason
+    FROM payment_order
+    WHERE id=#{id}
+    <if test="lock">
+      FOR UPDATE
+    </if>
+  </select>
+
+  <sql id="suborderColumns">
+    SELECT
+      id,
+      payment_order_id,
+      factory_id,
+      factory_wechat_account_id,
+      sub_mchid_snapshot,
+      channel_sub_order_no,
+      channel_sub_transaction_id,
+      channel_suborder_amount_fen,
+      channel_suborder_status,
+      rental_order_id,
+      channel_description,
+      profit_sharing_flag,
+      payment_status,
+      channel_trade_state,
+      paid_amount_fen,
+      refunded_amount_fen,
+      paid_at,
+      closed_at,
+      version,
+      freeze_expire_at,
+      freeze_alert_status,
+      created_at,
+      updated_at
+    FROM payment_channel_suborder
+  </sql>
+  <select id="lockSuborderById" resultType="com.mujian.backend.payment.domain.ChannelSuborderDO" flushCache="true" useCache="false">
+    <include refid="suborderColumns"/> WHERE id=#{id} FOR UPDATE
+  </select>
+  <select id="selectSubordersByPayment" resultType="com.mujian.backend.payment.domain.ChannelSuborderDO" useCache="false" flushCache="true">
+    <include refid="suborderColumns"/>
+    WHERE payment_order_id=#{id}
+    ORDER BY id
+    <if test="lock">
+      FOR UPDATE
+    </if>
+  </select>
+
+  <update id="claimAttempt">
+    UPDATE payment_order
+    SET
+      next_attempt_at=#{attempt.next},
+      last_checked_at=#{attempt.now},
+      attempt_count=attempt_count+1,
+      version=version+1,
+      updated_at=#{attempt.now}
+    WHERE id=#{attempt.id}
+      AND version=#{attempt.version}
+      AND (next_attempt_at IS NULL
+      OR next_attempt_at&lt;=#{attempt.now})
+  </update>
+
+  <update id="finishAttempt">
+    UPDATE payment_order
+    SET
+      channel_prepay_id=COALESCE(channel_prepay_id,
+      #{finish.prepayId}),
+      payment_status=CASE WHEN #{finish.prepayId} IS NOT NULL
+      AND payment_status='pending' THEN 'paying' ELSE payment_status END,
+      last_error_code=#{finish.errorCode},
+      next_attempt_at=#{finish.next},
+      version=version+1,
+      updated_at=#{finish.now}
+    WHERE id=#{finish.id}
+      AND version=#{finish.version}
+  </update>
+
+  <update id="confirmSuborderPaid">
+    UPDATE payment_channel_suborder
+    SET
+      channel_sub_transaction_id=#{fact.transactionId},
+      payment_status='success',
+      channel_trade_state=#{fact.tradeState},
+      channel_suborder_status=CASE WHEN refunded_amount_fen=channel_suborder_amount_fen THEN 'fully_refunded' WHEN refunded_amount_fen&gt;0 THEN 'partially_refunded' ELSE 'paid_frozen' END,
+      paid_amount_fen=#{fact.paidFen},
+      paid_at=#{fact.paidAt},
+      version=version+1,
+      updated_at=#{fact.now}
+    WHERE id=#{fact.id}
+      AND payment_status!='success'
+  </update>
+
+  <update id="confirmSuborderClosed">
+    UPDATE payment_channel_suborder
+    SET
+      payment_status='closed',
+      channel_suborder_status='closed',
+      channel_trade_state='CLOSED',
+      closed_at=#{now},
+      version=version+1,
+      updated_at=#{now}
+    WHERE id=#{id}
+      AND payment_status NOT IN ('success',
+      'closed')
+  </update>
+
+  <update id="updatePaymentSummary">
+    UPDATE payment_order
+    SET
+      payment_status=#{summary.status},
+      paid_amount_fen=#{summary.paidFen},
+      paid_at=#{summary.paidAt},
+      channel_trade_state=#{summary.tradeState},
+      last_checked_at=#{summary.now},
+      version=version+1,
+      updated_at=#{summary.now}
+    WHERE id=#{summary.id}
+  </update>
+
+  <update id="requestClose">
+    UPDATE payment_order
+    SET
+      close_requested_at=COALESCE(close_requested_at,
+      #{now}),
+      close_reason=COALESCE(close_reason,
+      #{reason}),
+      next_attempt_at=COALESCE(next_attempt_at,
+      #{now}),
+      version=version+1,
+      updated_at=#{now}
+    WHERE id=#{id}
+      AND payment_status NOT IN ('success',
+      'closed',
+      'expired')
+  </update>
+
+  <select id="selectDuePaymentBatches" resultType="string">
+    SELECT
+      COALESCE(p.checkout_batch_id,p.id)
+    FROM payment_order p LEFT JOIN checkout_batch b ON b.id=p.checkout_batch_id
+    WHERE p.payment_scene IN ('initial_order','extension_rent','compensation_supplement','custom_order_full_payment') AND (p.next_attempt_at IS NULL
+      OR p.next_attempt_at&lt;=#{now})
+      AND (p.payment_status IN ('pending',
+      'paying',
+      'partial_received')
+      OR (p.payment_status='closed'
+      AND b.batch_status='pending_payment')
+      OR b.batch_status IN ('payment_exception',
+      'refund_processing'))
+    ORDER BY p.next_attempt_at,
+      p.id
+    LIMIT 100
+  </select>
+
+  <update id="rememberPrepay">
+    UPDATE payment_order
+    SET
+      channel_prepay_id=#{prepay},
+      updated_at=#{now}
+    WHERE id=#{id}
+      AND channel_prepay_id IS NULL
+  </update>
+  <sql id="paymentColumns">
+    id,
+      payment_no,
+      request_idempotency_key,
+      checkout_batch_id,
+      buyer_user_id,
+      channel_app_id,
+      channel_mch_id,
+      channel_notify_url,
+      channel_prepay_id,
+      channel_combine_out_trade_no,
+      payer_openid,
+      channel_trade_state,
+      payment_status,
+      payable_amount_fen,
+      paid_amount_fen,
+      refunded_amount_fen,
+      expire_at,
+      paid_at,
+      closed_at,
+      version,
+      created_at,
+      updated_at,
+      next_attempt_at,
+      last_checked_at,
+      attempt_count,
+      last_error_code,
+      close_requested_at,
+      close_reason
+  </sql>
+  <sql id="paymentQueryWhere">
+    WHERE 1=1
+    <if test="query.status!=null">
+        AND payment_status=#{query.status}
+    </if>
+    <if test="query.buyerUserId!=null">
+        AND buyer_user_id=#{query.buyerUserId}
+    </if>
+    <if test="query.factoryId!=null">
+        AND EXISTS(
+      SELECT
+        1
+      FROM payment_channel_suborder s
+      WHERE s.payment_order_id=payment_order.id
+        AND s.factory_id=#{query.factoryId})
+    </if>
+    <if test="query.keyword!=null">
+        AND LOCATE(#{query.keyword},
+        CONVERT(payment_no USING utf8mb4) COLLATE utf8mb4_bin)&gt;0
+    </if>
+  </sql>
+
+  <select id="selectSource" resultType="com.mujian.backend.payment.mapper.PaymentOrderMapper$Source">
+    SELECT payment_scene scene,related_extension_request_id extension_id,related_compensation_receivable_id receivable_id,(SELECT s.custom_order_id FROM payment_channel_suborder s WHERE s.payment_order_id=p.id AND s.custom_order_id IS NOT NULL) custom_order_id FROM payment_order p WHERE id=#{id}
+  </select>
+  <select id="selectPaymentPage" resultType="com.mujian.backend.payment.domain.PaymentOrderDO">
+    SELECT
+    <include refid="paymentColumns"/>
+    FROM payment_order
+    <include refid="paymentQueryWhere"/>
+    ORDER BY created_at DESC,
+      id DESC
+    LIMIT #{query.page.pageSize}
+    OFFSET #{query.page.offset}
+  </select>
+
+  <select id="countPayments" resultType="long">
+    SELECT
+      COUNT(*)
+    FROM payment_order
+    <include refid="paymentQueryWhere"/>
+  </select>
+</mapper>

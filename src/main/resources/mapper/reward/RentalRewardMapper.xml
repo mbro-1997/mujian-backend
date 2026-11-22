@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC '-//mybatis.org//DTD Mapper 3.0//EN' 'https://mybatis.org/dtd/mybatis-3-mapper.dtd'>
+<mapper namespace="com.mujian.backend.reward.mapper.RentalRewardMapper">
+
+  <select id="selectDueRentalRewardIds" resultType="string">
+    SELECT
+      id
+    FROM coupon_reward_record
+    WHERE reward_status='pending'
+      AND next_retry_at&lt;=#{now}
+    ORDER BY next_retry_at,
+      id
+    LIMIT 100
+  </select>
+
+  <select id="selectRentalRewardById" resultType="com.mujian.backend.reward.projection.RentalRewardProjection" useCache="false" flushCache="true">
+    SELECT
+      r.id,
+      r.user_id,
+      u.user_status,
+      r.event_type,
+      rr.template_id,
+      r.reward_status,
+      t.template_status,
+      t.validity_type,
+      t.valid_days,
+      t.valid_start_at,
+      t.valid_end_at
+    FROM coupon_reward_record r JOIN sys_user u ON u.id=r.user_id JOIN coupon_reward_rule rr ON rr.id=r.rule_id JOIN coupon_template t ON t.id=rr.template_id
+    WHERE r.id=#{id}
+  </select>
+
+  <select id="lockOriginalTemplate" resultType="string">
+    SELECT
+      id
+    FROM coupon_template
+    WHERE id=#{id}
+    FOR UPDATE
+  </select>
+
+  <select id="lockRewardStatus" resultType="string" useCache="false" flushCache="true">
+    SELECT
+      reward_status
+    FROM coupon_reward_record
+    WHERE id=#{id}
+    FOR UPDATE
+  </select>
+
+  <insert id="insertRewardCoupon">
+    INSERT INTO user_coupon(id,
+      user_coupon_no,
+      template_id,
+      user_id,
+      issue_source_type,
+      issue_source_id,
+      issue_request_id,
+      coupon_status,
+      coupon_type_snapshot,
+      face_amount_fen_snapshot,
+      discount_rate_bps_snapshot,
+      threshold_rent_amount_fen_snapshot,
+      cost_bearer_snapshot,
+      valid_from,
+      valid_until,
+      created_at,
+      updated_at)
+    SELECT
+      #{id},
+      #{id},
+      id,
+      #{reward.userId},
+      'event_reward',
+      #{reward.id},
+      CONCAT('reward:',
+      #{reward.id}),
+      'available',
+      coupon_type,
+      face_amount_fen,
+      discount_rate_bps,
+      threshold_rent_amount_fen,
+      cost_bearer,
+      #{validFrom},
+      #{validUntil},
+      #{now},
+      #{now}
+    FROM coupon_template
+    WHERE id=#{reward.templateId}
+  </insert>
+
+  <insert id="insertRewardCouponLog">
+    INSERT INTO coupon_operation_log(id,
+      operation_request_id,
+      user_coupon_id,
+      operation_type,
+      to_status,
+      operator_type,
+      operator_id,
+      biz_type,
+      biz_id,
+      reason,
+      created_at)
+    VALUES (#{id},
+      CONCAT('reward:',
+      #{rewardId}),
+      #{couponId},
+      'issued',
+      'available',
+      'system',
+      #{operator},
+      'reward_record',
+      #{rewardId},
+      #{reason},
+      #{now})
+  </insert>
+
+  <update id="increaseTemplateIssuedCount">
+    UPDATE coupon_template
+    SET
+      issued_count=issued_count+1,
+      updated_at=#{now}
+    WHERE id=#{id}
+  </update>
+
+  <update id="completeRentalReward">
+    UPDATE coupon_reward_record
+    SET
+      reward_status='granted',
+      granted_at=#{now},
+      attempt_count=attempt_count+1,
+      next_retry_at=NULL,
+      last_error_code=NULL,
+      updated_at=#{now}
+    WHERE id=#{id}
+      AND reward_status='pending'
+  </update>
+
+  <update id="deferRentalReward">
+    UPDATE coupon_reward_record
+    SET
+      attempt_count=attempt_count+1,
+      next_retry_at=DATE_ADD(#{now},
+      INTERVAL 5 MINUTE),
+      last_error_code=#{reason},
+      updated_at=#{now}
+    WHERE id=#{id}
+      AND reward_status='pending'
+  </update>
+</mapper>

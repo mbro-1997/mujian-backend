@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.casework.mapper.AdminCaseNoteMapper">
+  <select id="lockContactCaseById" resultType="com.mujian.backend.casework.mapper.AdminCaseNoteMapper$CaseState">
+    SELECT c.id,c.case_status status,c.version FROM admin_case c
+    WHERE c.id=#{caseId} AND EXISTS (
+      SELECT 1 FROM admin_case_relation rel WHERE rel.admin_case_id=c.id AND rel.is_primary=1 AND (
+        (c.case_type='fulfillment_risk' AND rel.relation_type='fulfillment_risk' AND EXISTS (SELECT 1 FROM order_fulfillment_risk r WHERE r.id=rel.relation_id))
+        OR (c.case_type='custom_after_sale' AND rel.relation_type='custom_after_sale_request' AND EXISTS (SELECT 1 FROM custom_after_sale_request a WHERE a.id=rel.relation_id AND a.admin_case_id=c.id))
+        OR (c.case_type='custom_fulfillment' AND rel.relation_type='custom_order_extension_request' AND EXISTS (SELECT 1 FROM custom_order_extension_request e WHERE e.id=rel.relation_id AND e.admin_case_id=c.id))
+      )) FOR UPDATE
+  </select>
+  <select id="selectReferencesByCaseId" resultType="com.mujian.backend.casework.dto.CaseContact$Reference">
+    SELECT DISTINCT relation_type,relation_id FROM admin_case_relation WHERE admin_case_id=#{caseId} ORDER BY relation_type,relation_id
+  </select>
+  <select id="selectSnapshotByRequest" resultType="string">
+    SELECT after_snapshot_json FROM admin_operation_audit WHERE admin_user_id=#{actor} AND operation_code='case_contact_record'
+      AND target_type='admin_case' AND target_id=#{caseId} AND idempotency_key=#{key}
+  </select>
+  <select id="selectNotesByCaseId" resultType="com.mujian.backend.casework.mapper.AdminCaseNoteMapper$Note">
+    SELECT n.id,n.contact_channel channel,n.note_content summary,n.created_at at,a.after_snapshot_json snapshot
+    FROM admin_case_note n LEFT JOIN admin_operation_audit a ON a.target_type='admin_case' AND a.target_id=n.admin_case_id
+      AND a.operation_code='case_contact_record' AND a.after_snapshot_json->>'$.result.noteId'=n.id
+    WHERE n.admin_case_id=#{caseId} AND n.note_type='contact_record' ORDER BY n.created_at DESC,n.id DESC
+  </select>
+  <insert id="insertContactNote">
+    INSERT INTO admin_case_note(id,admin_case_id,note_type,note_content,contact_channel,created_by_admin_user_id,created_at,updated_at)
+    VALUES(#{id},#{caseId},'contact_record',#{input.summary},#{input.contactChannel},#{actor},#{at},#{at})
+  </insert>
+  <update id="incrementCaseVersion">
+    UPDATE admin_case SET version=version+1,updated_at=#{at} WHERE id=#{caseId} AND version=#{version}
+  </update>
+</mapper>

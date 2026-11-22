@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC '-//mybatis.org//DTD Mapper 3.0//EN'
+  'https://mybatis.org/dtd/mybatis-3-mapper.dtd'>
+<mapper namespace="com.mujian.backend.student.mapper.StudentMapper">
+  <sql id="columns">v.id,v.application_no,v.submit_request_id,v.user_id,v.school_name,v.student_card_urls,v.id_card_last4,v.verification_status,v.reject_reason,v.reviewed_by_admin_user_id,v.submitted_at,v.material_consent_version,v.material_consent_at,v.reviewed_at,v.expire_at,v.version,v.created_at,v.updated_at</sql>
+  <select id="selectStudentVerificationById" resultType="com.mujian.backend.student.domain.StudentVerificationDO" useCache="false" flushCache="true">SELECT v.id,v.application_no,v.submit_request_id,v.user_id,v.school_name,v.student_card_urls,v.id_card_last4,v.verification_status,v.reject_reason,v.reviewed_by_admin_user_id,v.submitted_at,v.material_consent_version,v.material_consent_at,v.reviewed_at,v.expire_at,v.version,v.created_at,v.updated_at FROM user_student_verification v WHERE v.id=#{id}</select>
+  <select id="selectStudentVerificationByIdForUpdate" resultType="com.mujian.backend.student.domain.StudentVerificationDO" useCache="false" flushCache="true">SELECT v.id,v.application_no,v.submit_request_id,v.user_id,v.school_name,v.student_card_urls,v.id_card_last4,v.verification_status,v.reject_reason,v.reviewed_by_admin_user_id,v.submitted_at,v.material_consent_version,v.material_consent_at,v.reviewed_at,v.expire_at,v.version,v.created_at,v.updated_at FROM user_student_verification v WHERE v.id=#{id} FOR UPDATE</select>
+  <select id="selectStudentVerificationByRequest" resultType="com.mujian.backend.student.domain.StudentVerificationDO" useCache="false" flushCache="true">SELECT v.id,v.application_no,v.submit_request_id,v.user_id,v.school_name,v.student_card_urls,v.id_card_last4,v.verification_status,v.reject_reason,v.reviewed_by_admin_user_id,v.submitted_at,v.material_consent_version,v.material_consent_at,v.reviewed_at,v.expire_at,v.version,v.created_at,v.updated_at FROM user_student_verification v WHERE v.submit_request_id=#{key}</select>
+  <select id="selectCurrentStudentVerification" resultType="com.mujian.backend.student.domain.StudentVerificationDO" useCache="false" flushCache="true">SELECT v.id,v.application_no,v.submit_request_id,v.user_id,v.school_name,v.student_card_urls,v.id_card_last4,v.verification_status,v.reject_reason,v.reviewed_by_admin_user_id,v.submitted_at,v.material_consent_version,v.material_consent_at,v.reviewed_at,v.expire_at,v.version,v.created_at,v.updated_at FROM user_student_verification v WHERE v.user_id=#{user} ORDER BY CASE WHEN verification_status='pending' THEN 0 WHEN verification_status='approved' AND expire_at&gt;#{now} THEN 1 ELSE 2 END,submitted_at DESC,id DESC LIMIT 1</select>
+  <select id="selectDueStudentVerificationCandidates" resultType="com.mujian.backend.student.projection.StudentExpiryProjection" useCache="false" flushCache="true">SELECT id,user_id FROM user_student_verification WHERE verification_status='approved' AND expire_at&lt;=#{now} ORDER BY expire_at,id LIMIT 100</select>
+  <select id="selectDueStudentVerificationIdsByOwner" resultType="string" useCache="false" flushCache="true">SELECT id FROM user_student_verification WHERE user_id=#{user} AND verification_status='approved' AND expire_at&lt;=#{now} ORDER BY id</select>
+  <update id="expireStudentVerificationByVersion">UPDATE user_student_verification SET verification_status='expired',version=version+1,updated_at=#{now} WHERE id=#{id} AND verification_status='approved' AND version=#{version} AND expire_at&lt;=#{now}</update>
+  <update id="reviewStudentVerificationByVersion">UPDATE user_student_verification SET verification_status=#{status},reviewed_by_admin_user_id=#{actor},reviewed_at=#{now},updated_at=#{now},version=version+1,reject_reason=CASE WHEN #{status}='rejected' THEN #{remark} ELSE NULL END,expire_at=#{expiry} WHERE id=#{id} AND verification_status='pending' AND version=#{version}</update>
+  <insert id="insertStudentVerification">INSERT INTO user_student_verification (id,user_id,submit_request_id,submitted_at,material_consent_version,material_consent_at,verification_status,created_at,updated_at,application_no,school_name,student_card_urls) VALUES (#{studentVerificationDO.id},#{studentVerificationDO.userId},#{studentVerificationDO.submitRequestId},#{studentVerificationDO.submittedAt},#{studentVerificationDO.materialConsentVersion},#{studentVerificationDO.materialConsentAt},#{studentVerificationDO.verificationStatus},#{studentVerificationDO.createdAt},#{studentVerificationDO.updatedAt},#{studentVerificationDO.applicationNo},#{studentVerificationDO.schoolName},#{studentVerificationDO.studentCardUrls})</insert>
+  <sql id="pageFrom">
+     FROM user_student_verification v JOIN sys_user u ON u.id=v.user_id WHERE 1=1 
+    <if test="verificationFilter.status != null and verificationFilter.status != ''">AND (CASE WHEN v.verification_status='approved' AND v.expire_at&lt;=#{verificationFilter.now} THEN 'expired' ELSE v.verification_status END)=#{verificationFilter.status}</if>
+    <if test="verificationFilter.from != null">AND v.submitted_at &gt;=#{verificationFilter.from}</if>
+    <if test="verificationFilter.to != null">AND v.submitted_at &lt;#{verificationFilter.to}</if>
+    <if test="verificationFilter.keyword != null">
+      <choose>
+        <when test="verificationFilter.identifier">AND (v.user_id=#{verificationFilter.keyword} OR CONCAT('SV',v.id)=#{verificationFilter.keyword})</when>
+        <otherwise>AND (u.nickname LIKE #{verificationFilter.keyword} ESCAPE '!' OR v.school_name LIKE #{verificationFilter.keyword} ESCAPE '!')</otherwise>
+      </choose>
+    </if>
+  </sql>
+  <select id="selectStudentVerificationCountByQuery" resultType="long" useCache="false" flushCache="true">
+    SELECT COUNT(*) 
+    <include refid="pageFrom"/>
+  </select>
+  <select id="selectStudentVerificationPageByQuery" resultType="com.mujian.backend.student.projection.StudentListProjection" useCache="false" flushCache="true"> SELECT v.id,v.user_id,v.verification_status,v.submitted_at,u.nickname,v.application_no,v.school_name,v.expire_at
+<include refid="pageFrom"/>
+     ORDER BY FIELD(CASE WHEN v.verification_status='approved' AND v.expire_at&lt;=#{verificationFilter.now} THEN 'expired' ELSE v.verification_status END,'pending','rejected','expired','approved'),v.submitted_at DESC,v.id DESC LIMIT #{verificationFilter.size} OFFSET #{verificationFilter.offset}
+  </select>
+</mapper>

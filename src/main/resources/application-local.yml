@@ -1,0 +1,7 @@
+# 本地开发配置；由 mvn spring-boot:run 默认启用。
+# 凭据只存放在被 Git 忽略的本机文件中，不复制进源码或构建产物。
+spring:
+  config:
+    import: file:./.local/runtime.properties
+mj:
+  environment: development

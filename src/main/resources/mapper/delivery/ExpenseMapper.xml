@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.delivery.mapper.ExpenseMapper">
+  <select id="selectTransportLegsByOrder" resultType="com.mujian.backend.delivery.mapper.ExpenseMapper$Basis">
+    SELECT l.id,l.leg_type type,l.charge_mode mode,l.leg_status status,l.pricing_snapshot_json snapshot,f.initial_prepaid_amount_fen pool
+    FROM order_transport_leg l JOIN rental_order_freight_account f ON f.rental_order_id=l.rental_order_id WHERE l.rental_order_id=#{orderId} ORDER BY l.leg_type
+  </select>
+  <sql id="columns">s.id,s.rental_order_id order_id,o.order_no,s.factory_id,
+    (SELECT MIN(i.factory_name_snapshot) FROM checkout_batch_item_snapshot i WHERE i.checkout_batch_id=o.checkout_batch_id AND i.factory_id=s.factory_id) factory_name,
+    s.statement_version,s.version,s.review_status status,s.outbound_transport_leg_id outbound_id,s.return_transport_leg_id return_id,
+    s.outbound_execution_source outbound_source,s.return_execution_source return_source,s.outbound_carrier_name outbound_carrier,s.outbound_carrier_order_no outbound_order_no,
+    s.return_carrier_name return_carrier,s.return_carrier_order_no return_order_no,s.outbound_declared_base_amount_fen outbound_base,s.return_declared_base_amount_fen return_base,
+    s.outbound_declared_total_amount_fen outbound_total,s.return_declared_total_amount_fen return_total,s.outbound_approved_amount_fen approved_outbound,s.return_approved_amount_fen approved_return,
+    s.declared_total_amount_fen declared_total,s.approved_total_amount_fen approved_total,s.prepaid_pool_amount_fen pool,s.online_settle_amount_fen online,
+    s.over_budget_amount_fen over_budget,s.refundable_amount_fen refundable,s.evidence_count,s.extra_fee_detail_json detail_json,s.submitted_at,s.reviewed_at,s.review_reason reason,
+    (SELECT JSON_ARRAYAGG(r.id) FROM refund_order r WHERE r.rental_order_id=o.id AND r.refund_type='freight_pool_release' AND s.review_status='approved') refund_json,
+    a.charge_mode outbound_mode,b.charge_mode return_mode,a.pricing_snapshot_json outbound_snapshot,b.pricing_snapshot_json return_snapshot,a.leg_status outbound_status,b.leg_status return_status, NOT EXISTS(SELECT 1 FROM order_transport_expense_statement later WHERE later.rental_order_id=s.rental_order_id AND later.statement_version&gt;s.statement_version) latest_version
+  </sql>
+  <sql id="joins">FROM order_transport_expense_statement s JOIN rental_order o ON o.id=s.rental_order_id
+    JOIN order_transport_leg a ON a.id=s.outbound_transport_leg_id JOIN order_transport_leg b ON b.id=s.return_transport_leg_id</sql>
+  <select id="selectLatestExpenseStatement" resultType="com.mujian.backend.delivery.domain.ExpenseStatementDO" useCache="false" flushCache="true">SELECT <include refid="columns"/> <include refid="joins"/> WHERE s.rental_order_id=#{orderId} ORDER BY s.statement_version DESC LIMIT 1</select>
+  <select id="selectExpenseDetail" resultType="com.mujian.backend.delivery.domain.ExpenseStatementDO" useCache="false" flushCache="true">SELECT <include refid="columns"/> <include refid="joins"/> WHERE s.rental_order_id=#{orderId} AND s.id=#{id}</select>
+  <sql id="filters"><where>
+    <if test="query.orderId!=null">AND s.rental_order_id=#{query.orderId}</if>
+    <if test="query.factoryId!=null">AND s.factory_id=#{query.factoryId}</if><if test="query.status!=null">AND s.review_status=#{query.status}</if>
+    <if test="query.overBudget!=null">AND (s.declared_total_amount_fen&gt;s.prepaid_pool_amount_fen)=#{query.overBudget}</if>
+    <if test="query.keyword!=null">AND (LOCATE(#{query.keyword},o.order_no)&gt;0 OR EXISTS(SELECT 1 FROM rental_order_item i WHERE i.rental_order_id=o.id AND LOCATE(#{query.keyword},i.prop_name_snapshot)&gt;0))</if>
+  </where></sql>
+  <select id="selectExpenseStatementPageByQuery" resultType="com.mujian.backend.delivery.domain.ExpenseStatementDO">SELECT <include refid="columns"/> <include refid="joins"/> <include refid="filters"/>
+    ORDER BY s.created_at DESC,s.statement_version DESC,s.id DESC LIMIT #{query.page.pageSize} OFFSET #{query.page.offset}</select>
+  <select id="selectOrderTransportExpenseStatementCountByQuery" resultType="long">SELECT COUNT(*) FROM order_transport_expense_statement s JOIN rental_order o ON o.id=s.rental_order_id <include refid="filters"/></select>
+  <select id="selectExpenseEvidenceByOrderAndStatement" resultType="com.mujian.backend.delivery.mapper.ExpenseMapper$Evidence" useCache="false" flushCache="true">
+    SELECT e.id,e.transport_leg_id leg_id,e.evidence_scene scene,e.transport_expense_statement_id statement_id FROM order_evidence_record e JOIN order_transport_expense_statement s
+      ON s.rental_order_id=e.rental_order_id AND s.id=#{id} WHERE e.rental_order_id=#{orderId} AND e.evidence_node='transport_expense'
+      AND e.evidence_type='photo' AND e.draft_removed_at IS NULL AND (e.transport_expense_statement_id=s.id OR JSON_CONTAINS(s.extra_fee_detail_json,JSON_QUOTE(e.id),'$.reusedEvidenceIds'))
+    ORDER BY e.id
+  </select>
+  <insert id="insertDraft">
+    INSERT INTO order_transport_expense_statement(id,rental_order_id,factory_id,statement_version,outbound_transport_leg_id,return_transport_leg_id,
+    outbound_execution_source,return_execution_source,outbound_carrier_name,return_carrier_name,outbound_carrier_order_no,return_carrier_order_no,
+    outbound_declared_base_amount_fen,return_declared_base_amount_fen,outbound_declared_extra_amount_fen,return_declared_extra_amount_fen,outbound_declared_total_amount_fen,return_declared_total_amount_fen,
+    declared_total_amount_fen,prepaid_pool_amount_fen,extra_fee_detail_json,evidence_count,review_status,version,created_at,updated_at)
+    VALUES(#{draft.id},#{draft.orderId},#{draft.factoryId},#{draft.number},#{draft.outbound.id},#{draft.returnLeg.id},#{draft.outbound.source},#{draft.returnLeg.source},
+    #{draft.outbound.carrier},#{draft.returnLeg.carrier},#{draft.outbound.orderNo},#{draft.returnLeg.orderNo},#{draft.outbound.base},#{draft.returnLeg.base},#{draft.outbound.extra},#{draft.returnLeg.extra},
+    #{draft.outbound.total},#{draft.returnLeg.total},#{draft.total},#{draft.pool},#{draft.details},#{draft.count},'draft',1,#{draft.at},#{draft.at})
+  </insert>
+  <update id="updateDraft">UPDATE order_transport_expense_statement SET outbound_execution_source=#{draft.outbound.source},return_execution_source=#{draft.returnLeg.source},
+    outbound_carrier_name=#{draft.outbound.carrier},return_carrier_name=#{draft.returnLeg.carrier},outbound_carrier_order_no=#{draft.outbound.orderNo},return_carrier_order_no=#{draft.returnLeg.orderNo},
+    outbound_declared_base_amount_fen=#{draft.outbound.base},return_declared_base_amount_fen=#{draft.returnLeg.base},outbound_declared_extra_amount_fen=#{draft.outbound.extra},return_declared_extra_amount_fen=#{draft.returnLeg.extra},
+    outbound_declared_total_amount_fen=#{draft.outbound.total},return_declared_total_amount_fen=#{draft.returnLeg.total},declared_total_amount_fen=#{draft.total},extra_fee_detail_json=#{draft.details},
+    evidence_count=#{draft.count},updated_at=#{draft.at},version=version+1 WHERE id=#{draft.id} AND rental_order_id=#{draft.orderId} AND version=#{draft.version} AND review_status='draft'</update>
+  <update id="submitTransportExpenseStatement">UPDATE order_transport_expense_statement SET review_status='submitted',extra_fee_detail_json=#{details},submitted_at=#{at},updated_at=#{at},version=version+1
+    WHERE id=#{id} AND version=#{version} AND review_status='draft'</update>
+  <update id="reviewTransportExpenseStatement">UPDATE order_transport_expense_statement SET review_status=IF(#{approve},'approved','returned'),review_user_id=#{actor},review_reason=#{reason},
+    reviewed_at=#{at},updated_at=#{at},version=version+1
+    <if test="approve">,outbound_approved_amount_fen=outbound_declared_total_amount_fen,return_approved_amount_fen=return_declared_total_amount_fen,
+    approved_total_amount_fen=declared_total_amount_fen,online_settle_amount_fen=LEAST(prepaid_pool_amount_fen,declared_total_amount_fen),
+    over_budget_amount_fen=GREATEST(0,declared_total_amount_fen-prepaid_pool_amount_fen),refundable_amount_fen=GREATEST(0,prepaid_pool_amount_fen-declared_total_amount_fen)</if>
+    WHERE id=#{id} AND version=#{version} AND review_status IN ('submitted','reviewing')</update>
+  <update id="approveLeg">UPDATE order_transport_leg SET execution_source=#{leg.source},approved_base_amount_fen=#{leg.base},
+    approved_extra_amount_fen=#{leg.extra},approved_total_amount_fen=#{leg.total},version=version+1,updated_at=#{at}
+    WHERE id=#{leg.id} AND rental_order_id=#{orderId} AND leg_status='completed'</update>
+  <update id="approveAccount">UPDATE rental_order_freight_account SET outbound_approved_amount_fen=#{row.approvedOutbound},return_approved_amount_fen=#{row.approvedReturn},
+    approved_total_amount_fen=#{row.approvedTotal},online_settle_amount_fen=#{row.online},over_budget_amount_fen=#{row.overBudget},refundable_amount_fen=#{row.refundable}-refunded_amount_fen,
+    freight_status=IF(refundable_amount_fen=0,'settled','refunding'),settled_at=IF(refundable_amount_fen=0,#{at},NULL),version=version+1,updated_at=#{at}
+    WHERE rental_order_id=#{row.orderId} AND initial_prepaid_amount_fen=#{row.pool} AND refunded_amount_fen&lt;=#{row.refundable} AND freight_status IN ('prepaid','reviewing')</update>
+</mapper>

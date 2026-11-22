@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.delivery.mapper.IssueReviewMapper">
+  <sql id="scope">
+    FROM order_issue_report i JOIN rental_order o ON o.id=i.rental_order_id
+    JOIN admin_case_relation l ON l.relation_type='order_issue_report' AND l.relation_id=i.id AND l.is_primary=1
+    JOIN admin_case c ON c.id=l.admin_case_id AND c.rental_order_id=i.rental_order_id
+    <where>
+      <if test="filter.id!=null">AND i.id=#{filter.id}</if>
+      <if test="filter.orderId!=null">AND o.id=#{filter.orderId}</if>
+      <if test="filter.buyer!=null">AND i.reporter_user_id=#{filter.buyer} AND o.buyer_user_id=#{filter.buyer}</if>
+      <if test="filter.status!=null">AND i.issue_status=#{filter.status}</if>
+    </where>
+  </sql>
+  <select id="selectRows" resultType="com.mujian.backend.delivery.mapper.IssueReviewMapper$Row" flushCache="true" useCache="false">
+    SELECT i.id,o.id order_id,o.order_no,o.factory_id,
+      (SELECT MIN(s.factory_name_snapshot) FROM checkout_batch_item_snapshot s
+        WHERE s.checkout_batch_id=o.checkout_batch_id AND s.factory_id=o.factory_id) factory_name,
+      i.version,i.created_at,c.id case_id,c.version case_version,i.issue_status status,i.issue_scene scene,
+      i.fulfillment_effect effect,i.primary_issue_type,i.issue_summary summary,
+      (SELECT a.id FROM arbitration_case a WHERE a.source_issue_report_id=i.id) arbitration_id,
+      (SELECT a.operation_reason FROM admin_case_action a WHERE a.admin_case_id=c.id AND a.action_type='request_issue_evidence'
+        ORDER BY CAST(a.request_payload_json->>'$.issue_version' AS UNSIGNED) DESC LIMIT 1) supplement_request
+    <include refid="scope"/> ORDER BY i.created_at DESC,i.id DESC LIMIT #{page.pageSize} OFFSET #{page.offset}
+  </select>
+  <select id="countRows" resultType="long">SELECT COUNT(*) <include refid="scope"/></select>
+  <select id="selectItems" resultType="com.mujian.backend.delivery.mapper.IssueReviewMapper$Item">
+    SELECT issue_report_id issue_id,rental_order_item_id item_id,issue_type,affected_quantity quantity,item_summary description
+    FROM order_issue_item WHERE issue_report_id IN <foreach collection="ids" item="id" open="(" close=")" separator=",">#{id}</foreach>
+    ORDER BY issue_report_id,created_at,id
+  </select>
+  <select id="selectEvidence" resultType="com.mujian.backend.delivery.mapper.IssueReviewMapper$Evidence">
+    SELECT p.relation_id issue_id,e.id evidence_id FROM admin_case_relation p JOIN admin_case_relation r
+      ON r.admin_case_id=p.admin_case_id AND r.relation_type='order_evidence_record'
+    JOIN order_evidence_record e ON e.id=r.relation_id AND e.draft_removed_at IS NULL
+    WHERE p.relation_type='order_issue_report' AND p.is_primary=1 AND p.relation_id IN
+    <foreach collection="ids" item="id" open="(" close=")" separator=",">#{id}</foreach> ORDER BY p.relation_id,e.created_at,e.id
+  </select>
+  <update id="updateStatus">UPDATE order_issue_report SET issue_status=#{status},version=version+1,updated_at=#{at}
+    WHERE id=#{id} AND version=#{version}</update>
+  <update id="changeCaseStatus">UPDATE admin_case SET case_status=#{status},version=version+1,updated_at=#{at}
+    WHERE id=#{issue.caseId} AND version=#{issue.caseVersion} AND case_status NOT IN ('closed','cancelled')</update>
+  <insert id="insertEvidenceRequest">
+    INSERT INTO admin_case_action(id,action_no,admin_case_id,action_type,action_status,target_module,target_type,target_id,
+      request_payload_json,result_payload_json,idempotency_key,operator_admin_user_id,operation_reason,executed_at,created_at,updated_at)
+    VALUES(#{id},CONCAT('REQ',#{id}),#{issue.caseId},'request_issue_evidence','succeeded','05','order_issue_report',#{issue.id},
+      JSON_OBJECT('issue_version',#{issue.version}),JSON_OBJECT('issue_status','waiting_evidence'),
+      CONCAT('issue-evidence:',#{actor},':',#{requestId}),#{actor},#{reason},#{at},#{at},#{at})
+  </insert>
+  <insert id="insertSupplementText">
+    INSERT INTO order_evidence_record(id,rental_order_id,issue_report_id,evidence_node,evidence_type,text_content,
+      uploaded_by_user_id,uploaded_role,created_at)
+    VALUES(#{id},#{issue.orderId},#{issue.id},IF(#{issue.scene}='receipt','receipt_check','in_use_report'),
+      'text',#{text},#{actor},'buyer',#{at})
+  </insert>
+</mapper>

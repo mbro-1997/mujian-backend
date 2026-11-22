@@ -1,0 +1,390 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.order.mapper.CheckoutBatchMapper">
+
+  <select id="selectBatchById" resultType="com.mujian.backend.order.domain.CheckoutBatchDO" useCache="false" flushCache="true">
+    SELECT
+      id,
+      batch_no,
+      source_checklist_id,
+      buyer_user_id,
+      batch_status,
+      submit_idempotency_key,
+      exception_reason,
+      recovery_mode,
+      rental_start_date,
+      rental_end_date,
+      rental_days,
+      transport_notice_snapshot,
+      rule_snapshot_json,
+      rent_payable_amount_fen,
+      coupon_discount_amount_fen,
+      deposit_payable_amount_fen,
+      freight_prepaid_amount_fen,
+      payable_amount_fen,
+      hold_expire_at,
+      submitted_at,
+      paid_at,
+      closed_at,
+      expired_at,
+      version,
+      created_at,
+      updated_at,
+      request_hash,
+      guard_released_at
+    FROM checkout_batch
+    WHERE id=#{id}
+    <if test="lock">
+      FOR UPDATE
+    </if>
+  </select>
+
+  <insert id="insertBatch">
+    INSERT INTO checkout_batch(id,
+      batch_no,
+      source_checklist_id,
+      buyer_user_id,
+      batch_status,
+      submit_idempotency_key,
+      rental_start_date,
+      rental_end_date,
+      rental_days,
+      transport_notice_snapshot,
+      rule_snapshot_json,
+      rent_payable_amount_fen,
+      coupon_discount_amount_fen,
+      deposit_original_amount_fen,
+      deposit_waived_amount_fen,
+      deposit_payable_amount_fen,
+      service_fee_fen,
+      freight_prepaid_amount_fen,
+      other_discount_amount_fen,
+      payable_amount_fen,
+      hold_expire_at,
+      submitted_at,
+      created_at,
+      updated_at,
+      request_hash)
+    VALUES (#{batch.id},
+      #{batch.id},
+      #{batch.quote.input.checklistId},
+      #{batch.quote.buyerId},
+      'pending_payment',
+      #{batch.requestId},
+      #{batch.quote.startDate},
+      #{batch.quote.endDate},
+      #{batch.quote.rentalDays},
+      #{batch.transportNotice},
+      #{batch.ruleSnapshotJson},
+      #{batch.quote.amounts.rentOriginalFen},
+      #{batch.quote.amounts.couponDiscountFen},
+      #{batch.quote.amounts.depositFen},
+      0,
+      #{batch.quote.amounts.depositFen},
+      0,
+      #{batch.quote.amounts.freightFen},
+      0,
+      #{batch.quote.amounts.totalFen},
+      #{batch.expiry},
+      #{batch.at},
+      #{batch.at},
+      #{batch.at},
+      #{batch.requestHash})
+  </insert>
+
+  <insert id="insertTransportSnapshot">
+    INSERT INTO checkout_batch_transport_snapshot(id,
+      checkout_batch_id,
+      factory_id,
+      outbound_service_mode,
+      return_service_mode,
+      factory_address_snapshot,
+      receiver_address_snapshot,
+      outbound_vehicle_tier_id,
+      return_vehicle_tier_id,
+      outbound_distance_meter,
+      return_distance_meter,
+      outbound_guide_min_amount_fen,
+      outbound_guide_max_amount_fen,
+      return_guide_min_amount_fen,
+      return_guide_max_amount_fen,
+      outbound_prepaid_amount_fen,
+      return_prepaid_amount_fen,
+      freight_prepaid_amount_fen,
+      route_pricing_snapshot_json,
+      transport_requirement_snapshot,
+      buyer_remark_snapshot,
+      created_at)
+    VALUES (#{transport.id},
+      #{transport.batchId},
+      #{transport.factory.factoryId},
+      #{transport.factory.outbound.serviceMode},
+      #{transport.factory.returnLeg.serviceMode},
+      #{transport.factory.address},
+      #{transport.receiverAddress},
+      #{transport.factory.outbound.vehicle.id},
+      #{transport.factory.returnLeg.vehicle.id},
+      #{transport.factory.outbound.route.distanceMeter},
+      #{transport.factory.returnLeg.route.distanceMeter},
+      #{transport.factory.outbound.guideMinFen},
+      #{transport.factory.outbound.guideMaxFen},
+      #{transport.factory.returnLeg.guideMinFen},
+      #{transport.factory.returnLeg.guideMaxFen},
+      #{transport.factory.outbound.prepaidFen},
+      #{transport.factory.returnLeg.prepaidFen},
+      #{transport.factory.amounts.freightFen},
+      #{transport.routeSnapshotJson},
+      #{transport.transportRequirements},
+      #{transport.factory.buyerRemark},
+      #{transport.at})
+  </insert>
+
+  <insert id="insertItemSnapshot">
+    INSERT INTO checkout_batch_item_snapshot(id,
+      checkout_batch_id,
+      source_checklist_item_id,
+      source_checklist_id,
+      factory_id,
+      factory_name_snapshot,
+      sku_id,
+      prop_name_snapshot,
+      image_url_snapshot,
+      asset_type_snapshot,
+      type_label_snapshot,
+      style_labels_snapshot,
+      quantity,
+      rental_start_date,
+      rental_end_date,
+      rental_days,
+      daily_rent_price_fen,
+      rent_amount_fen,
+      coupon_discount_amount_fen,
+      rent_cash_payable_amount_fen,
+      deposit_unit_amount_fen,
+      deposit_original_amount_fen,
+      deposit_waived_amount_fen,
+      deposit_payable_amount_fen,
+      checkout_batch_transport_snapshot_id,
+      transport_requirement_snapshot,
+      item_snapshot_json,
+      created_at)
+    VALUES (#{item.item.snapshotItemId},
+      #{item.batchId},
+      #{item.item.sourceItemId},
+      #{item.checklistId},
+      #{item.factory.factoryId},
+      #{item.factory.factoryName},
+      #{item.item.snapshot.skuId},
+      #{item.item.snapshot.name},
+      #{item.imageKey},
+      #{item.item.snapshot.assetType},
+      #{item.item.snapshot.typeLabel},
+      #{item.styleLabels},
+      #{item.item.quantity},
+      #{item.quote.startDate},
+      #{item.quote.endDate},
+      #{item.quote.rentalDays},
+      #{item.item.snapshot.prices.dailyRentPriceFen},
+      #{item.item.rentOriginalFen},
+      #{item.item.couponDiscountFen},
+      #{item.item.rentCashFen},
+      #{item.item.snapshot.prices.depositAmountFen},
+      #{item.item.depositFen},
+      0,
+      #{item.item.depositFen},
+      #{item.transportId},
+      #{item.item.transportRequirement},
+      #{item.itemSnapshotJson},
+      #{item.at})
+  </insert>
+
+  <update id="markChecklistProcessing">
+    UPDATE rental_checklist
+    SET
+      checklist_status='checkout_processing',
+      current_checkout_batch_id=#{batch},
+      checkout_processing_at=#{now},
+      version=version+1,
+      updated_at=#{now}
+    WHERE id=#{id}
+      AND owner_user_id=#{actor}
+      AND version=#{version}
+      AND checklist_status='selecting'
+      AND current_owner_guard=#{actor}
+  </update>
+
+  <select id="selectFactoryIdsByBatch" resultType="string">
+    SELECT
+      factory_id
+    FROM checkout_batch_transport_snapshot
+    WHERE checkout_batch_id=#{id}
+    ORDER BY factory_id
+  </select>
+
+  <update id="markRecovery">
+    UPDATE checkout_batch
+    SET
+      batch_status='payment_exception',
+      recovery_mode=CASE WHEN recovery_mode='refund_batch'
+      OR #{mode}='refund_batch' THEN 'refund_batch' ELSE #{mode} END,
+      exception_reason=#{reason},
+      version=version+1,
+      updated_at=#{now}
+    WHERE id=#{id}
+      AND batch_status!='paid'
+      AND batch_status!='refunded_closed'
+  </update>
+
+  <select id="selectItemSnapshotsByBatch" resultType="com.mujian.backend.order.domain.BatchItemSnapshotDO">
+    SELECT
+      id,
+      checkout_batch_id,
+      source_checklist_item_id,
+      source_checklist_id,
+      factory_id,
+      factory_name_snapshot,
+      sku_id,
+      prop_name_snapshot,
+      image_url_snapshot,
+      asset_type_snapshot,
+      type_label_snapshot,
+      style_labels_snapshot,
+      quantity,
+      rental_start_date,
+      rental_end_date,
+      rental_days,
+      daily_rent_price_fen,
+      rent_amount_fen,
+      coupon_discount_amount_fen,
+      rent_cash_payable_amount_fen,
+      deposit_unit_amount_fen,
+      deposit_original_amount_fen,
+      deposit_waived_amount_fen,
+      deposit_payable_amount_fen,
+      checkout_batch_transport_snapshot_id,
+      transport_requirement_snapshot,
+      item_snapshot_json,
+      created_at
+    FROM checkout_batch_item_snapshot
+    WHERE checkout_batch_id=#{id}
+    <if test="factoryId!=null">
+        AND factory_id=#{factoryId}
+    </if>
+    ORDER BY factory_id,
+      id
+  </select>
+
+  <select id="selectTransportSnapshotsByBatch" resultType="com.mujian.backend.order.domain.BatchTransportSnapshotDO">
+    SELECT
+      id,
+      checkout_batch_id,
+      factory_id,
+      outbound_service_mode,
+      return_service_mode,
+      factory_address_snapshot,
+      receiver_address_snapshot,
+      outbound_vehicle_tier_id,
+      return_vehicle_tier_id,
+      outbound_distance_meter,
+      return_distance_meter,
+      outbound_guide_min_amount_fen,
+      outbound_guide_max_amount_fen,
+      return_guide_min_amount_fen,
+      return_guide_max_amount_fen,
+      outbound_prepaid_amount_fen,
+      return_prepaid_amount_fen,
+      freight_prepaid_amount_fen,
+      route_pricing_snapshot_json,
+      transport_requirement_snapshot,
+      buyer_remark_snapshot,
+      created_at
+    FROM checkout_batch_transport_snapshot
+    WHERE checkout_batch_id=#{id}
+    <if test="factoryId!=null">
+        AND factory_id=#{factoryId}
+    </if>
+    ORDER BY factory_id
+  </select>
+
+  <update id="markBatchPaid">
+    UPDATE checkout_batch
+    SET
+      batch_status='paid',
+      paid_at=#{paidAt},
+      guard_released_at=COALESCE(guard_released_at,
+      #{now}),
+      exception_resolved_at=#{now},
+      exception_reason=NULL,
+      version=version+1,
+      updated_at=#{now}
+    WHERE id=#{id}
+      AND guard_released_at IS NULL
+      AND (recovery_mode IS NULL
+      OR recovery_mode='recover_orders')
+  </update>
+
+  <update id="markChecklistConverted">
+    UPDATE rental_checklist
+    SET
+      checklist_status='converted_to_order',
+      active_slot_no=NULL,
+      current_checkout_batch_id=NULL,
+      converted_order_at=#{now},
+      version=version+1,
+      updated_at=#{now}
+    WHERE id=#{id}
+      AND current_checkout_batch_id=#{batch}
+      AND checklist_status='checkout_processing'
+  </update>
+
+  <update id="closeBatch">
+    UPDATE checkout_batch
+    SET
+      batch_status=#{status},
+      guard_released_at=COALESCE(guard_released_at,
+      #{now}),
+      closed_at=COALESCE(closed_at,
+      #{now}),
+      expired_at=CASE WHEN #{status}='expired' THEN COALESCE(expired_at,
+      #{now}) ELSE expired_at END,
+      exception_resolved_at=#{now},
+      version=version+1,
+      updated_at=#{now}
+    WHERE id=#{id}
+  </update>
+
+  <update id="restoreChecklist">
+    UPDATE rental_checklist
+    SET
+      checklist_status='selecting',
+      current_checkout_batch_id=NULL,
+      checkout_processing_at=NULL,
+      version=version+1,
+      updated_at=#{now}
+    WHERE id=#{id}
+      AND current_checkout_batch_id=#{batch}
+      AND checklist_status='checkout_processing'
+  </update>
+
+  <update id="markBatchRefunding">
+    UPDATE checkout_batch
+    SET
+      batch_status='refund_processing',
+      recovery_mode='refund_batch',
+      version=version+1,
+      updated_at=#{now}
+    WHERE id=#{id}
+      AND recovery_mode='refund_batch'
+      AND batch_status NOT IN ('paid',
+      'refunded_closed')
+  </update>
+
+  <update id="touchBatch">
+    UPDATE checkout_batch
+    SET
+      version=version+1,
+      updated_at=#{now}
+    WHERE id=#{id}
+      AND version=#{version}
+  </update>
+</mapper>

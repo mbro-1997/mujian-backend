@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.delivery.mapper.ReturnShipmentMapper">
+  <insert id="insertDraft">INSERT INTO order_return_shipment(id,rental_order_id,return_transport_leg_id,buyer_user_id,operator_user_id,operator_role,shipment_status,return_method,created_at,updated_at)
+    VALUES(#{row.id},#{row.rentalOrderId},#{row.returnTransportLegId},#{row.buyerUserId},#{row.operatorUserId},#{row.operatorRole},'draft',#{row.returnMethod},#{row.createdAt},#{row.updatedAt})</insert>
+  <update id="updateOrderReturnShipment">UPDATE order_return_shipment SET shipment_status=#{row.shipmentStatus},tracking_no=#{row.trackingNo},carrier_name=#{row.carrierName},remark=#{row.remark},
+    sent_at=#{row.sentAt},expected_arrival_at=#{row.expectedArrivalAt},expected_check_start_at=#{row.expectedCheckStartAt},version=version+1,updated_at=#{row.updatedAt}
+    WHERE id=#{row.id} AND rental_order_id=#{row.rentalOrderId} AND version=#{version} AND shipment_status='draft'</update>
+</mapper>

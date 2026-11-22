@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.prop.mapper.PropInstanceStatusLogMapper">
+<sql id="columns_prop_instance_status_log">id,prop_instance_id,sku_id,sn_code,qr_code_id,from_status,to_status,source_type,reason,operator_user_id,operator_role,related_order_id,related_adjustment_audit_id,related_arbitration_id,business_key,created_at</sql>
+<sql id="aliased_prop_instance_status_log">s.id,s.prop_instance_id,s.sku_id,s.sn_code,s.qr_code_id,s.from_status,s.to_status,s.source_type,s.reason,s.operator_user_id,s.operator_role,s.related_order_id,s.related_adjustment_audit_id,s.related_arbitration_id,s.business_key,s.created_at</sql>
+<select id="selectPropInstanceStatusLogCountByQuery" resultType="long" useCache="false" flushCache="true">SELECT COUNT(*) FROM prop_instance_status_log WHERE prop_instance_id=#{logQueryDTO.snId}</select>
+<select id="selectPropInstanceStatusLogPageByQuery" resultType="com.mujian.backend.prop.domain.PropInstanceStatusLogDO" useCache="false" flushCache="true">SELECT id, created_at, from_status, operator_role, operator_user_id, reason, related_adjustment_audit_id, related_arbitration_id, related_order_id, source_type, to_status FROM prop_instance_status_log WHERE prop_instance_id=#{logQueryDTO.snId} ORDER BY created_at DESC,id DESC LIMIT #{logQueryDTO.limit} OFFSET #{logQueryDTO.offset}</select>
+<select id="selectPropInstanceStatusLog" resultType="com.mujian.backend.prop.domain.PropInstanceStatusLogDO" useCache="false" flushCache="true">
+    SELECT id,prop_instance_id,sku_id,sn_code,qr_code_id,from_status,to_status,source_type,reason,operator_user_id,operator_role,related_order_id,related_adjustment_audit_id,related_arbitration_id,business_key,created_at FROM prop_instance_status_log WHERE id=#{id} <if test="lock">FOR UPDATE</if>
+  </select>
+<insert id="insertPropInstanceStatusLog">INSERT INTO prop_instance_status_log
+<trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="row.id != null">id,</if>
+<if test="row.propInstanceId != null">prop_instance_id,</if>
+<if test="row.skuId != null">sku_id,</if>
+<if test="row.snCode != null">sn_code,</if>
+<if test="row.qrCodeId != null">qr_code_id,</if>
+<if test="row.fromStatus != null">from_status,</if>
+<if test="row.toStatus != null">to_status,</if>
+<if test="row.sourceType != null">source_type,</if>
+<if test="row.reason != null">reason,</if>
+<if test="row.operatorUserId != null">operator_user_id,</if>
+<if test="row.operatorRole != null">operator_role,</if>
+<if test="row.relatedOrderId != null">related_order_id,</if>
+<if test="row.relatedAdjustmentAuditId != null">related_adjustment_audit_id,</if>
+<if test="row.relatedArbitrationId != null">related_arbitration_id,</if>
+<if test="row.businessKey != null">business_key,</if>
+<if test="row.createdAt != null">created_at,</if>
+</trim> VALUES
+<trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="row.id != null">#{row.id},</if>
+<if test="row.propInstanceId != null">#{row.propInstanceId},</if>
+<if test="row.skuId != null">#{row.skuId},</if>
+<if test="row.snCode != null">#{row.snCode},</if>
+<if test="row.qrCodeId != null">#{row.qrCodeId},</if>
+<if test="row.fromStatus != null">#{row.fromStatus},</if>
+<if test="row.toStatus != null">#{row.toStatus},</if>
+<if test="row.sourceType != null">#{row.sourceType},</if>
+<if test="row.reason != null">#{row.reason},</if>
+<if test="row.operatorUserId != null">#{row.operatorUserId},</if>
+<if test="row.operatorRole != null">#{row.operatorRole},</if>
+<if test="row.relatedOrderId != null">#{row.relatedOrderId},</if>
+<if test="row.relatedAdjustmentAuditId != null">#{row.relatedAdjustmentAuditId},</if>
+<if test="row.relatedArbitrationId != null">#{row.relatedArbitrationId},</if>
+<if test="row.businessKey != null">#{row.businessKey},</if>
+<if test="row.createdAt != null">#{row.createdAt},</if>
+</trim></insert>
+</mapper>

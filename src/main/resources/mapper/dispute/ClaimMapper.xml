@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.dispute.mapper.ClaimMapper">
+  <sql id="source">FROM order_claim c JOIN rental_order o ON o.id=c.rental_order_id
+    LEFT JOIN admin_case_relation rel ON rel.relation_type='order_claim' AND rel.relation_id=c.id AND rel.is_primary=1
+    LEFT JOIN admin_case ac ON ac.id=rel.admin_case_id AND ac.case_type='claim_review'
+    LEFT JOIN claim_user_response ur ON ur.claim_id=c.id AND ur.response_type='appeal'
+    LEFT JOIN arbitration_case ar ON ar.claim_id=c.id</sql>
+  <sql id="projection">SELECT c.id,o.id order_id,o.order_no,o.factory_id,o.buyer_user_id buyer_id,
+    (SELECT MIN(s.factory_name_snapshot) FROM checkout_batch_item_snapshot s WHERE s.checkout_batch_id=o.checkout_batch_id AND s.factory_id=o.factory_id) factory_name,
+    c.version,c.created_at,c.return_check_id,ac.id case_id,c.claim_status status,c.problem_type,c.problem_summary summary,c.claimed_amount_fen claimed_fen,
+    c.approved_amount_fen approved_loss_fen,c.available_deposit_amount_fen_snapshot available_deposit_fen,c.user_response_deadline_at response_deadline_at,
+    c.admin_review_remark review_remark,ur.response_remark appeal_reason,ar.id arbitration_id,c.affected_items_json items,c.evidence_reference_json evidence <include refid="source"/></sql>
+  <sql id="filter"><where><if test="filter.id!=null">AND c.id=#{filter.id}</if><if test="filter.orderId!=null">AND o.id=#{filter.orderId}</if>
+    <if test="filter.buyerId!=null">AND o.buyer_user_id=#{filter.buyerId} AND c.user_response_deadline_at IS NOT NULL</if>
+    <if test="filter.factoryId!=null">AND o.factory_id=#{filter.factoryId}</if><if test="filter.admin">AND ac.id IS NOT NULL</if>
+    <if test="filter.status!=null">AND c.claim_status=#{filter.status}</if></where></sql>
+  <select id="selectClaimById" resultType="com.mujian.backend.dispute.mapper.ClaimMapper$Row" flushCache="true" useCache="false"><include refid="projection"/> WHERE c.id=#{id}</select>
+  <select id="selectOrderClaimPageByQuery" resultType="com.mujian.backend.dispute.mapper.ClaimMapper$Row"><include refid="projection"/><include refid="filter"/> ORDER BY c.created_at DESC,c.id DESC LIMIT #{page.pageSize} OFFSET #{page.offset}</select>
+  <select id="selectOrderClaimCountByQuery" resultType="long">SELECT COUNT(*) <include refid="source"/><include refid="filter"/></select>
+  <insert id="insertOrderClaimDraft">INSERT INTO order_claim(id,rental_order_id,return_check_id,claim_no,submit_idempotency_key,claim_type,claim_status,submitted_by_user_id,submitted_role,
+    fund_subject,admin_review_status,version,created_at,updated_at) VALUES(#{id},#{order},#{check},CONCAT('CL',#{id}),#{key},'factory_claim','draft',#{actor},'factory','deposit','pending',0,#{at},#{at})</insert>
+  <update id="updateOrderClaim">UPDATE order_claim SET problem_type=#{input.problemType},problem_summary=#{input.summary},claimed_amount_fen=#{input.claimedFen},
+    affected_items_json=#{items},evidence_reference_json=#{evidence},version=version+IF(#{advance},1,0),updated_at=#{at} WHERE id=#{id} AND claim_status='draft'</update>
+  <update id="updateOrderReturnCheckFreeze">UPDATE order_return_check SET remaining_close_ms=TIMESTAMPDIFF(MICROSECOND,#{at},auto_close_at) DIV 1000,
+    auto_close_at=NULL,claim_created=1,check_status='claim_submitted',version=version+1,updated_at=#{at}
+    WHERE id=#{check} AND closed_at IS NULL AND claim_created=0 AND check_status IN ('pending','warning') AND check_start_at&lt;=#{at} AND auto_close_at&gt;#{at}</update>
+  <update id="releaseClaim">UPDATE order_return_check SET claim_created=0,version=version+1,updated_at=#{at} WHERE id=#{check} AND claim_created=1 AND closed_at IS NULL</update>
+  <update id="freezeInventory">UPDATE inventory_reservation SET reservation_status='disputed_holding',version=version+1,updated_at=#{at}
+    WHERE rental_order_id=#{order} AND reservation_status IN ('renting','overdue_holding')</update>
+  <update id="thawInventory">UPDATE inventory_reservation r SET reservation_status=IF(EXISTS(SELECT 1 FROM order_fulfillment_event e WHERE e.rental_order_id=r.rental_order_id AND e.event_type='rental_overdue'),'overdue_holding','renting'),
+    version=version+1,updated_at=#{at} WHERE rental_order_id=#{order} AND reservation_status='disputed_holding'</update>
+  <update id="freezeDeposit">UPDATE rental_order SET deposit_status='frozen_by_claim',version=version+1,updated_at=#{at} WHERE id=#{order} AND deposit_status='paid'</update>
+  <update id="thawDeposit">UPDATE rental_order SET deposit_status=IF(deposit_deducted_amount_fen&gt;0,'partially_deducted','paid'),version=version+1,updated_at=#{at}
+    WHERE id=#{order} AND deposit_status='frozen_by_claim'</update>
+  <update id="updateOrderReturnCheckResume">UPDATE order_return_check rc SET auto_close_at=TIMESTAMPADD(MICROSECOND,remaining_close_ms*1000,#{at}),
+    check_status=IF(warning_at&lt;=#{at},'warning','pending'),remaining_close_ms=NULL,updated_at=#{at},version=version+1
+    WHERE rental_order_id=#{order} AND closed_at IS NULL AND remaining_close_ms IS NOT NULL AND claim_created=0
+      AND NOT EXISTS(SELECT 1 FROM order_issue_report i WHERE i.rental_order_id=rc.rental_order_id AND i.fulfillment_effect='paused' AND i.issue_status NOT IN ('closed','resolved'))
+      AND NOT EXISTS(SELECT 1 FROM order_claim c WHERE c.rental_order_id=rc.rental_order_id AND c.claim_status NOT IN ('draft','withdrawn','closed','rejected'))
+      AND NOT EXISTS(SELECT 1 FROM arbitration_case a WHERE a.rental_order_id=rc.rental_order_id AND a.case_status NOT IN ('closed','cancelled'))
+      AND NOT EXISTS(SELECT 1 FROM platform_intervention_record pi WHERE pi.rental_order_id=rc.rental_order_id AND pi.intervention_status IN ('open','processing'))
+      AND NOT EXISTS(SELECT 1 FROM admin_case_action a WHERE a.target_id=rc.rental_order_id AND a.action_type='resolve_order_issue' AND a.operator_confirmed_at IS NOT NULL
+        AND a.action_status IN ('executing','failed','succeeded') AND a.request_payload_json->>'$.fulfillment_decision'='terminate')</update>
+  <update id="updateOrderClaimState">UPDATE order_claim SET claim_status=#{state},admin_review_status=COALESCE(#{review},admin_review_status),
+      admin_review_remark=COALESCE(#{reason},admin_review_remark),approved_amount_fen=COALESCE(#{loss},approved_amount_fen),
+      available_deposit_amount_fen_snapshot=COALESCE(#{deposit},available_deposit_amount_fen_snapshot),
+      reviewed_at=IF(#{actor} IS NULL,reviewed_at,#{at}),reviewed_by_admin_user_id=COALESCE(#{actor},reviewed_by_admin_user_id),
+      user_response_deadline_at=IF(#{state}='waiting_user_response',DATE_ADD(#{at},INTERVAL 48 HOUR),user_response_deadline_at),
+      withdrawn_at=IF(#{state}='withdrawn',#{at},withdrawn_at),updated_at=#{at},version=version+1 WHERE id=#{id}</update>
+  <update id="updateOrderClaimEvidence">UPDATE order_claim SET evidence_reference_json=#{refs},updated_at=#{at} WHERE id=#{id}</update>
+  <select id="usableEvidence" resultType="boolean">SELECT EXISTS(SELECT 1 FROM order_evidence_record WHERE id=#{id} AND rental_order_id=#{order}
+    AND uploaded_by_user_id=#{actor} AND draft_removed_at IS NULL)</select>
+  <update id="bindUploads">UPDATE order_evidence_record SET claim_id=#{id} WHERE rental_order_id=#{order} AND claim_id IS NULL AND id IN
+    <foreach collection="ids" item="id" open="(" close=")" separator=",">#{id}</foreach></update>
+  <update id="caseState">UPDATE admin_case SET case_status=#{status},version=version+1,updated_at=#{at},closed_at=IF(#{status}='closed',#{at},NULL),
+    closed_by_admin_user_id=IF(#{status}='closed',#{actor},NULL),active_case_key=IF(#{status}='closed',NULL,active_case_key) WHERE id=#{id}</update>
+  <insert id="insertClaimUserResponse">INSERT INTO claim_user_response(id,claim_id,rental_order_id,buyer_user_id,response_type,response_remark,responded_at,created_at)
+    VALUES(#{id},#{claim.id},#{claim.orderId},#{claim.buyerId},#{type},#{reason},#{at},#{at})</insert>
+  <insert id="insertArbitrationCaseAppeal">INSERT INTO arbitration_case(id,case_no,rental_order_id,claim_id,case_type,case_status,version,opened_by_user_id,opened_role,summary,opened_at,created_at,updated_at)
+    VALUES(#{id},CONCAT('ARB',#{id}),#{claim.orderId},#{claim.id},'return_claim','open',0,#{actor},'buyer',LEFT(#{summary},500),#{at},#{at},#{at})</insert>
+  <insert id="arbitrationEvidence">INSERT INTO arbitration_evidence_link(id,arbitration_case_id,evidence_record_id,evidence_role,created_at)
+    VALUES(#{id},#{arb},#{evidence},#{role},#{at})</insert>
+  <select id="selectClaimIdsPastResponseDeadline" resultType="string">SELECT id FROM order_claim WHERE id&gt;#{after} AND claim_status='waiting_user_response' AND user_response_deadline_at&lt;=#{at} ORDER BY id LIMIT 100</select>
+  <select id="selectFrozenReturnCheckOrderIds" resultType="string">SELECT rental_order_id FROM order_return_check WHERE rental_order_id&gt;#{after} AND remaining_close_ms IS NOT NULL AND claim_created=0 AND closed_at IS NULL ORDER BY rental_order_id LIMIT 100</select>
+</mapper>

@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC '-//mybatis.org//DTD Mapper 3.0//EN' 'https://mybatis.org/dtd/mybatis-3-mapper.dtd'>
+<mapper namespace="com.mujian.backend.customer.mapper.ServiceContextMapper">
+  <sql id="sources"><trim prefixOverrides="UNION ALL"><if test="type==null or type=='factory_onboarding'"> UNION ALL
+    SELECT 'factory_onboarding' AS source_type,s.id AS source_id,'01' AS module,CONCAT('入驻申请 ',CONVERT(s.application_no USING utf8mb4)) AS title,
+      CONVERT(s.audit_status USING utf8mb4) COLLATE utf8mb4_0900_ai_ci AS status,CONCAT('/pages/factory/status?id=',s.id) AS path,s.created_at AS created_at
+    FROM factory_onboarding_audit s WHERE s.applicant_user_id=#{user}
+    <if test="id!=null">AND s.id=#{id}</if></if>
+<if test="type==null or type=='rental_order'"> UNION ALL
+    SELECT 'rental_order' AS source_type,s.id AS source_id,'04' AS module,CONCAT('租赁订单 ',CONVERT(s.order_no USING utf8mb4)) AS title,
+      CONVERT(s.order_status USING utf8mb4) COLLATE utf8mb4_0900_ai_ci AS status,CONCAT(<choose><when test="factory!=null">'/pages/factory/order?id='</when><otherwise>'/pages/orders/detail?id='</otherwise></choose>,s.id) AS path,s.created_at AS created_at
+    FROM rental_order s WHERE <choose><when test="factory!=null">s.factory_id=#{factory}</when><otherwise>s.buyer_user_id=#{user}</otherwise></choose>
+    
+    
+    
+    <if test="id!=null">AND s.id=#{id}</if></if>
+<if test="type==null or type=='payment_order'"> UNION ALL
+    SELECT 'payment_order' AS source_type,s.id AS source_id,'04' AS module,CONCAT('支付单 ',CONVERT(s.payment_no USING utf8mb4)) AS title,
+      CONVERT(s.payment_status USING utf8mb4) COLLATE utf8mb4_0900_ai_ci AS status,CONCAT(<choose><when test="factory!=null">'/pages/payment/index?id='</when><otherwise>'/pages/payment/index?id='</otherwise></choose>,s.id) AS path,s.created_at AS created_at
+    FROM payment_order s WHERE <choose><when test="factory!=null">NULL=#{factory}</when><otherwise>s.buyer_user_id=#{user}</otherwise></choose>
+    
+    
+    
+    <if test="id!=null">AND s.id=#{id}</if></if>
+<if test="type==null or type=='refund_order'"> UNION ALL
+    SELECT 'refund_order' AS source_type,s.id AS source_id,'04' AS module,CONCAT('退款单 ',CONVERT(s.refund_no USING utf8mb4)) AS title,
+      CONVERT(s.refund_status USING utf8mb4) COLLATE utf8mb4_0900_ai_ci AS status,CONCAT(<choose><when test="factory!=null">'/pages/refund/detail?id='</when><otherwise>'/pages/refund/detail?id='</otherwise></choose>,s.id) AS path,s.created_at AS created_at
+    FROM refund_order s JOIN payment_order p ON p.id=s.payment_order_id WHERE <choose><when test="factory!=null">NULL=#{factory}</when><otherwise>p.buyer_user_id=#{user}</otherwise></choose>
+    
+    
+    
+    <if test="id!=null">AND s.id=#{id}</if></if>
+<if test="type==null or type=='compensation_receivable'"> UNION ALL
+    SELECT 'compensation_receivable' AS source_type,s.id AS source_id,'04' AS module,CONCAT('待缴偿还 ',CONVERT(s.receivable_no USING utf8mb4)) AS title,
+      CONVERT(s.receivable_status USING utf8mb4) COLLATE utf8mb4_0900_ai_ci AS status,CONCAT(<choose><when test="factory!=null">'/pages/factory/disputes?kind=compensation-receivables&amp;id='</when><otherwise>'/pages/orders/disputes?kind=compensation-receivables&amp;id='</otherwise></choose>,s.id) AS path,s.created_at AS created_at
+    FROM order_compensation_receivable s WHERE <choose><when test="factory!=null">s.factory_id=#{factory}</when><otherwise>s.buyer_user_id=#{user}</otherwise></choose>
+    
+    
+    
+    <if test="id!=null">AND s.id=#{id}</if></if>
+<if test="type==null or type=='order_issue'"> UNION ALL
+    SELECT 'order_issue' AS source_type,s.id AS source_id,'05' AS module,CONCAT('订单问题 ',CONVERT(s.issue_no USING utf8mb4)) AS title,
+      CONVERT(s.issue_status USING utf8mb4) COLLATE utf8mb4_0900_ai_ci AS status,CONCAT(<choose><when test="factory!=null">'/pages/factory/fulfillment?id='</when><otherwise>'/pages/orders/issues?id='</otherwise></choose>,o.id) AS path,s.created_at AS created_at
+    FROM order_issue_report s JOIN rental_order o ON o.id=s.rental_order_id WHERE <choose><when test="factory!=null">o.factory_id=#{factory}</when><otherwise>o.buyer_user_id=#{user}</otherwise></choose>
+    
+    
+    
+    <if test="id!=null">AND s.id=#{id}</if></if>
+<if test="type==null or type=='extension_application'"> UNION ALL
+    SELECT 'extension_application' AS source_type,s.id AS source_id,'04' AS module,CONCAT('延期申请 ',CONVERT(s.id USING utf8mb4)) AS title,
+      CONVERT(s.extension_status USING utf8mb4) COLLATE utf8mb4_0900_ai_ci AS status,CONCAT(<choose><when test="factory!=null">'/pages/factory/extensions?orderId='</when><otherwise>'/pages/orders/extensions?orderId='</otherwise></choose>,s.rental_order_id) AS path,s.created_at AS created_at
+    FROM order_extension_request s WHERE <choose><when test="factory!=null">s.factory_id=#{factory}</when><otherwise>s.buyer_user_id=#{user}</otherwise></choose>
+    
+    
+    
+    <if test="id!=null">AND s.id=#{id}</if></if>
+<if test="type==null or type=='transport_order'"> UNION ALL
+    SELECT 'transport_order' AS source_type,s.id AS source_id,'05' AS module,CONCAT('运输段 ',CONVERT(o.order_no USING utf8mb4)) AS title,
+      CONVERT(s.leg_status USING utf8mb4) COLLATE utf8mb4_0900_ai_ci AS status,CONCAT(<choose><when test="factory!=null">'/pages/factory/fulfillment?id='</when><otherwise>'/pages/orders/fulfillment?id='</otherwise></choose>,o.id) AS path,s.created_at AS created_at
+    FROM order_transport_leg s JOIN rental_order o ON o.id=s.rental_order_id WHERE <choose><when test="factory!=null">o.factory_id=#{factory}</when><otherwise>o.buyer_user_id=#{user}</otherwise></choose>
+    
+    
+    
+    <if test="id!=null">AND s.id=#{id}</if></if>
+<if test="type==null or type=='return_verification'"> UNION ALL
+    SELECT 'return_verification' AS source_type,s.id AS source_id,'05' AS module,CONCAT('归还核验 ',CONVERT(o.order_no USING utf8mb4)) AS title,
+      CONVERT(s.check_status USING utf8mb4) COLLATE utf8mb4_0900_ai_ci AS status,CONCAT(<choose><when test="factory!=null">'/pages/factory/fulfillment?id='</when><otherwise>'/pages/orders/fulfillment?id='</otherwise></choose>,o.id) AS path,s.created_at AS created_at
+    FROM order_return_check s JOIN rental_order o ON o.id=s.rental_order_id WHERE <choose><when test="factory!=null">o.factory_id=#{factory}</when><otherwise>o.buyer_user_id=#{user}</otherwise></choose>
+    
+    
+    
+    <if test="id!=null">AND s.id=#{id}</if></if>
+<if test="type==null or type=='claim'"> UNION ALL
+    SELECT 'claim' AS source_type,s.id AS source_id,'06' AS module,CONCAT('索赔 ',CONVERT(s.claim_no USING utf8mb4)) AS title,
+      CONVERT(s.claim_status USING utf8mb4) COLLATE utf8mb4_0900_ai_ci AS status,CONCAT(<choose><when test="factory!=null">'/pages/factory/disputes?kind=claims&amp;orderId='</when><otherwise>'/pages/orders/disputes?kind=claims&amp;orderId='</otherwise></choose>,o.id) AS path,s.created_at AS created_at
+    FROM order_claim s JOIN rental_order o ON o.id=s.rental_order_id WHERE <choose><when test="factory!=null">o.factory_id=#{factory}</when><otherwise>o.buyer_user_id=#{user}</otherwise></choose>
+    <if test="factory==null">AND s.claim_status!='draft'</if>
+    
+    
+    <if test="id!=null">AND s.id=#{id}</if></if>
+<if test="type==null or type=='arbitration_case'"> UNION ALL
+    SELECT 'arbitration_case' AS source_type,s.id AS source_id,'06' AS module,CONCAT('仲裁 ',CONVERT(s.case_no USING utf8mb4)) AS title,
+      CONVERT(s.case_status USING utf8mb4) COLLATE utf8mb4_0900_ai_ci AS status,CONCAT(<choose><when test="factory!=null">'/pages/factory/disputes?kind=arbitrations&amp;orderId='</when><otherwise>'/pages/orders/disputes?kind=arbitrations&amp;orderId='</otherwise></choose>,o.id) AS path,s.created_at AS created_at
+    FROM arbitration_case s JOIN rental_order o ON o.id=s.rental_order_id WHERE <choose><when test="factory!=null">o.factory_id=#{factory}</when><otherwise>o.buyer_user_id=#{user}</otherwise></choose>
+    
+    
+    
+    <if test="id!=null">AND s.id=#{id}</if></if>
+<if test="type==null or type=='custom_requirement'"> UNION ALL
+    SELECT 'custom_requirement' AS source_type,s.id AS source_id,'11' AS module,CONCAT('定制需求 ',CONVERT(s.requirement_no USING utf8mb4)) AS title,
+      CONVERT(s.requirement_status USING utf8mb4) COLLATE utf8mb4_0900_ai_ci AS status,CONCAT(<choose><when test="factory!=null">'/pages/factory/custom-detail?kind=requirements&amp;id='</when><otherwise>'/pages/custom/detail?kind=requirements&amp;id='</otherwise></choose>,s.id) AS path,s.created_at AS created_at
+    FROM custom_requirement s WHERE <choose><when test="factory!=null">s.factory_id=#{factory}</when><otherwise>s.buyer_user_id=#{user}</otherwise></choose>
+    
+    
+    <if test="factory!=null">AND s.requirement_status!='draft'</if>
+    <if test="id!=null">AND s.id=#{id}</if></if>
+<if test="type==null or type=='custom_quote'"> UNION ALL
+    SELECT 'custom_quote' AS source_type,s.id AS source_id,'11' AS module,CONCAT('定制报价 ',CONVERT(s.quote_no USING utf8mb4)) AS title,
+      CONVERT(s.quote_status USING utf8mb4) COLLATE utf8mb4_0900_ai_ci AS status,CONCAT(<choose><when test="factory!=null">'/pages/factory/custom-detail?kind=requirements&amp;id='</when><otherwise>'/pages/custom/detail?kind=requirements&amp;id='</otherwise></choose>,s.requirement_id) AS path,s.created_at AS created_at
+    FROM custom_quote s JOIN custom_requirement o ON o.id=s.requirement_id WHERE <choose><when test="factory!=null">s.factory_id=#{factory}</when><otherwise>o.buyer_user_id=#{user}</otherwise></choose>
+    
+    <if test="factory==null">AND s.quote_status!='draft'</if>
+    
+    <if test="id!=null">AND s.id=#{id}</if></if>
+<if test="type==null or type=='custom_order'"> UNION ALL
+    SELECT 'custom_order' AS source_type,s.id AS source_id,'11' AS module,CONCAT('定制订单 ',CONVERT(s.custom_order_no USING utf8mb4)) AS title,
+      CONVERT(s.order_status USING utf8mb4) COLLATE utf8mb4_0900_ai_ci AS status,CONCAT(<choose><when test="factory!=null">'/pages/factory/custom-detail?kind=orders&amp;id='</when><otherwise>'/pages/custom/detail?kind=orders&amp;id='</otherwise></choose>,s.id) AS path,s.created_at AS created_at
+    FROM custom_order s WHERE <choose><when test="factory!=null">s.factory_id=#{factory}</when><otherwise>s.buyer_user_id=#{user}</otherwise></choose>
+    
+    
+    
+    <if test="id!=null">AND s.id=#{id}</if></if>
+<if test="type==null or type=='custom_after_sale'"> UNION ALL
+    SELECT 'custom_after_sale' AS source_type,s.id AS source_id,'11' AS module,CONCAT('定制售后 ',CONVERT(s.after_sale_no USING utf8mb4)) AS title,
+      CONVERT(s.after_sale_status USING utf8mb4) COLLATE utf8mb4_0900_ai_ci AS status,CONCAT(<choose><when test="factory!=null">'/pages/factory/custom-detail?kind=orders&amp;id='</when><otherwise>'/pages/custom/detail?kind=orders&amp;id='</otherwise></choose>,o.id) AS path,s.created_at AS created_at
+    FROM custom_after_sale_request s JOIN custom_order o ON o.id=s.custom_order_id WHERE <choose><when test="factory!=null">o.factory_id=#{factory}</when><otherwise>s.buyer_user_id=#{user}</otherwise></choose>
+    
+    
+    
+    <if test="id!=null">AND s.id=#{id}</if></if></trim></sql>
+  <select id="countSources" resultType="long">SELECT COUNT(*) FROM (<include refid="sources"/>) permitted</select>
+  <select id="selectSources" resultType="com.mujian.backend.customer.vo.ServiceViews$SourceRow"><bind name="pageOffset" value="page.offset()"/>
+    SELECT source_type,source_id,module,title,status,path,created_at FROM (<include refid="sources"/>) permitted
+    ORDER BY created_at DESC,source_type,source_id DESC LIMIT #{page.pageSize} OFFSET #{pageOffset}
+  </select>
+  <select id="hasApplication" resultType="boolean">
+    SELECT EXISTS(SELECT 1 FROM factory_onboarding_audit WHERE applicant_user_id=#{user})
+  </select>
+  <select id="latestContext" resultType="string">
+    SELECT id FROM customer_service_context
+    WHERE user_id=#{user} AND source_type=#{source.sourceType} AND source_id=#{source.sourceId}
+      AND (active_role=#{role} OR (#{role}='factory' AND source_type='factory_onboarding' AND active_role='applicant'))
+    ORDER BY created_at DESC,id DESC LIMIT 1
+  </select>
+  <sql id="publicProgress">c.case_no,IF(c.case_status='closed','resolved','registered') AS status</sql>
+  <select id="sourceProgress" resultType="com.mujian.backend.customer.vo.ServiceViews$Progress">
+    SELECT <include refid="publicProgress"/> FROM admin_case_relation r JOIN admin_case c ON c.id=r.admin_case_id
+    WHERE r.relation_type=#{source.sourceType} AND r.relation_id=#{source.sourceId} AND r.is_primary=1
+      AND c.case_type='customer_service' AND c.buyer_user_id=#{user} AND c.case_status!='cancelled'
+    ORDER BY c.created_at DESC,(c.case_status='closed') ASC,c.id DESC LIMIT 1
+  </select>
+  <select id="linkedProgress" resultType="com.mujian.backend.customer.vo.ServiceViews$Progress">
+    SELECT <include refid="publicProgress"/> FROM customer_service_context x JOIN admin_case c ON c.id=x.admin_case_id
+    JOIN admin_case_relation r ON r.admin_case_id=c.id AND r.is_primary=1 AND r.relation_type=x.source_type AND r.relation_id=x.source_id
+    WHERE x.id=#{id} AND x.user_id=#{user} AND c.buyer_user_id=#{user} AND c.case_type='customer_service' AND c.case_status!='cancelled'
+  </select>
+  <sql id="contextColumns">id,user_id,active_role,source_type,source_id,title_snapshot AS title,status_snapshot,summary_snapshot AS summary,
+    return_page_path,context_status,expire_at,context_token_hash AS token_hash,admin_case_id</sql>
+  <select id="selectByRequest" resultType="com.mujian.backend.customer.vo.ServiceViews$ContextRow">
+    SELECT <include refid="contextColumns"/> FROM customer_service_context WHERE context_request_id=#{key}
+  </select>
+  <select id="selectContext" resultType="com.mujian.backend.customer.vo.ServiceViews$ContextRow" useCache="false" flushCache="true">
+    SELECT <include refid="contextColumns"/> FROM customer_service_context WHERE id=#{id} <if test="lock">FOR UPDATE</if>
+  </select>
+  <insert id="insertContext">INSERT INTO customer_service_context(id,context_request_id,user_id,active_role,source_module,source_type,source_id,
+    title_snapshot,status_snapshot,summary_snapshot,return_page_path,context_token_hash,context_status,expire_at,created_at,updated_at)
+    VALUES(#{id},#{key},#{user},#{role},#{source.module},#{source.sourceType},#{source.sourceId},#{source.title},#{source.status},
+    #{source.title},#{source.path},#{hash},'created',#{expires},#{at},#{at})</insert>
+</mapper>

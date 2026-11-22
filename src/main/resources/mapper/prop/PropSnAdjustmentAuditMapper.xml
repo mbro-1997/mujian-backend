@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.prop.mapper.PropSnAdjustmentAuditMapper">
+<sql id="columns_prop_sn_adjustment_audit">id,sku_id,factory_id,adjustment_type,increase_scene,requested_quantity,audit_status,applicant_user_id,reviewer_id,apply_remark,audit_remark,reject_reason,submitted_at,reviewed_at,version,created_at,request_id,request_hash,related_sku_audit_id,updated_at</sql>
+<sql id="aliased_prop_sn_adjustment_audit">s.id,s.sku_id,s.factory_id,s.adjustment_type,s.increase_scene,s.requested_quantity,s.audit_status,s.applicant_user_id,s.reviewer_id,s.apply_remark,s.audit_remark,s.reject_reason,s.submitted_at,s.reviewed_at,s.version,s.created_at,s.request_id,s.request_hash,s.related_sku_audit_id,s.updated_at</sql>
+<select id="selectPendingSnAdjustmentListBySnId" resultType="com.mujian.backend.prop.domain.PropSnAdjustmentAuditDO" useCache="false" flushCache="true">
+    SELECT id,sku_id,factory_id,adjustment_type,increase_scene,requested_quantity,audit_status,applicant_user_id,reviewer_id,apply_remark,audit_remark,reject_reason,submitted_at,reviewed_at,version,created_at,request_id,request_hash,related_sku_audit_id,updated_at FROM prop_sn_adjustment_audit WHERE audit_status='pending' AND id IN (SELECT adjustment_audit_id FROM prop_sn_adjustment_item WHERE sn_id=#{snId})
+  </select>
+<select id="selectPropSnAdjustmentAuditListByActorAndRequest" resultType="com.mujian.backend.prop.domain.PropSnAdjustmentAuditDO" useCache="false" flushCache="true">SELECT <include refid="columns_prop_sn_adjustment_audit"/> FROM prop_sn_adjustment_audit WHERE applicant_user_id=#{actorId} AND request_id=#{requestId}</select>
+<select id="selectUnlinkedPendingPropSnAdjustmentAuditList" resultType="com.mujian.backend.prop.domain.PropSnAdjustmentAuditDO" useCache="false" flushCache="true">SELECT s.id FROM prop_sn_adjustment_audit s WHERE s.audit_status='pending' AND NOT EXISTS (SELECT 1 FROM admin_case_relation c WHERE c.relation_type='prop_sn_adjustment_audit' AND c.relation_id=s.id AND c.is_primary=1 AND c.relation_role='source') ORDER BY s.created_at,s.id LIMIT 100</select>
+<select id="selectPropSnAdjustmentAudit" resultType="com.mujian.backend.prop.domain.PropSnAdjustmentAuditDO" useCache="false" flushCache="true">
+    SELECT id,sku_id,factory_id,adjustment_type,increase_scene,requested_quantity,audit_status,applicant_user_id,reviewer_id,apply_remark,audit_remark,reject_reason,submitted_at,reviewed_at,version,created_at,request_id,request_hash,related_sku_audit_id,updated_at FROM prop_sn_adjustment_audit WHERE id=#{id} <if test="lock">FOR UPDATE</if>
+  </select>
+<insert id="insertPropSnAdjustmentAudit">INSERT INTO prop_sn_adjustment_audit
+<trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="row.id != null">id,</if>
+<if test="row.skuId != null">sku_id,</if>
+<if test="row.factoryId != null">factory_id,</if>
+<if test="row.adjustmentType != null">adjustment_type,</if>
+<if test="row.increaseScene != null">increase_scene,</if>
+<if test="row.requestedQuantity != null">requested_quantity,</if>
+<if test="row.auditStatus != null">audit_status,</if>
+<if test="row.applicantUserId != null">applicant_user_id,</if>
+<if test="row.reviewerId != null">reviewer_id,</if>
+<if test="row.applyRemark != null">apply_remark,</if>
+<if test="row.auditRemark != null">audit_remark,</if>
+<if test="row.rejectReason != null">reject_reason,</if>
+<if test="row.submittedAt != null">submitted_at,</if>
+<if test="row.reviewedAt != null">reviewed_at,</if>
+<if test="row.version != null">version,</if>
+<if test="row.createdAt != null">created_at,</if>
+<if test="row.requestId != null">request_id,</if>
+<if test="row.requestHash != null">request_hash,</if>
+<if test="row.relatedSkuAuditId != null">related_sku_audit_id,</if>
+<if test="row.updatedAt != null">updated_at,</if>
+</trim> VALUES
+<trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="row.id != null">#{row.id},</if>
+<if test="row.skuId != null">#{row.skuId},</if>
+<if test="row.factoryId != null">#{row.factoryId},</if>
+<if test="row.adjustmentType != null">#{row.adjustmentType},</if>
+<if test="row.increaseScene != null">#{row.increaseScene},</if>
+<if test="row.requestedQuantity != null">#{row.requestedQuantity},</if>
+<if test="row.auditStatus != null">#{row.auditStatus},</if>
+<if test="row.applicantUserId != null">#{row.applicantUserId},</if>
+<if test="row.reviewerId != null">#{row.reviewerId},</if>
+<if test="row.applyRemark != null">#{row.applyRemark},</if>
+<if test="row.auditRemark != null">#{row.auditRemark},</if>
+<if test="row.rejectReason != null">#{row.rejectReason},</if>
+<if test="row.submittedAt != null">#{row.submittedAt},</if>
+<if test="row.reviewedAt != null">#{row.reviewedAt},</if>
+<if test="row.version != null">#{row.version},</if>
+<if test="row.createdAt != null">#{row.createdAt},</if>
+<if test="row.requestId != null">#{row.requestId},</if>
+<if test="row.requestHash != null">#{row.requestHash},</if>
+<if test="row.relatedSkuAuditId != null">#{row.relatedSkuAuditId},</if>
+<if test="row.updatedAt != null">#{row.updatedAt},</if>
+</trim></insert>
+<update id="updateSnAdjustmentCancellation">UPDATE prop_sn_adjustment_audit SET audit_status=#{command.auditStatus},reviewer_id=#{command.reviewerId},reviewed_at=#{command.reviewedAt},audit_remark=#{command.auditRemark},version=#{command.version},updated_at=#{command.updatedAt} WHERE id=#{command.id}</update>
+<update id="updateSnAdjustmentDecision">UPDATE prop_sn_adjustment_audit SET audit_status=#{command.auditStatus},reviewer_id=#{command.reviewerId},audit_remark=#{command.auditRemark},reject_reason=#{command.rejectReason},reviewed_at=#{command.reviewedAt},version=#{command.version},updated_at=#{command.updatedAt} WHERE id=#{command.id}</update>
+<select id="selectPendingSnAdjustmentListBySnIds" resultType="com.mujian.backend.prop.projection.PropSnPendingProjection" useCache="false" flushCache="true">
+ SELECT DISTINCT i.sn_id,a.id AS audit_id FROM prop_sn_adjustment_audit a
+ JOIN prop_sn_adjustment_item i ON i.adjustment_audit_id=a.id
+ WHERE a.audit_status='pending' AND i.sn_id IN
+ <foreach collection="snIds" item="snId" open="(" separator="," close=")">#{snId}</foreach>
+ ORDER BY i.sn_id,a.id
+</select>
+</mapper>

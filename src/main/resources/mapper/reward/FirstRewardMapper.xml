@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC '-//mybatis.org//DTD Mapper 3.0//EN' 'https://mybatis.org/dtd/mybatis-3-mapper.dtd'>
+<mapper namespace="com.mujian.backend.reward.mapper.FirstRewardMapper">
+  <select id="selectActiveRule" resultType="string" useCache="false" flushCache="true">
+    SELECT id FROM coupon_reward_rule WHERE event_type=#{event} AND status='active' FOR SHARE
+  </select>
+  <insert id="insertFirstFact">
+    INSERT INTO coupon_reward_record
+      (id,user_id,event_type,source_id,rule_id,reward_status,ineligible_reason,occurred_at,next_retry_at,created_at,updated_at)
+    VALUES (#{id},#{user},#{event},#{source},#{rule},
+      <choose><when test="reason == null">'pending'</when><otherwise>'not_eligible'</otherwise></choose>,
+      #{reason},#{now},<choose><when test="reason == null">#{now}</when><otherwise>NULL</otherwise></choose>,#{now},#{now})
+    ON DUPLICATE KEY UPDATE id=coupon_reward_record.id
+  </insert>
+</mapper>

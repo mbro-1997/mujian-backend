@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.dispute.mapper.ArbitrationMapper">
+  <sql id="tables">FROM arbitration_case a JOIN rental_order o ON o.id=a.rental_order_id
+    LEFT JOIN admin_case_relation r ON r.relation_type='arbitration_case' AND r.relation_id=a.id AND r.is_primary=1
+    LEFT JOIN admin_case c ON c.id=r.admin_case_id AND c.case_type='arbitration'
+    LEFT JOIN claim_user_response u ON u.claim_id=a.claim_id AND u.response_type='appeal'</sql>
+  <sql id="projection">SELECT a.id,o.id order_id,o.order_no,o.factory_id,o.buyer_user_id buyer_id,
+    (SELECT MIN(s.factory_name_snapshot) FROM checkout_batch_item_snapshot s WHERE s.checkout_batch_id=o.checkout_batch_id AND s.factory_id=o.factory_id) factory_name,
+    a.version,a.created_at,a.case_no,a.case_status status,a.claim_id,a.source_issue_report_id issue_id,u.response_remark appeal_reason,c.id case_id,
+    k.operation_reason request,k.request_payload_json->>'$.party' party
+    <include refid="tables"/>
+    LEFT JOIN admin_case_action k ON k.id=(
+      SELECT latest.id FROM admin_case_action latest
+      WHERE latest.admin_case_id=c.id AND latest.action_type='requestArbitrationEvidence'
+      ORDER BY CAST(latest.request_payload_json->>'$.expectedVersion' AS UNSIGNED) DESC,latest.created_at DESC,latest.id DESC LIMIT 1)
+    </sql>
+  <sql id="filter"><where><if test="claimFilter.orderId!=null">AND o.id=#{claimFilter.orderId}</if><if test="claimFilter.buyerId!=null">AND o.buyer_user_id=#{claimFilter.buyerId}</if>
+    <if test="claimFilter.factoryId!=null">AND o.factory_id=#{claimFilter.factoryId}</if>
+    <choose><when test="claimFilter.status=='historical'">AND a.case_status='cancelled'</when><otherwise>AND a.case_status!='cancelled'</otherwise></choose>
+    <choose>
+    <when test="claimFilter.status=='decided'">AND EXISTS(SELECT 1 FROM arbitration_decision d WHERE d.confirmed_case_guard=a.id)</when>
+    <when test="claimFilter.status=='awaiting_decision'">AND NOT EXISTS(SELECT 1 FROM arbitration_decision d WHERE d.confirmed_case_guard=a.id)</when></choose>
+    </where></sql>
+  <select id="selectArbitrationById" resultType="com.mujian.backend.dispute.mapper.ArbitrationMapper$Row" flushCache="true" useCache="false"><include refid="projection"/> WHERE a.id=#{id}</select>
+  <select id="selectArbitrationPageByQuery" resultType="com.mujian.backend.dispute.mapper.ArbitrationMapper$Row"><include refid="projection"/><include refid="filter"/> ORDER BY a.created_at DESC,a.id DESC LIMIT #{pageQuery.pageSize} OFFSET #{pageQuery.offset}</select>
+  <select id="selectArbitrationCaseCountByQuery" resultType="long">SELECT COUNT(*) <include refid="tables"/><include refid="filter"/></select>
+  <sql id="idList"><foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach></sql>
+  <select id="evidenceForCases" resultType="com.mujian.backend.dispute.mapper.ArbitrationMapper$EvidenceLink">
+    SELECT arbitration_case_id case_id, evidence_record_id evidence_id FROM arbitration_evidence_link
+    WHERE arbitration_case_id IN <include refid="idList"/>
+    <if test="role!='admin'">AND evidence_role=#{role}</if> ORDER BY arbitration_case_id,id
+  </select>
+  <select id="selectArbitrationLinked" resultType="boolean">SELECT EXISTS(SELECT 1 FROM arbitration_evidence_link WHERE arbitration_case_id=#{id} AND evidence_record_id=#{evidenceId})</select>
+  <select id="caseEvidence" resultType="boolean">
+    SELECT EXISTS(SELECT 1 FROM arbitration_case a JOIN order_evidence_record e
+      ON e.rental_order_id=a.rental_order_id AND e.id=#{id} AND e.draft_removed_at IS NULL
+      WHERE a.id=#{arbitration} AND (e.issue_report_id=a.source_issue_report_id
+        OR EXISTS(SELECT 1 FROM arbitration_evidence_link l WHERE l.arbitration_case_id=a.id AND l.evidence_record_id=e.id)
+        OR EXISTS(SELECT 1 FROM admin_case_relation ar
+          JOIN admin_case_relation s ON s.admin_case_id=ar.admin_case_id AND s.relation_role='source' AND s.is_primary=0
+          JOIN admin_case_relation parent ON parent.is_primary=1 AND parent.relation_id=s.relation_id
+            AND parent.relation_type=CASE s.relation_type WHEN 'receipt_problem' THEN 'order_issue_report'
+            WHEN 'overdue_impact' THEN 'fulfillment_risk' ELSE s.relation_type END
+          JOIN admin_case_relation proof ON proof.admin_case_id=parent.admin_case_id AND proof.relation_type='order_evidence_record'
+          WHERE ar.relation_type='arbitration_case' AND ar.relation_id=a.id AND ar.is_primary=1 AND proof.relation_id=e.id)))
+  </select>
+  <select id="validSource" resultType="boolean">SELECT NOT EXISTS(SELECT 1 FROM arbitration_case a JOIN admin_case_relation r ON r.relation_type='arbitration_case' AND r.relation_id=a.id AND r.is_primary=1
+    JOIN admin_case_relation s ON s.admin_case_id=r.admin_case_id AND s.relation_role='source' AND s.is_primary=0 AND s.relation_type=#{type} AND s.relation_id=#{source}) AND
+    <choose><when test="type=='receipt_problem'">EXISTS(SELECT 1 FROM order_issue_report WHERE id=#{source} AND rental_order_id=#{order} AND issue_status IN ('submitted','processing','waiting_evidence'))</when>
+    <when test="type=='overdue_impact'">EXISTS(SELECT 1 FROM order_fulfillment_risk WHERE id=#{source} AND source_rental_order_id=#{order} AND risk_status!='resolved')</when>
+    <otherwise>EXISTS(SELECT 1 FROM platform_intervention_record WHERE id=#{source} AND rental_order_id=#{order} AND intervention_status IN ('open','processing'))</otherwise></choose></select>
+  <insert id="insertArbitrationCase">INSERT INTO arbitration_case(id,case_no,rental_order_id,source_issue_report_id,case_type,case_status,version,opened_by_user_id,opened_role,summary,opened_at,created_at,updated_at)
+    VALUES(#{id},CONCAT('ARB',#{id}),#{order},IF(#{input.sourceType}='receipt_problem',#{input.sourceId},NULL),#{input.sourceType},'open',0,#{actor},'admin',LEFT(#{input.summary},500),#{at},#{at},#{at})</insert>
+  <update id="freezeReceipt">UPDATE order_receipt_check c JOIN rental_order_delivery l ON l.rental_order_id=c.rental_order_id
+    SET c.remaining_check_ms=COALESCE(c.remaining_check_ms,GREATEST(0,TIMESTAMPDIFF(MICROSECOND,GREATEST(c.start_at,#{at}),c.deadline_at) DIV 1000),43200000),
+      c.check_status='problem_reported',c.deadline_at=NULL,c.version=c.version+1,c.updated_at=#{at},l.receipt_check_deadline_at=NULL,l.updated_at=#{at}
+    WHERE c.rental_order_id=#{order} AND c.check_status='pending'</update>
+  <update id="closeSourceCase">UPDATE admin_case c JOIN admin_case_relation l ON l.admin_case_id=c.id AND l.is_primary=1
+    SET c.case_status='closed',c.active_case_key=NULL,c.closed_at=#{at},c.closed_by_admin_user_id=#{actor},c.version=c.version+1,c.updated_at=#{at}
+    WHERE l.relation_type='order_issue_report' AND l.relation_id=#{issue} AND c.case_status NOT IN ('closed','cancelled')</update>
+  <update id="updateOrderIssueReportTransfer">UPDATE order_issue_report SET issue_status='transferred_arbitration',fulfillment_effect='paused',version=version+1,updated_at=#{at} WHERE id=#{id} AND rental_order_id=#{order}</update>
+  <update id="resolveIssue">UPDATE order_issue_report SET issue_status='resolved',resolved_at=#{at},version=version+1,updated_at=#{at}
+    WHERE id=#{issue} AND issue_status='transferred_arbitration'</update>
+  <update id="updateArbitrationCaseStage">UPDATE arbitration_case SET case_status=#{status},version=version+1,closed_at=IF(#{status}='closed',#{at},closed_at),updated_at=#{at} WHERE id=#{id}</update>
+  <sql id="balanceColumns">SELECT o.deposit_paid_amount_fen paid_fen,
+    (SELECT COALESCE(SUM(amount_fen),0) FROM order_deduction WHERE rental_order_id=o.id AND fund_component='deposit' AND deduction_status IN ('pending','confirmed')) deducted_fen,
+    (SELECT COALESCE(SUM(deposit_refund_amount_fen),0) FROM refund_order WHERE rental_order_id=o.id AND refund_status='success') refunded_fen,
+    (SELECT COALESCE(SUM(deposit_refund_amount_fen),0) FROM refund_order WHERE rental_order_id=o.id AND refund_status NOT IN ('cancelled','success')) reserved_fen,o.id order_id FROM rental_order o</sql>
+  <select id="selectArbitrationBalance" resultType="com.mujian.backend.dispute.mapper.ArbitrationMapper$SourceBalance" flushCache="true" useCache="false"><include refid="balanceColumns"/> WHERE o.id=#{order}</select>
+  <select id="selectArbitrationBalances" resultType="com.mujian.backend.dispute.mapper.ArbitrationMapper$SourceBalance" flushCache="true" useCache="false"><include refid="balanceColumns"/> WHERE o.id IN <include refid="idList"/></select>
+  <sql id="reservationColumns">SELECT r.id,r.rental_order_item_id item_id,r.sku_id,r.sn_id,r.quantity,r.reservation_status status,i.prop_name_snapshot name,s.sn_code,r.rental_order_id order_id
+    FROM inventory_reservation r JOIN rental_order_item i ON i.id=r.rental_order_item_id LEFT JOIN prop_sn_instance s ON s.id=r.sn_id</sql>
+  <select id="selectArbitrationReservations" resultType="com.mujian.backend.dispute.mapper.ArbitrationMapper$Reservation"><include refid="reservationColumns"/> WHERE r.rental_order_id=#{order} AND r.source_type!='extension_request' AND reservation_status IN ('paid_locked','renting','overdue_holding','disputed_holding') ORDER BY r.id</select>
+  <select id="stockForOrders" resultType="com.mujian.backend.dispute.mapper.ArbitrationMapper$Reservation"><include refid="reservationColumns"/> WHERE r.rental_order_id IN <include refid="idList"/> AND r.source_type!='extension_request' AND reservation_status IN ('paid_locked','renting','overdue_holding','disputed_holding') ORDER BY r.id</select>
+  <sql id="decisionColumns">SELECT id,decision_status status,responsibility_party responsibility,decision_summary summary,
+    confirmed_loss_amount_fen loss,deposit_deduction_amount_fen deposit,excess_compensation_amount_fen excess,rent_deduction_amount_fen rent,refund_components_json refunds,
+    stock_outcomes_json stock,decided_at confirmed_at,compensation_receivable_id receivable,
+    (SELECT ac.request_payload_json->>'$.refundBasis' FROM admin_case_action ac WHERE ac.target_id=arbitration_decision.id AND ac.action_type='arbitration_draft' LIMIT 1) refund_basis,
+    arbitration_case_id case_id,
+    (SELECT p.failure_message FROM admin_case_action p WHERE p.target_id=arbitration_decision.id AND p.target_type='arbitration_decision'
+      AND p.action_type='execute_arbitration' AND p.action_status='failed') failure_reason FROM arbitration_decision</sql>
+  <select id="selectArbitrationDecision" resultType="com.mujian.backend.dispute.mapper.ArbitrationMapper$Decision" flushCache="true" useCache="false"><include refid="decisionColumns"/> WHERE arbitration_case_id=#{id}
+    AND decision_status IN ('draft','confirmed') ORDER BY created_at DESC,id DESC LIMIT 1</select>
+  <select id="selectArbitrationDecisions" resultType="com.mujian.backend.dispute.mapper.ArbitrationMapper$Decision">
+    <include refid="decisionColumns"/> WHERE arbitration_case_id IN <include refid="idList"/>
+      AND id=(SELECT d.id FROM arbitration_decision d WHERE d.arbitration_case_id=arbitration_decision.arbitration_case_id
+        AND d.decision_status IN ('draft','confirmed') ORDER BY d.created_at DESC,d.id DESC LIMIT 1)
+  </select>
+  <update id="retireDraft">UPDATE arbitration_decision SET decision_status='cancelled',updated_at=#{at} WHERE arbitration_case_id=#{id} AND decision_status='draft'</update>
+  <insert id="insertArbitrationDecisionDraft">INSERT INTO arbitration_decision(id,arbitration_case_id,rental_order_id,decision_status,responsibility_party,rent_deduction_amount_fen,confirmed_loss_amount_fen,
+    deposit_deduction_amount_fen,excess_compensation_amount_fen,refund_amount_fen,credit_event_required,decision_summary,decided_by_admin_user_id,created_at,updated_at,stock_outcomes_json,refund_components_json)
+    VALUES(#{id},#{row.id},#{row.orderId},'draft',#{arbitrationInput.responsibility},#{arbitrationInput.rentDeductionFen},#{arbitrationInput.lossFen},#{deposit},#{arbitrationInput.lossFen}-#{deposit},#{arbitrationInput.refunds.rentFen}+#{arbitrationInput.refunds.depositFen}+#{arbitrationInput.refunds.freightFen},
+    0,#{arbitrationInput.summary},#{actor},#{at},#{at},#{stock},#{cash})</insert>
+  <update id="confirmArbitrationDecision">UPDATE arbitration_decision SET decision_status='confirmed',confirm_request_id=#{key},decided_by_admin_user_id=#{actor},decided_at=#{at},updated_at=#{at} WHERE id=#{id} AND decision_status='draft'</update>
+  <update id="linkReceivable">UPDATE arbitration_decision SET compensation_receivable_id=#{receivable} WHERE id=#{id}</update>
+  <select id="selectDeductionIdsByDecision" resultType="string">SELECT id FROM order_deduction WHERE source_type='arbitration' AND source_id=#{id} AND deduction_status='confirmed' ORDER BY id</select>
+  <select id="selectAdminCaseActionRefs" resultType="com.mujian.backend.dispute.mapper.ArbitrationMapper$Ref">SELECT a.target_type relation_type,a.target_id relation_id FROM admin_case_action a
+    JOIN admin_case_action p ON p.id=a.parent_action_id WHERE p.target_type='arbitration_decision' AND p.target_id=#{id} AND p.action_type='execute_arbitration' ORDER BY a.step_no</select>
+  <select id="selectAdminCaseActionParent" resultType="string">SELECT id FROM admin_case_action WHERE target_type='arbitration_decision' AND target_id=#{id} AND action_type='execute_arbitration'</select>
+  <select id="executionLinks" resultType="com.mujian.backend.dispute.mapper.ArbitrationMapper$ExecutionLink">
+    SELECT p.target_id decision_id, a.target_type relation_type,a.target_id relation_id,r.refund_status,r.refund_amount_fen refund_fen
+    FROM admin_case_action p JOIN admin_case_action a ON a.parent_action_id=p.id
+    LEFT JOIN refund_order r ON a.target_type='refund_order' AND a.target_id=r.id
+    WHERE p.target_type='arbitration_decision' AND p.action_type='execute_arbitration' AND p.target_id IN <include refid="idList"/>
+    ORDER BY p.target_id,a.step_no
+  </select>
+  <select id="selectAdminCaseActionSteps" resultType="com.mujian.backend.dispute.mapper.ArbitrationMapper$Step" flushCache="true" useCache="false">SELECT id,action_type kind,target_id target,request_payload_json payload,
+    action_status status,operator_admin_user_id actor FROM admin_case_action WHERE parent_action_id=#{parent} ORDER BY step_no</select>
+  <update id="releaseIntervention">UPDATE platform_intervention_record i JOIN admin_case_relation s ON s.relation_id=i.id AND s.relation_type='admin_intervention' AND s.relation_role='source' AND s.is_primary=0
+    JOIN admin_case_relation r ON r.admin_case_id=s.admin_case_id AND r.relation_type='arbitration_case' AND r.relation_id=#{id}
+    SET i.intervention_status='resolved',i.resolved_at=#{at},i.updated_at=#{at} WHERE i.rental_order_id=#{order} AND i.intervention_status IN ('open','processing')</update>
+  <select id="selectArbitrationCasePending" resultType="string">SELECT id FROM arbitration_case WHERE id&gt;#{after} AND case_status IN ('executing','execution_failed') ORDER BY id LIMIT 100</select>
+  <update id="actionState">UPDATE admin_case_action SET action_status=#{status},failure_message=#{reason},updated_at=#{at},executed_at=IF(#{status}='succeeded',#{at},executed_at) WHERE id=#{id}</update>
+</mapper>

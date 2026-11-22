@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.order.mapper.ExtensionRequestMapper">
+  <sql id="projection">SELECT e.id,e.rental_order_id order_id,o.order_no,e.factory_id,e.buyer_user_id buyer_id,e.version,e.created_at,
+    e.extension_status status,e.extra_days,e.original_due_date,e.requested_due_date,e.extension_rent_amount_fen rent_fen,e.payment_order_id payment_id,
+    e.paid_at,e.factory_warning_at warning_at,e.factory_deadline_at deadline_at,e.reject_reason reason,e.refund_order_id refund_id,
+    r.refund_status,r.refund_amount_fen refund_fen,e.latest_paid_at,e.application_remark remark,(SELECT p.expire_at FROM payment_order p WHERE p.id=e.payment_order_id) payment_expire_at
+    FROM order_extension_request e JOIN rental_order o ON o.id=e.rental_order_id LEFT JOIN refund_order r ON r.id=e.refund_order_id</sql>
+  <sql id="filter"><where>
+    <if test="filter.id!=null">AND e.id=#{filter.id}</if><if test="filter.orderId!=null">AND e.rental_order_id=#{filter.orderId}</if>
+    <if test="filter.buyerId!=null">AND e.buyer_user_id=#{filter.buyerId}</if>
+    <if test="filter.factoryId!=null">AND e.factory_id=#{filter.factoryId} AND e.submitted_to_factory_at IS NOT NULL</if>
+    <if test="filter.status!=null">AND e.extension_status=#{filter.status}</if></where></sql>
+  <select id="selectExtensionPageByQuery" resultType="com.mujian.backend.order.mapper.ExtensionRequestMapper$Row"><include refid="projection"/><include refid="filter"/>
+    ORDER BY e.created_at DESC,e.id DESC LIMIT #{page.pageSize} OFFSET #{page.offset}</select>
+  <select id="selectOrderExtensionRequestCountByQuery" resultType="long">SELECT COUNT(*) FROM order_extension_request e <include refid="filter"/></select>
+  <select id="selectExtensionById" resultType="com.mujian.backend.order.mapper.ExtensionRequestMapper$Row" flushCache="true" useCache="false"><include refid="projection"/> WHERE e.id=#{id}</select>
+  <select id="selectActiveExtensionIdByOrder" resultType="string">SELECT id FROM order_extension_request WHERE active_order_guard=#{orderId}</select>
+  <select id="selectOrderExtensionRequestByPaymentId" resultType="string">SELECT id FROM order_extension_request WHERE payment_order_id=#{paymentId}</select>
+  <select id="fundingBatch" resultType="string">SELECT o.checkout_batch_id FROM payment_order p JOIN payment_channel_suborder s ON s.payment_order_id=p.id
+    JOIN rental_order o ON o.id=s.rental_order_id WHERE p.id=#{paymentId} AND p.payment_scene IN ('extension_rent','compensation_supplement')</select>
+  <insert id="insertOrderExtensionRequest">INSERT INTO order_extension_request(id,rental_order_id,buyer_user_id,factory_id,original_due_date,requested_due_date,extra_days,
+    max_extra_days_snapshot,extension_rent_amount_fen,extension_status,latest_paid_at,application_remark,created_at,updated_at)
+    SELECT #{id},o.id,o.buyer_user_id,o.factory_id,#{quote.originalDueDate},#{quote.requestedDueDate},#{quote.extraDays},#{quote.maxExtraDays},#{quote.rentFen},
+      'pending_payment',DATE_SUB(DATE_ADD(CAST(#{quote.originalDueDate} AS DATETIME),INTERVAL 1 DAY),INTERVAL 48 HOUR),#{remark},#{at},#{at} FROM rental_order o WHERE o.id=#{quote.orderId} AND o.version=#{quote.orderVersion}</insert>
+  <insert id="insertPaymentOrder">INSERT INTO payment_order(id,payment_no,request_idempotency_key,payment_scene,related_extension_request_id,buyer_user_id,pay_channel,channel_order_mode,
+    channel_app_id,channel_mch_id,channel_notify_url,channel_combine_out_trade_no,payer_openid,payment_status,payable_amount_fen,paid_amount_fen,refunded_amount_fen,expire_at,next_attempt_at,created_at,updated_at)
+    SELECT #{payment},#{payment},#{key},'extension_rent',e.id,e.buyer_user_id,'wechat_pay','combine_jsapi',p.channel_app_id,p.channel_mch_id,p.channel_notify_url,
+    #{payment},p.payer_openid,'pending',e.extension_rent_amount_fen,0,0,#{expiry},#{at},#{at},#{at}
+    FROM order_extension_request e JOIN rental_order o ON o.id=e.rental_order_id JOIN payment_order p ON p.checkout_batch_id=o.checkout_batch_id WHERE e.id=#{id}</insert>
+  <insert id="insertPaymentChannelSuborder">INSERT INTO payment_channel_suborder(id,payment_order_id,factory_id,factory_wechat_account_id,sub_mchid_snapshot,channel_sub_order_no,
+    rental_order_id,channel_suborder_amount_fen,channel_suborder_status,channel_description,profit_sharing_flag,payment_status,paid_amount_fen,refunded_amount_fen,
+    freeze_alert_status,created_at,updated_at)
+    SELECT #{sub},#{payment},e.factory_id,s.factory_wechat_account_id,s.sub_mchid_snapshot,#{sub},e.rental_order_id,e.extension_rent_amount_fen,'pending','道具延期租金',
+      1,'pending',0,0,'none',#{at},#{at} FROM order_extension_request e JOIN payment_channel_suborder s ON s.rental_order_id=e.rental_order_id
+      JOIN payment_order p ON p.id=s.payment_order_id AND p.payment_scene='initial_order' WHERE e.id=#{id}</insert>
+  <update id="bindExtensionPayment">UPDATE order_extension_request SET payment_order_id=#{payment} WHERE id=#{id} AND payment_order_id IS NULL</update>
+  <insert id="insertInventoryReservationHold">INSERT INTO inventory_reservation(id,sku_id,sn_id,quantity,checkout_batch_id,checkout_batch_item_snapshot_id,rental_order_id,rental_order_item_id,
+      source_type,source_id,rental_start_date,rental_end_date,occupy_start_date,occupy_end_date,reservation_status,expires_at,idempotency_key,version,created_at,updated_at)
+    SELECT #{id},r.sku_id,r.sn_id,r.quantity,r.checkout_batch_id,r.checkout_batch_item_snapshot_id,r.rental_order_id,r.rental_order_item_id,'extension_request',e.id,
+      DATE_ADD(e.original_due_date,INTERVAL 1 DAY),e.requested_due_date,DATE_ADD(r.occupy_end_date,INTERVAL 1 DAY),DATE_ADD(r.occupy_end_date,INTERVAL e.extra_days DAY),
+      'held',#{expiry},CONCAT('extend:',e.id,':',r.id),0,#{at},#{at} FROM inventory_reservation r JOIN order_extension_request e ON e.rental_order_id=r.rental_order_id
+      WHERE e.id=#{ext} AND r.id=#{source} AND r.reservation_status='renting'</insert>
+  <update id="transitionHolds">UPDATE inventory_reservation SET reservation_status=#{to},expires_at=NULL,updated_at=#{at},version=version+1
+    WHERE source_type='extension_request' AND source_id=#{id} AND reservation_status=#{from}</update>
+  <insert id="insertPaymentAllocation">INSERT INTO payment_allocation(id,payment_order_id,payment_channel_suborder_id,rental_order_id,rent_allocated_amount_fen,coupon_discount_allocated_fen,
+     deposit_allocated_amount_fen,service_fee_allocated_fen,freight_prepaid_allocated_fen,compensation_allocated_amount_fen,custom_goods_allocated_amount_fen,total_allocated_amount_fen,created_at)
+    SELECT #{id},s.payment_order_id,s.id,e.rental_order_id,s.paid_amount_fen,0,0,0,0,0,0,s.paid_amount_fen,#{at} FROM order_extension_request e
+    JOIN payment_channel_suborder s ON s.payment_order_id=e.payment_order_id WHERE e.id=#{ext} AND s.payment_status='success'
+      AND NOT EXISTS(SELECT 1 FROM payment_allocation a WHERE a.payment_channel_suborder_id=s.id)</insert>
+  <update id="recordCash">UPDATE rental_order SET total_paid_amount_fen=total_paid_amount_fen+#{fen},rent_paid_amount_fen=rent_paid_amount_fen+#{fen},
+    version=version+1,updated_at=#{at} WHERE id=#{orderId}</update>
+  <update id="updateOrderExtensionRequestPaid">UPDATE order_extension_request SET extension_status='pending_factory',paid_at=#{paidAt},submitted_to_factory_at=#{at},
+    factory_warning_at=DATE_ADD(#{at},INTERVAL 12 HOUR),factory_deadline_at=DATE_ADD(#{at},INTERVAL 24 HOUR),updated_at=#{at},version=version+1 WHERE id=#{id} AND extension_status='pending_payment'</update>
+  <update id="updateExtensionStatusAndRefund">UPDATE order_extension_request SET extension_status=#{status},reject_reason=#{reason},refund_order_id=#{refund},
+    effective_at=IF(#{status}='approved',#{at},effective_at),factory_handled_at=IF(#{status} IN ('approved','rejected_refunding'),#{at},factory_handled_at),
+    updated_at=#{at},version=version+1 WHERE id=#{id}</update>
+  <update id="mergeDates">UPDATE inventory_reservation r JOIN inventory_reservation h ON h.idempotency_key=CONCAT('extend:',#{ext.id},':',r.id)
+    SET r.rental_end_date=#{ext.requestedDueDate},r.occupy_end_date=h.occupy_end_date,r.version=r.version+1,r.updated_at=#{at}
+    WHERE h.source_id=#{ext.id} AND h.source_type='extension_request' AND h.reservation_status='paid_locked' AND r.reservation_status='renting'</update>
+  <update id="effectiveDate">UPDATE rental_order SET current_due_date=#{ext.requestedDueDate},updated_at=#{at},version=version+1 WHERE id=#{ext.orderId} AND current_due_date=#{ext.originalDueDate}</update>
+  <select id="selectOrderExtensionRequestDueForProcessing" resultType="string">SELECT id FROM order_extension_request WHERE id&gt;#{after} AND ((extension_status='pending_factory' AND factory_warning_at&lt;=#{at})
+    OR (extension_status='factory_warning' AND factory_deadline_at&lt;=#{at})) ORDER BY id LIMIT 100</select>
+  <update id="markRefunded">UPDATE order_extension_request SET extension_status='rejected_refunded',version=version+1,updated_at=#{at} WHERE refund_order_id=#{refund} AND extension_status='rejected_refunding'</update>
+</mapper>

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.custom.mapper.CustomOrderMapper">
+  <select id="selectCustomOrderById" resultType="com.mujian.backend.custom.mapper.CustomOrderMapper$Order" useCache="false" flushCache="true">
+    SELECT o.id,o.custom_order_no number,o.version,o.requirement_id,o.accepted_quote_id quote_id,o.factory_id,o.buyer_user_id buyer_id,
+ o.order_status state,o.payment_order_id payment_id,o.delivery_mode,o.delivery_address_snapshot address,o.promised_completion_date promised_date,
+ q.custom_goods_amount_fen goods,q.delivery_fee_fen freight,q.total_amount_fen total_fen,o.total_paid_amount_fen paid,o.refunded_amount_fen refunded_fen,
+ o.production_started_at started_at,o.current_delivery_record_id delivery_id,o.acceptance_status acceptance,o.acceptance_deadline_at deadline,
+ o.acceptance_remaining_seconds remaining,o.updated_at,q.valid_until quote_deadline FROM custom_order o JOIN custom_quote q ON q.id=o.accepted_quote_id WHERE o.id=#{id} <if test="lock">FOR UPDATE</if>
+  </select>
+  <select id="selectCustomOrderPageByQuery" resultType="com.mujian.backend.custom.mapper.CustomOrderMapper$OrderSummary" useCache="false" flushCache="true">
+    SELECT o.id,o.custom_order_no number,o.version,o.requirement_id,o.factory_id,
+           o.order_status state,q.total_amount_fen total_fen,o.updated_at FROM custom_order o JOIN custom_quote q ON q.id=o.accepted_quote_id WHERE <choose><when test="factory!=null">o.factory_id=#{factory}</when><otherwise>o.buyer_user_id=#{buyer}</otherwise></choose>
+ <if test="status!=null">AND o.order_status=#{status}</if> ORDER BY o.updated_at DESC,o.id LIMIT #{page.pageSize} OFFSET #{page.offset}
+  </select>
+  <select id="selectCustomOrderCountByQuery" resultType="long" useCache="false" flushCache="true">
+    SELECT COUNT(*) FROM custom_order o WHERE <choose><when test="factory!=null">o.factory_id=#{factory}</when><otherwise>o.buyer_user_id=#{buyer}</otherwise></choose>
+ <if test="status!=null">AND o.order_status=#{status}</if>
+  </select>
+  <select id="selectCustomOrderItemsByOrderId" resultType="com.mujian.backend.custom.mapper.CustomOrderMapper$OrderItem" useCache="false" flushCache="true">
+    SELECT id,source_requirement_item_id item_id,item_title title,quantity,unit_price_fen,
+ spec_snapshot_json->>'$.dimension' dimension,spec_snapshot_json->>'$.material' material,spec_snapshot_json->>'$.style' style,acceptance_standard
+ FROM custom_order_item WHERE custom_order_id=#{id} ORDER BY sort_no
+  </select>
+  <insert id="insertCustomOrder">
+    INSERT INTO custom_order(id,custom_order_no,requirement_id,accepted_quote_id,buyer_user_id,factory_id,acceptance_status,order_status,
+ custom_goods_original_amount_fen,custom_goods_discount_amount_fen,custom_goods_paid_amount_fen,delivery_fee_paid_fen,total_paid_amount_fen,refunded_amount_fen,
+ delivery_mode,delivery_address_snapshot,promised_completion_date,commission_rate_bps_snapshot,version,created_at,updated_at)
+ SELECT #{id},CONCAT('CO',#{id}),r.id,q.id,r.buyer_user_id,r.factory_id,'not_started','pending_payment',q.custom_goods_amount_fen,0,0,0,0,0,
+ #{mode},#{address},q.promised_completion_date,2000,0,#{at},#{at} FROM custom_requirement r JOIN custom_quote q ON q.requirement_id=r.id WHERE q.id=#{quote}
+  </insert>
+  <insert id="freezeItem">
+    INSERT INTO custom_order_item(id,custom_order_id,source_quote_id,source_requirement_item_id,item_title,quantity,unit_price_fen,item_amount_fen,
+ spec_snapshot_json,acceptance_standard,source_requirement_snapshot_json,sort_no,created_at) VALUES(#{id},#{root},#{quote},#{item.itemId},#{item.title},#{item.quantity},
+ #{item.unitPriceFen},#{item.unitPriceFen}*#{item.quantity},#{terms},#{item.acceptanceStandard},#{source},#{sort},#{at})
+  </insert>
+  <insert id="insertPaymentOrder">
+    INSERT INTO payment_order(id,payment_no,request_idempotency_key,payment_scene,buyer_user_id,pay_channel,channel_order_mode,
+ channel_app_id,channel_mch_id,channel_notify_url,channel_combine_out_trade_no,payer_openid,payment_status,payable_amount_fen,paid_amount_fen,refunded_amount_fen,
+ expire_at,next_attempt_at,created_at,updated_at) VALUES(#{id},#{id},#{key},'custom_order_full_payment',#{buyer},'wechat_pay','combine_jsapi',
+ #{account.appId},#{account.mchId},#{account.notifyUrl},#{id},#{openid},'pending',#{total},0,0,DATE_ADD(CAST(#{at} AS DATETIME(3)),INTERVAL 10 MINUTE),#{at},#{at},#{at})
+  </insert>
+  <insert id="insertPaymentChannelSuborder">
+    INSERT INTO payment_channel_suborder(id,payment_order_id,factory_id,factory_wechat_account_id,sub_mchid_snapshot,channel_sub_order_no,
+ custom_order_id,channel_suborder_amount_fen,channel_suborder_status,channel_description,profit_sharing_flag,payment_status,paid_amount_fen,refunded_amount_fen,freeze_alert_status,created_at,updated_at)
+ SELECT #{id},#{payment},f.id,m.id,m.sub_mchid,#{id},o.id,#{total},'pending','定制商品全款',1,'pending',0,0,'none',#{at},#{at} FROM custom_order o JOIN factory_profile f ON f.id=o.factory_id
+ JOIN sys_user u ON u.id=f.owner_user_id JOIN factory_wechat_merchant_account m ON m.factory_id=f.id WHERE o.id=#{order} AND f.factory_status='active' AND u.user_status='active' AND m.account_status='active' AND m.profit_sharing_status='active'
+  </insert>
+  <update id="bindCustomOrderPayment">
+    UPDATE custom_order SET payment_order_id=#{payment},version=version+1,updated_at=#{at} WHERE id=#{id}
+  </update>
+  <select id="fundingOrder" resultType="String" useCache="false" flushCache="true">
+    SELECT s.custom_order_id FROM payment_channel_suborder s JOIN payment_order p ON p.id=s.payment_order_id WHERE p.id=#{payment} AND p.payment_scene='custom_order_full_payment' AND s.rental_order_id IS NULL
+  </select>
+  <insert id="insertPaymentAllocation">
+    INSERT INTO payment_allocation(id,payment_order_id,payment_channel_suborder_id,custom_order_id,rent_allocated_amount_fen,coupon_discount_allocated_fen,
+ deposit_allocated_amount_fen,service_fee_allocated_fen,freight_prepaid_allocated_fen,compensation_allocated_amount_fen,custom_goods_allocated_amount_fen,total_allocated_amount_fen,created_at)
+ SELECT #{id},s.payment_order_id,s.id,o.id,0,0,0,0,q.delivery_fee_fen,0,q.custom_goods_amount_fen,s.paid_amount_fen,#{at} FROM payment_channel_suborder s JOIN custom_order o ON o.id=s.custom_order_id
+ JOIN custom_quote q ON q.id=o.accepted_quote_id WHERE s.id=#{sub} AND o.id=#{order} AND s.payment_order_id=#{payment} AND s.payment_status='success' AND s.paid_amount_fen=q.total_amount_fen
+ AND NOT EXISTS(SELECT 1 FROM payment_allocation a WHERE a.payment_channel_suborder_id=s.id)
+  </insert>
+  <update id="updateCustomOrderPaid">
+    UPDATE custom_order SET order_status='paid_waiting_production',payment_order_id=#{payment},custom_goods_paid_amount_fen=#{goods},delivery_fee_paid_fen=#{freight},
+ total_paid_amount_fen=#{goods}+#{freight},version=version+1,updated_at=#{at} WHERE id=#{id} AND total_paid_amount_fen=0
+  </update>
+  <update id="updateCustomOrderState">
+    UPDATE custom_order SET order_status=#{state},production_started_at=IF(#{state}='producing',COALESCE(production_started_at,#{at}),production_started_at),
+ updated_at=#{at},version=version+1 WHERE id=#{id}
+  </update>
+  <sql id="refundableComponents">a.custom_goods_allocated_amount_fen-COALESCE(SUM(r.custom_goods_refund_amount_fen),0) goods,
+ a.freight_prepaid_allocated_fen-COALESCE(SUM(r.freight_refund_amount_fen),0) freight,COALESCE(SUM(r.refund_status!='success'),0) pending</sql>
+  <sql id="refundableSource">FROM payment_allocation a LEFT JOIN refund_order r ON r.payment_channel_suborder_id=a.payment_channel_suborder_id AND r.refund_status!='cancelled'</sql>
+  <select id="pageExposures" resultType="com.mujian.backend.custom.mapper.CustomOrderMapper$OrderExposure">
+    SELECT o.id orderId, <include refid="refundableComponents"/>
+    <include refid="refundableSource"/>
+    JOIN custom_order o ON o.id=a.custom_order_id AND o.payment_order_id=a.payment_order_id
+    JOIN payment_channel_suborder s ON s.id=a.payment_channel_suborder_id AND s.payment_order_id=o.payment_order_id AND s.custom_order_id=o.id
+    WHERE o.id IN <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    GROUP BY o.id, a.id
+  </select>
+  <select id="selectRefundableCustomAmountsBySuborder" resultType="com.mujian.backend.custom.mapper.CustomOrderMapper$Exposure" useCache="false" flushCache="true">
+    SELECT <include refid="refundableComponents"/> <include refid="refundableSource"/>
+ WHERE a.payment_channel_suborder_id=#{sub} GROUP BY a.id
+  </select>
+  <insert id="insertRefundOrder">
+    INSERT INTO refund_order(id,refund_no,request_idempotency_key,biz_order_type,biz_order_id,payment_order_id,payment_channel_suborder_id,refund_type,refund_status,
+ pay_channel,channel_transaction_id,channel_out_trade_no,channel_out_refund_no,rent_refund_amount_fen,deposit_refund_amount_fen,service_fee_refund_fen,
+ freight_refund_amount_fen,compensation_refund_amount_fen,custom_goods_refund_amount_fen,refund_amount_fen,refund_reason,requested_by,requested_at,created_at,updated_at,next_attempt_at)
+ SELECT #{id},#{id},#{key},'custom_order',#{order},s.payment_order_id,s.id,#{type},'pending','wechat_pay',s.channel_sub_transaction_id,s.channel_sub_order_no,
+ #{id},0,0,0,#{freight},0,#{goods},#{goods}+#{freight},LEFT(#{reason},255),#{actor},#{at},#{at},#{at},#{at} FROM payment_channel_suborder s WHERE s.id=#{sub} AND s.custom_order_id=#{order} AND s.payment_status='success'
+  </insert>
+  <update id="refreshRefunded">
+    UPDATE custom_order o SET refunded_amount_fen=COALESCE((SELECT SUM(r.refund_amount_fen) FROM refund_order r
+ WHERE r.biz_order_type='custom_order' AND r.biz_order_id=o.id AND r.payment_order_id=o.payment_order_id AND r.refund_status='success'),0),updated_at=#{at},version=version+1 WHERE o.id=#{id}
+  </update>
+  <select id="selectCustomOrderExpired" resultType="String" useCache="false" flushCache="true">
+    SELECT o.id FROM custom_order o JOIN custom_quote q ON q.id=o.accepted_quote_id JOIN payment_order p ON p.id=o.payment_order_id
+ WHERE o.order_status='pending_payment' AND q.valid_until&lt;=#{at} AND (p.payment_status='closed' OR (p.payment_status='success' AND p.paid_at>p.expire_at)) ORDER BY o.id LIMIT 100
+  </select>
+</mapper>

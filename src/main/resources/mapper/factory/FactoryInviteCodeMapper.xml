@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.factory.mapper.FactoryInviteCodeMapper">
+<select id="selectFactoryInvitationByRequest" resultType="com.mujian.backend.factory.projection.FactoryInviteProjection" useCache="false" flushCache="true">
+    SELECT id,code_hash,create_request_id,request_hash,code_suffix,invite_status,expire_at,created_by_admin_user_id,locked_by_user_id,locked_at,used_by_user_id,used_at,revoked_by_admin_user_id,revoked_at,remark,created_at,updated_at FROM factory_invite_code WHERE created_by_admin_user_id=#{actor} AND create_request_id=#{key}
+  </select>
+  
+<select id="selectFactoryInvitationForRecovery" resultType="com.mujian.backend.factory.projection.FactoryInviteProjection" useCache="false" flushCache="true">
+    SELECT id,code_hash,create_request_id,request_hash,code_suffix,invite_status,expire_at,created_by_admin_user_id,locked_by_user_id,locked_at,used_by_user_id,used_at,revoked_by_admin_user_id,revoked_at,remark,created_at,updated_at FROM factory_invite_code WHERE created_by_admin_user_id=#{actor} AND create_request_id=#{key}
+  </select>
+  
+<select id="selectFactoryInvitationByHashForUpdate" resultType="com.mujian.backend.factory.projection.FactoryInviteProjection" useCache="false" flushCache="true">
+    SELECT id,code_hash,create_request_id,request_hash,code_suffix,invite_status,expire_at,created_by_admin_user_id,locked_by_user_id,locked_at,used_by_user_id,used_at,revoked_by_admin_user_id,revoked_at,remark,created_at,updated_at FROM factory_invite_code WHERE code_hash=#{hash} FOR UPDATE
+  </select>
+  
+<select id="selectFactoryInvitationById" resultType="com.mujian.backend.factory.projection.FactoryInviteProjection" useCache="false" flushCache="true">
+    
+    SELECT 
+    <include refid="columns_factory_invite_code" />
+     FROM 
+    factory_invite_code
+     WHERE id=#{id} 
+    <if test="lock">FOR UPDATE</if>
+  </select>
+  
+<select id="selectLatestFactoryInvitationByOwner" resultType="com.mujian.backend.factory.projection.FactoryInviteProjection" useCache="false" flushCache="true">
+    
+    SELECT 
+    <include refid="columns_factory_invite_code" />
+     FROM 
+    factory_invite_code
+     WHERE locked_by_user_id=#{owner} ORDER BY locked_at DESC,created_at DESC,id DESC LIMIT 1
+  </select>
+  
+<select id="selectFactoryInvitationCountByQuery" resultType="long" useCache="false" flushCache="true">
+    SELECT COUNT(*) FROM factory_invite_code s
+    <include refid="invitesWhere" />
+  </select>
+  
+<select id="selectFactoryInvitationPageByQuery" resultType="com.mujian.backend.factory.projection.FactoryInviteProjection" useCache="false" flushCache="true">
+    SELECT 
+    s.id,s.code_hash,s.create_request_id,s.request_hash,s.code_suffix,s.invite_status,s.expire_at,s.created_by_admin_user_id,s.locked_by_user_id,s.locked_at,s.used_by_user_id,s.used_at,s.revoked_by_admin_user_id,s.revoked_at,s.remark,s.created_at,s.updated_at
+    ,EXISTS(SELECT 1 FROM factory_onboarding_audit o WHERE o.invite_code_id=s.id) AS submitted FROM factory_invite_code s
+    <include refid="invitesWhere" />
+     ORDER BY s.created_at DESC,s.id DESC LIMIT #{factoryPageQueryDTO.limit} OFFSET #{factoryPageQueryDTO.offset}
+  </select>
+  
+<insert id="insertFactoryInvitation">INSERT INTO factory_invite_code (id,code_hash,create_request_id,request_hash,code_suffix,invite_status,expire_at,created_by_admin_user_id,remark,created_at,updated_at) VALUES (#{factoryInviteCodeDO.id},#{factoryInviteCodeDO.codeHash},#{factoryInviteCodeDO.createRequestId},#{factoryInviteCodeDO.requestHash},#{factoryInviteCodeDO.codeSuffix},#{factoryInviteCodeDO.inviteStatus},#{factoryInviteCodeDO.expireAt},#{factoryInviteCodeDO.createdByAdminUserId},#{factoryInviteCodeDO.remark},#{factoryInviteCodeDO.createdAt},#{factoryInviteCodeDO.updatedAt})</insert>
+  
+<update id="claimFactoryInvitation">UPDATE factory_invite_code SET locked_by_user_id=#{factoryInviteCodeDO.lockedByUserId},locked_at=#{factoryInviteCodeDO.lockedAt},invite_status=#{factoryInviteCodeDO.inviteStatus},updated_at=#{factoryInviteCodeDO.updatedAt} WHERE id=#{factoryInviteCodeDO.id}</update>
+  
+<update id="revokeFactoryInvitation">UPDATE factory_invite_code SET invite_status=#{factoryInviteCodeDO.inviteStatus},revoked_by_admin_user_id=#{factoryInviteCodeDO.revokedByAdminUserId},revoked_at=#{factoryInviteCodeDO.revokedAt},updated_at=#{factoryInviteCodeDO.updatedAt} WHERE id=#{factoryInviteCodeDO.id}</update>
+  
+<update id="useFactoryInvitation">UPDATE factory_invite_code SET invite_status=#{factoryInviteCodeDO.inviteStatus},used_by_user_id=#{factoryInviteCodeDO.usedByUserId},used_at=#{factoryInviteCodeDO.usedAt},updated_at=#{factoryInviteCodeDO.updatedAt} WHERE id=#{factoryInviteCodeDO.id}</update>
+  
+
+<sql id="columns_factory_invite_code">id,code_hash,create_request_id,request_hash,code_suffix,invite_status,expire_at,created_by_admin_user_id,locked_by_user_id,locked_at,used_by_user_id,used_at,revoked_by_admin_user_id,revoked_at,remark,created_at,updated_at</sql>
+<sql id="invitesWhere">
+     WHERE 1=1
+    <if test="factoryPageQueryDTO.from != null"> AND s.created_at&gt;=#{factoryPageQueryDTO.from}</if>
+    <if test="factoryPageQueryDTO.to != null"> AND s.created_at&lt;#{factoryPageQueryDTO.to}</if>
+    <if test="factoryPageQueryDTO.status != null"> AND (CASE WHEN s.invite_status IN ('unused','locked') AND s.expire_at&lt;=#{factoryPageQueryDTO.now} AND NOT EXISTS(SELECT 1 FROM factory_onboarding_audit o WHERE o.invite_code_id=s.id) THEN 'expired' ELSE s.invite_status END)=#{factoryPageQueryDTO.status}</if>
+    <if test="factoryPageQueryDTO.keyword != null"> AND LOCATE(#{factoryPageQueryDTO.keyword},CONVERT(s.code_suffix USING utf8mb4) COLLATE utf8mb4_bin)&gt;0</if>
+  </sql>
+</mapper>

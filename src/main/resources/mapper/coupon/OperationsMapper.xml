@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC '-//mybatis.org//DTD Mapper 3.0//EN' 'https://mybatis.org/dtd/mybatis-3-mapper.dtd'>
+<mapper namespace="com.mujian.backend.coupon.mapper.OperationsMapper">
+<sql id="TemplateFilter">1=1 <if test="filter.status!=null"> AND t.template_status=#{filter.status}</if>
+<if test="filter.keyword!=null"> AND LOCATE(#{filter.keyword},t.template_name)&gt;0</if></sql>
+<select id="countTemplate" resultType="long">SELECT COUNT(*) FROM coupon_template t WHERE <include refid="TemplateFilter"/></select>
+<sql id="TemplateColumns">t.template_code,t.template_name,t.coupon_type,t.face_amount_fen,t.discount_rate_bps,t.threshold_rent_amount_fen,t.applicable_scope_type,t.validity_type,t.valid_days,CONCAT(LEFT(DATE_FORMAT(t.valid_start_at,'%Y-%m-%dT%H:%i:%s.%f'),23),'+08:00') AS valid_start_at,CONCAT(LEFT(DATE_FORMAT(t.valid_end_at,'%Y-%m-%dT%H:%i:%s.%f'),23),'+08:00') AS valid_end_at,t.id,t.template_version,t.template_status AS status,CAST(t.issued_count AS CHAR) AS issued_count</sql>
+<select id="selectTemplatePage" resultType="com.mujian.backend.coupon.vo.OperationsViews$TemplateRow"><bind name="pageOffset" value="page.offset()"/>
+  SELECT <include refid="TemplateColumns"/> FROM coupon_template t WHERE <include refid="TemplateFilter"/> ORDER BY t.created_at DESC,t.id DESC LIMIT #{page.pageSize} OFFSET #{pageOffset}
+</select>
+<select id="selectTemplateById" resultType="com.mujian.backend.coupon.vo.OperationsViews$TemplateRow" useCache="false" flushCache="true">SELECT <include refid="TemplateColumns"/> FROM coupon_template t WHERE 1=1 AND t.id=#{id} <if test="lock">FOR UPDATE</if></select>
+<sql id="ActivityFilter">t.mode='conditional_claim' <if test="filter.status!=null"> AND t.status=#{filter.status}</if></sql>
+<select id="countActivity" resultType="long">SELECT COUNT(*) FROM coupon_distribution t WHERE <include refid="ActivityFilter"/></select>
+<sql id="ActivityColumns">t.id,t.template_id,t.config_json-&gt;&gt;'$.condition' AS `condition`,CONCAT(LEFT(DATE_FORMAT(t.starts_at,'%Y-%m-%dT%H:%i:%s.%f'),23),'+08:00') AS starts_at,CONCAT(LEFT(DATE_FORMAT(t.ends_at,'%Y-%m-%dT%H:%i:%s.%f'),23),'+08:00') AS ends_at,t.config_json-&gt;&gt;'$.reason' AS reason,t.status,t.version,CAST(t.issued_quantity AS CHAR) AS issued_quantity</sql>
+<select id="selectActivityPage" resultType="com.mujian.backend.coupon.vo.OperationsViews$Activity"><bind name="pageOffset" value="page.offset()"/>
+  SELECT <include refid="ActivityColumns"/> FROM coupon_distribution t WHERE <include refid="ActivityFilter"/> ORDER BY t.created_at DESC,t.id DESC LIMIT #{page.pageSize} OFFSET #{pageOffset}
+</select>
+<select id="selectActivityById" resultType="com.mujian.backend.coupon.vo.OperationsViews$Activity" useCache="false" flushCache="true">SELECT <include refid="ActivityColumns"/> FROM coupon_distribution t WHERE t.mode='conditional_claim' AND t.id=#{id} <if test="lock">FOR UPDATE</if></select>
+<sql id="RuleFilter">1=1 <if test="filter.eventType!=null"> AND t.event_type=#{filter.eventType}</if></sql>
+<select id="countRule" resultType="long">SELECT COUNT(*) FROM coupon_reward_rule t WHERE <include refid="RuleFilter"/></select>
+<sql id="RuleColumns">t.id,t.event_type,t.template_id,t.rule_version,t.status,SHA2(JSON_ARRAY(t.id,t.event_type,t.template_id,t.rule_version,t.status),256) AS snapshot_token</sql>
+<select id="selectRulePage" resultType="com.mujian.backend.coupon.vo.OperationsViews$Rule"><bind name="pageOffset" value="page.offset()"/>
+  SELECT <include refid="RuleColumns"/> FROM coupon_reward_rule t WHERE <include refid="RuleFilter"/> ORDER BY t.created_at DESC,t.id DESC LIMIT #{page.pageSize} OFFSET #{pageOffset}
+</select>
+<select id="selectRuleById" resultType="com.mujian.backend.coupon.vo.OperationsViews$Rule" useCache="false" flushCache="true">SELECT <include refid="RuleColumns"/> FROM coupon_reward_rule t WHERE 1=1 AND t.id=#{id} <if test="lock">FOR UPDATE</if></select>
+<sql id="RewardFilter">1=1 <if test="filter.eventType!=null"> AND t.event_type=#{filter.eventType}</if>
+<if test="filter.userId!=null"> AND t.user_id=#{filter.userId}</if>
+<if test="filter.status!=null"> AND t.reward_status=#{filter.status}</if></sql>
+<select id="countReward" resultType="long">SELECT COUNT(*) FROM coupon_reward_record t LEFT JOIN user_coupon c ON c.issue_request_id=CONCAT('reward:',t.id) WHERE <include refid="RewardFilter"/></select>
+<sql id="RewardColumns">t.id,t.user_id,t.event_type,t.source_id,t.rule_id,t.reward_status AS status,COALESCE(t.ineligible_reason,t.last_error_code) AS reason_code,c.id AS user_coupon_id,CONCAT(LEFT(DATE_FORMAT(t.occurred_at,'%Y-%m-%dT%H:%i:%s.%f'),23),'+08:00') AS occurred_at</sql>
+<select id="selectRewardPage" resultType="com.mujian.backend.coupon.vo.OperationsViews$Reward"><bind name="pageOffset" value="page.offset()"/>
+  SELECT <include refid="RewardColumns"/> FROM coupon_reward_record t LEFT JOIN user_coupon c ON c.issue_request_id=CONCAT('reward:',t.id) WHERE <include refid="RewardFilter"/> ORDER BY t.occurred_at DESC,t.id DESC LIMIT #{page.pageSize} OFFSET #{pageOffset}
+</select>
+<sql id="DistributionFilter">t.mode IN ('all_users','selected_users') <if test="filter.requestId!=null"> AND t.request_id=#{filter.requestId}</if>
+<if test="filter.templateId!=null"> AND t.template_id=#{filter.templateId}</if></sql>
+<select id="countDistribution" resultType="long">SELECT COUNT(*) FROM coupon_distribution t WHERE <include refid="DistributionFilter"/></select>
+<sql id="DistributionColumns">t.id,t.template_id,t.mode,t.request_id,CAST(t.target_count AS CHAR) AS target_count,CAST(t.issued_quantity AS CHAR) AS issued_quantity,CONCAT(LEFT(DATE_FORMAT(t.completed_at,'%Y-%m-%dT%H:%i:%s.%f'),23),'+08:00') AS completed_at,(SELECT CAST(d.config_json-&gt;&gt;'$.reason' AS CHAR(500)) FROM coupon_distribution d WHERE d.id=t.id) AS reason,t.created_by_admin_user_id</sql>
+<select id="selectDistributionPage" resultType="com.mujian.backend.coupon.vo.OperationsViews$Distribution"><bind name="pageOffset" value="page.offset()"/>
+  SELECT <include refid="DistributionColumns"/> FROM coupon_distribution t WHERE <include refid="DistributionFilter"/> ORDER BY t.created_at DESC,t.id DESC LIMIT #{page.pageSize} OFFSET #{pageOffset}
+</select>
+<select id="selectDistributionById" resultType="com.mujian.backend.coupon.vo.OperationsViews$Distribution" useCache="false" flushCache="true">SELECT <include refid="DistributionColumns"/> FROM coupon_distribution t WHERE t.mode IN ('all_users','selected_users') AND t.id=#{id} <if test="lock">FOR UPDATE</if></select>
+<sql id="IssuedFilter">1=1 <if test="filter.userId!=null"> AND t.user_id=#{filter.userId}</if>
+<if test="filter.issueSourceType!=null"> AND t.issue_source_type=#{filter.issueSourceType}</if>
+<if test="filter.issueSourceId!=null"> AND t.issue_source_id=#{filter.issueSourceId}</if>
+<if test="filter.templateId!=null"> AND t.template_id=#{filter.templateId}</if></sql>
+<select id="countIssued" resultType="long">SELECT COUNT(*) FROM user_coupon t WHERE <include refid="IssuedFilter"/></select>
+<sql id="IssuedColumns">t.id,t.user_id,t.template_id,t.coupon_status,t.issue_source_type,t.issue_source_id,CONCAT(LEFT(DATE_FORMAT(t.valid_from,'%Y-%m-%dT%H:%i:%s.%f'),23),'+08:00') AS valid_from,CONCAT(LEFT(DATE_FORMAT(t.valid_until,'%Y-%m-%dT%H:%i:%s.%f'),23),'+08:00') AS valid_until,CONCAT(LEFT(DATE_FORMAT(t.created_at,'%Y-%m-%dT%H:%i:%s.%f'),23),'+08:00') AS created_at</sql>
+<select id="selectIssuedPage" resultType="com.mujian.backend.coupon.vo.OperationsViews$Issued"><bind name="pageOffset" value="page.offset()"/>
+  SELECT <include refid="IssuedColumns"/> FROM user_coupon t WHERE <include refid="IssuedFilter"/> ORDER BY t.created_at DESC,t.id DESC LIMIT #{page.pageSize} OFFSET #{pageOffset}
+</select>
+<select id="selectIssuedById" resultType="com.mujian.backend.coupon.vo.OperationsViews$Issued" useCache="false" flushCache="true">SELECT <include refid="IssuedColumns"/> FROM user_coupon t WHERE 1=1 AND t.id=#{id} <if test="lock">FOR UPDATE</if></select>
+<select id="selectUsageIds" resultType="string">
+  SELECT id FROM coupon_usage WHERE user_coupon_id=#{couponId} ORDER BY created_at DESC,id DESC
+</select>
+</mapper>

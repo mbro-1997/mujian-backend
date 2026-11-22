@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.scheme.mapper.SchemeExportMapper">
+
+  <select id="selectOwnedExportById" resultType="com.mujian.backend.scheme.domain.SchemeExportDO" useCache="false" flushCache="true">
+    SELECT
+      id,
+      scheme_id,
+      export_status,
+      source_content_version,
+      template_version,
+      hide_price,
+      watermark_enabled,
+      watermark_text,
+      file_expire_at,
+      local_file_key,
+      processing_deadline_at,
+      processing_scheme_guard,
+      record_expire_at,
+      generated_at,
+      error_message,
+      snapshot_json,
+      created_by,
+      created_at,
+      updated_at
+    FROM scheme_export
+    WHERE id=#{id}
+      AND created_by=#{actor}
+  </select>
+
+  <select id="selectExportById" resultType="com.mujian.backend.scheme.domain.SchemeExportDO" useCache="false" flushCache="true">
+    SELECT
+      id,
+      scheme_id,
+      export_status,
+      source_content_version,
+      template_version,
+      hide_price,
+      watermark_enabled,
+      watermark_text,
+      file_expire_at,
+      local_file_key,
+      processing_deadline_at,
+      processing_scheme_guard,
+      record_expire_at,
+      generated_at,
+      error_message,
+      snapshot_json,
+      created_by,
+      created_at,
+      updated_at
+    FROM scheme_export
+    WHERE id=#{id}
+  </select>
+
+  <select id="selectProcessingExportBySchemeId" resultType="com.mujian.backend.scheme.domain.SchemeExportDO" useCache="false" flushCache="true">
+    SELECT
+      id,
+      scheme_id,
+      export_status,
+      source_content_version,
+      template_version,
+      hide_price,
+      watermark_enabled,
+      watermark_text,
+      file_expire_at,
+      local_file_key,
+      processing_deadline_at,
+      processing_scheme_guard,
+      record_expire_at,
+      generated_at,
+      error_message,
+      snapshot_json,
+      created_by,
+      created_at,
+      updated_at
+    FROM scheme_export
+    WHERE processing_scheme_guard=#{schemeId}
+  </select>
+
+  <select id="selectLatestExportAttemptBySchemeId" resultType="java.time.LocalDateTime" useCache="false" flushCache="true">
+    SELECT
+      MAX(created_at)
+    FROM scheme_export
+    WHERE scheme_id=#{schemeId}
+  </select>
+
+  <select id="selectExportCountByActorAndDay" resultType="long" useCache="false" flushCache="true">
+    SELECT
+      COUNT(*)
+    FROM scheme_export
+    WHERE created_by=#{actor}
+      AND created_at&gt;=#{start}
+      AND created_at&lt;#{end}
+  </select>
+
+  <insert id="insertExport">
+    INSERT INTO scheme_export (id,
+      scheme_id,
+      export_status,
+      source_content_version,
+      template_version,
+      hide_price,
+      watermark_enabled,
+      watermark_text,
+      file_expire_at,
+      local_file_key,
+      processing_deadline_at,
+      record_expire_at,
+      generated_at,
+      error_message,
+      snapshot_json,
+      created_by,
+      created_at,
+      updated_at)
+    VALUES (#{row.id},
+      #{row.schemeId},
+      #{row.exportStatus},
+      #{row.sourceContentVersion},
+      #{row.templateVersion},
+      #{row.hidePrice},
+      #{row.watermarkEnabled},
+      #{row.watermarkText},
+      #{row.fileExpireAt},
+      #{row.localFileKey},
+      #{row.processingDeadlineAt},
+      #{row.recordExpireAt},
+      #{row.generatedAt},
+      #{row.errorMessage},
+      #{row.snapshotJson},
+      #{row.createdBy},
+      #{row.createdAt},
+      #{row.updatedAt})
+  </insert>
+
+  <update id="completeExport">
+    UPDATE scheme_export
+    SET
+      export_status='success',
+      local_file_key=#{key},
+      generated_at=#{now},
+      file_expire_at=#{expires},
+      updated_at=#{now}
+    WHERE id=#{id}
+      AND export_status='processing'
+      AND processing_deadline_at&gt;#{now}
+  </update>
+
+  <update id="failExport">
+    UPDATE scheme_export
+    SET
+      export_status='failed',
+      error_message=#{reason},
+      updated_at=#{now}
+    WHERE id=#{id}
+      AND export_status='processing'
+  </update>
+
+  <select id="selectTimedOutExportsByDeadline" resultType="com.mujian.backend.scheme.domain.SchemeExportDO" useCache="false" flushCache="true">
+    SELECT
+      id,
+      scheme_id,
+      export_status,
+      source_content_version,
+      template_version,
+      hide_price,
+      watermark_enabled,
+      watermark_text,
+      file_expire_at,
+      local_file_key,
+      processing_deadline_at,
+      processing_scheme_guard,
+      record_expire_at,
+      generated_at,
+      error_message,
+      snapshot_json,
+      created_by,
+      created_at,
+      updated_at
+    FROM scheme_export
+    WHERE export_status='processing'
+      AND processing_deadline_at&lt;=#{now}
+    ORDER BY processing_deadline_at
+    LIMIT 100
+  </select>
+
+  <delete id="deleteExpiredExportRecordsByTime">
+    DELETE FROM scheme_export
+    WHERE export_status&lt;&gt;'processing'
+      AND record_expire_at&lt;=#{now}
+    ORDER BY record_expire_at
+    LIMIT 100
+  </delete>
+</mapper>

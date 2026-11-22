@@ -1,0 +1,5069 @@
+{
+  "columns": [
+    {
+      "t": "admin_account",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_account",
+      "c": "user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_account",
+      "c": "username",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_account",
+      "c": "password_hash",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_account",
+      "c": "enabled",
+      "kind": "tinyint",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_account",
+      "c": "last_login_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_account",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_account",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_account_role",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_account_role",
+      "c": "admin_account_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_account_role",
+      "c": "admin_role_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_account_role",
+      "c": "granted_by_admin_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_account_role",
+      "c": "granted_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_account_role",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case",
+      "c": "case_no",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case",
+      "c": "active_case_key",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case",
+      "c": "case_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case",
+      "c": "case_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case",
+      "c": "priority",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case",
+      "c": "title",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case",
+      "c": "summary",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case",
+      "c": "rental_order_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case",
+      "c": "buyer_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case",
+      "c": "factory_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case",
+      "c": "deadline_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case",
+      "c": "resolution_code",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case",
+      "c": "resolution_summary",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case",
+      "c": "closure_checklist_json",
+      "kind": "json",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case",
+      "c": "closed_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case",
+      "c": "closed_by_admin_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case",
+      "c": "version",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case",
+      "c": "created_by_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case",
+      "c": "created_by_admin_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_action",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_action",
+      "c": "action_no",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_action",
+      "c": "admin_case_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_action",
+      "c": "parent_action_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_action",
+      "c": "step_no",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_action",
+      "c": "action_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_action",
+      "c": "action_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_action",
+      "c": "target_module",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_action",
+      "c": "target_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_action",
+      "c": "target_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_action",
+      "c": "request_payload_json",
+      "kind": "json",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_action",
+      "c": "planned_rent_refund_amount_fen",
+      "kind": "bigint",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_action",
+      "c": "planned_deposit_refund_amount_fen",
+      "kind": "bigint",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_action",
+      "c": "planned_freight_refund_amount_fen",
+      "kind": "bigint",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_action",
+      "c": "result_payload_json",
+      "kind": "json",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_action",
+      "c": "failure_code",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_action",
+      "c": "failure_message",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_action",
+      "c": "idempotency_key",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_action",
+      "c": "operator_admin_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_action",
+      "c": "operation_reason",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_action",
+      "c": "confirmation_snapshot_json",
+      "kind": "json",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_action",
+      "c": "operator_confirmed_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_action",
+      "c": "executed_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_action",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_action",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_relation",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_relation",
+      "c": "admin_case_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_relation",
+      "c": "relation_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_relation",
+      "c": "relation_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_relation",
+      "c": "relation_role",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_relation",
+      "c": "is_primary",
+      "kind": "tinyint",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_relation",
+      "c": "primary_case_guard",
+      "kind": "varchar",
+      "extra": "STORED GENERATED",
+      "gen": "(case when (`is_primary` = 1) then `admin_case_id` else NULL end)"
+    },
+    {
+      "t": "admin_case_relation",
+      "c": "snapshot_json",
+      "kind": "json",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_relation",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_case_relation",
+      "c": "factory_source_guard",
+      "kind": "varchar",
+      "extra": "STORED GENERATED",
+      "gen": "(case when ((`relation_type` in (_ascii\\'factory_onboarding_audit\\',_ascii\\'factory_profile_change_audit\\')) and (`relation_role` = _ascii\\'source\\') and (`is_primary` = 1)) then concat(`relation_type`,_ascii\\':\\',`relation_id`) else NULL end)"
+    },
+    {
+      "t": "admin_case_relation",
+      "c": "prop_source_guard",
+      "kind": "varchar",
+      "extra": "STORED GENERATED",
+      "gen": "(case when ((`relation_type` in (_utf8mb4\\'prop_sku_audit\\',_utf8mb4\\'prop_sn_adjustment_audit\\',_utf8mb4\\'prop_stock_adjustment_audit\\',_utf8mb4\\'prop_qr_exception_record\\')) and (`relation_role` = _utf8mb4\\'source\\') and (`is_primary` = 1)) then concat(`relation_type`,_utf8mb4\\':\\',`relation_id`) else NULL end)"
+    },
+    {
+      "t": "admin_menu",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_menu",
+      "c": "parent_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_menu",
+      "c": "menu_name",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_menu",
+      "c": "menu_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_menu",
+      "c": "permission_code",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_menu",
+      "c": "route_path",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_menu",
+      "c": "component_path",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_menu",
+      "c": "icon_name",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_menu",
+      "c": "visible",
+      "kind": "tinyint",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_menu",
+      "c": "enabled",
+      "kind": "tinyint",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_menu",
+      "c": "sort_no",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_menu",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_menu",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_operation_audit",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_operation_audit",
+      "c": "audit_no",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_operation_audit",
+      "c": "admin_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_operation_audit",
+      "c": "admin_case_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_operation_audit",
+      "c": "case_action_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_operation_audit",
+      "c": "permission_code",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_operation_audit",
+      "c": "operation_code",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_operation_audit",
+      "c": "operation_name",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_operation_audit",
+      "c": "target_module",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_operation_audit",
+      "c": "target_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_operation_audit",
+      "c": "target_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_operation_audit",
+      "c": "request_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_operation_audit",
+      "c": "idempotency_key",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_operation_audit",
+      "c": "operation_reason",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_operation_audit",
+      "c": "before_snapshot_json",
+      "kind": "json",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_operation_audit",
+      "c": "after_snapshot_json",
+      "kind": "json",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_operation_audit",
+      "c": "result_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_operation_audit",
+      "c": "result_message",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_operation_audit",
+      "c": "client_ip",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_operation_audit",
+      "c": "user_agent",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_operation_audit",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_role",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_role",
+      "c": "role_code",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_role",
+      "c": "role_name",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_role",
+      "c": "role_sort",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_role",
+      "c": "built_in",
+      "kind": "tinyint",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_role",
+      "c": "enabled",
+      "kind": "tinyint",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_role",
+      "c": "remark",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_role",
+      "c": "created_by_admin_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_role",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_role",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_role_menu",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_role_menu",
+      "c": "admin_role_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_role_menu",
+      "c": "admin_menu_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_role_menu",
+      "c": "created_by_admin_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "admin_role_menu",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_reward_record",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_reward_record",
+      "c": "user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_reward_record",
+      "c": "event_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_reward_record",
+      "c": "source_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_reward_record",
+      "c": "rule_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_reward_record",
+      "c": "reward_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_reward_record",
+      "c": "ineligible_reason",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_reward_record",
+      "c": "occurred_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_reward_record",
+      "c": "granted_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_reward_record",
+      "c": "attempt_count",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_reward_record",
+      "c": "next_retry_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_reward_record",
+      "c": "last_error_code",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_reward_record",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_reward_record",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_reward_rule",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_reward_rule",
+      "c": "event_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_reward_rule",
+      "c": "rule_version",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_reward_rule",
+      "c": "template_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_reward_rule",
+      "c": "status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_reward_rule",
+      "c": "active_event_type",
+      "kind": "varchar",
+      "extra": "STORED GENERATED",
+      "gen": "(case when (`status` = _utf8mb4\\'active\\') then `event_type` else NULL end)"
+    },
+    {
+      "t": "coupon_reward_rule",
+      "c": "created_by_admin_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_reward_rule",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_reward_rule",
+      "c": "activated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_reward_rule",
+      "c": "ended_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_template",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_template",
+      "c": "template_code",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_template",
+      "c": "template_name",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_template",
+      "c": "template_version",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_template",
+      "c": "coupon_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_template",
+      "c": "face_amount_fen",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_template",
+      "c": "discount_rate_bps",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_template",
+      "c": "threshold_rent_amount_fen",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_template",
+      "c": "applicable_scope_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_template",
+      "c": "cost_bearer",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_template",
+      "c": "validity_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_template",
+      "c": "valid_days",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_template",
+      "c": "valid_start_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_template",
+      "c": "valid_end_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_template",
+      "c": "refund_return_policy",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_template",
+      "c": "return_extension_days",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_template",
+      "c": "issued_count",
+      "kind": "bigint",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_template",
+      "c": "template_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_template",
+      "c": "created_by_admin_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_template",
+      "c": "published_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_template",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "coupon_template",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_invite_code",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_invite_code",
+      "c": "code_hash",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_invite_code",
+      "c": "create_request_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_invite_code",
+      "c": "request_hash",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_invite_code",
+      "c": "code_suffix",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_invite_code",
+      "c": "invite_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_invite_code",
+      "c": "expire_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_invite_code",
+      "c": "created_by_admin_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_invite_code",
+      "c": "locked_by_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_invite_code",
+      "c": "locked_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_invite_code",
+      "c": "used_by_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_invite_code",
+      "c": "used_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_invite_code",
+      "c": "revoked_by_admin_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_invite_code",
+      "c": "revoked_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_invite_code",
+      "c": "remark",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_invite_code",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_invite_code",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "application_no",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "submit_request_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "request_hash",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "accepted_rule_document_ids_json",
+      "kind": "json",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "previous_application_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "applicant_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "invite_code_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "factory_name",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "factory_avatar_url",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "unified_social_credit_code",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "business_license_url",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "factory_photo_urls",
+      "kind": "json",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "contact_name",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "contact_phone",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "factory_address",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "main_business",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "worker_count",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "specialty_category_ids_json",
+      "kind": "json",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "specialty_category_names_snapshot_json",
+      "kind": "json",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "case_materials_json",
+      "kind": "json",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "remark",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "audit_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "pending_applicant_guard",
+      "kind": "varchar",
+      "extra": "STORED GENERATED",
+      "gen": "(case when (`audit_status` = _ascii\\'pending\\') then `applicant_user_id` else NULL end)"
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "audit_remark",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "reject_reason",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "reviewed_by_admin_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "submitted_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "reviewed_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "created_factory_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "version",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile",
+      "c": "owner_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile",
+      "c": "factory_name",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile",
+      "c": "factory_avatar_url",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile",
+      "c": "unified_social_credit_code",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile",
+      "c": "business_license_url",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile",
+      "c": "factory_photo_urls",
+      "kind": "json",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile",
+      "c": "contact_name",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile",
+      "c": "contact_phone",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile",
+      "c": "factory_address",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile",
+      "c": "main_business",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile",
+      "c": "worker_count",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile",
+      "c": "case_materials_json",
+      "kind": "json",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile",
+      "c": "specialty_category_ids_json",
+      "kind": "json",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile",
+      "c": "specialty_category_names_snapshot_json",
+      "kind": "json",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile",
+      "c": "profile_version",
+      "kind": "bigint",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile",
+      "c": "remark",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile",
+      "c": "factory_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile",
+      "c": "approved_audit_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile",
+      "c": "approved_by_admin_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile",
+      "c": "approved_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile_change_audit",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile_change_audit",
+      "c": "application_no",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile_change_audit",
+      "c": "submit_request_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile_change_audit",
+      "c": "request_hash",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile_change_audit",
+      "c": "factory_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile_change_audit",
+      "c": "applicant_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile_change_audit",
+      "c": "change_payload_json",
+      "kind": "json",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile_change_audit",
+      "c": "audit_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile_change_audit",
+      "c": "reject_reason",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile_change_audit",
+      "c": "reviewed_by_admin_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile_change_audit",
+      "c": "submitted_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile_change_audit",
+      "c": "reviewed_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile_change_audit",
+      "c": "version",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile_change_audit",
+      "c": "pending_factory_guard",
+      "kind": "varchar",
+      "extra": "STORED GENERATED",
+      "gen": "(case when (`audit_status` = _ascii\\'pending\\') then `factory_id` else NULL end)"
+    },
+    {
+      "t": "factory_profile_change_audit",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "factory_profile_change_audit",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "flyway_schema_history",
+      "c": "installed_rank",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "flyway_schema_history",
+      "c": "version",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "flyway_schema_history",
+      "c": "description",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "flyway_schema_history",
+      "c": "type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "flyway_schema_history",
+      "c": "script",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "flyway_schema_history",
+      "c": "checksum",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "flyway_schema_history",
+      "c": "installed_by",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "flyway_schema_history",
+      "c": "installed_on",
+      "kind": "timestamp",
+      "extra": "DEFAULT_GENERATED",
+      "gen": ""
+    },
+    {
+      "t": "flyway_schema_history",
+      "c": "execution_time",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "flyway_schema_history",
+      "c": "success",
+      "kind": "tinyint",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "inventory_reservation",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "inventory_reservation",
+      "c": "sku_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "inventory_reservation",
+      "c": "sn_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "inventory_reservation",
+      "c": "quantity",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "inventory_reservation",
+      "c": "checkout_batch_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "inventory_reservation",
+      "c": "checkout_batch_item_snapshot_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "inventory_reservation",
+      "c": "rental_order_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "inventory_reservation",
+      "c": "rental_order_item_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "inventory_reservation",
+      "c": "source_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "inventory_reservation",
+      "c": "source_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "inventory_reservation",
+      "c": "rental_start_date",
+      "kind": "date",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "inventory_reservation",
+      "c": "rental_end_date",
+      "kind": "date",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "inventory_reservation",
+      "c": "occupy_start_date",
+      "kind": "date",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "inventory_reservation",
+      "c": "occupy_end_date",
+      "kind": "date",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "inventory_reservation",
+      "c": "reservation_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "inventory_reservation",
+      "c": "expires_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "inventory_reservation",
+      "c": "idempotency_key",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "inventory_reservation",
+      "c": "version",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "inventory_reservation",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "inventory_reservation",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "option_dictionary",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "option_dictionary",
+      "c": "option_group",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "option_dictionary",
+      "c": "option_code",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "option_dictionary",
+      "c": "option_label",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "option_dictionary",
+      "c": "sort_order",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "option_dictionary",
+      "c": "enabled",
+      "kind": "tinyint",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "option_dictionary",
+      "c": "remark",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "option_dictionary",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "option_dictionary",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "platform_rule_document",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "platform_rule_document",
+      "c": "rule_code",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "platform_rule_document",
+      "c": "rule_title",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "platform_rule_document",
+      "c": "rule_version",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "platform_rule_document",
+      "c": "rule_scope",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "platform_rule_document",
+      "c": "content_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "platform_rule_document",
+      "c": "content_text",
+      "kind": "text",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "platform_rule_document",
+      "c": "content_url",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "platform_rule_document",
+      "c": "content_hash",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "platform_rule_document",
+      "c": "is_required",
+      "kind": "tinyint",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "platform_rule_document",
+      "c": "force_reaccept",
+      "kind": "tinyint",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "platform_rule_document",
+      "c": "rule_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "platform_rule_document",
+      "c": "active_rule_guard",
+      "kind": "varchar",
+      "extra": "STORED GENERATED",
+      "gen": "(case when (`rule_status` = _utf8mb4\\'active\\') then `rule_code` else NULL end)"
+    },
+    {
+      "t": "platform_rule_document",
+      "c": "effective_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "platform_rule_document",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "platform_rule_document",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_image",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_image",
+      "c": "sku_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_image",
+      "c": "image_url",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_image",
+      "c": "sort_order",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_image",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_instance_status_log",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_instance_status_log",
+      "c": "prop_instance_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_instance_status_log",
+      "c": "sku_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_instance_status_log",
+      "c": "sn_code",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_instance_status_log",
+      "c": "qr_code_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_instance_status_log",
+      "c": "from_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_instance_status_log",
+      "c": "to_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_instance_status_log",
+      "c": "source_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_instance_status_log",
+      "c": "reason",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_instance_status_log",
+      "c": "operator_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_instance_status_log",
+      "c": "operator_role",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_instance_status_log",
+      "c": "related_order_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_instance_status_log",
+      "c": "related_adjustment_audit_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_instance_status_log",
+      "c": "related_arbitration_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_instance_status_log",
+      "c": "business_key",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_instance_status_log",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_operation_record",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_operation_record",
+      "c": "actor_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_operation_record",
+      "c": "request_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_operation_record",
+      "c": "request_hash",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_operation_record",
+      "c": "operation_code",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_operation_record",
+      "c": "sku_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_operation_record",
+      "c": "target_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_operation_record",
+      "c": "target_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_operation_record",
+      "c": "before_snapshot_json",
+      "kind": "json",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_operation_record",
+      "c": "after_snapshot_json",
+      "kind": "json",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_operation_record",
+      "c": "result_json",
+      "kind": "json",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_operation_record",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "qr_code_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "code_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "target_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "target_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "sku_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "supersedes_qr_code_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "qr_scene",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "qr_page",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "qr_content",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "resolve_url",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "qr_image_url",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "qr_image_storage_key",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "image_sha256",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "active_sku_guard",
+      "kind": "varchar",
+      "extra": "STORED GENERATED",
+      "gen": "(case when ((`status` = _ascii\\'bound\\') and (`target_type` = _ascii\\'SKU\\')) then `target_id` else NULL end)"
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "active_sn_guard",
+      "kind": "varchar",
+      "extra": "STORED GENERATED",
+      "gen": "(case when ((`status` = _ascii\\'bound\\') and (`target_type` = _ascii\\'SN\\')) then `target_id` else NULL end)"
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "created_by_admin_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "used_by_factory_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "used_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "revoked_by_admin_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "revoked_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "version",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "image_generation_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "image_attempts",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "image_lease_until",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "image_next_retry_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "image_error_code",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "exception_no",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "factory_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "sku_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "sn_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "original_qr_code_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "reported_by_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "exception_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "description",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "evidence_urls_json",
+      "kind": "json",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "exception_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "active_original_qr_guard",
+      "kind": "varchar",
+      "extra": "STORED GENERATED",
+      "gen": "(case when (`exception_status` = _ascii\\'reported\\') then `original_qr_code_id` else NULL end)"
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "resolution_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "replacement_qr_code_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "resolved_by_admin_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "resolution_reason",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "resolved_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "version",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "request_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "request_hash",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku",
+      "c": "factory_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku",
+      "c": "sku_code",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku",
+      "c": "prop_name",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku",
+      "c": "asset_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku",
+      "c": "image_url",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku",
+      "c": "type_code",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku",
+      "c": "size_desc",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku",
+      "c": "length_cm",
+      "kind": "decimal",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku",
+      "c": "width_cm",
+      "kind": "decimal",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku",
+      "c": "height_cm",
+      "kind": "decimal",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku",
+      "c": "material_desc",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku",
+      "c": "fire_resistant_code",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku",
+      "c": "weight_kg",
+      "kind": "decimal",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku",
+      "c": "transport_suggestion",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku",
+      "c": "daily_rent_price_fen",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku",
+      "c": "deposit_amount_fen",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku",
+      "c": "sku_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku",
+      "c": "fill_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku",
+      "c": "remark",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku",
+      "c": "version",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "sku_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "applicant_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "action_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "before_sku_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "target_sku_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "before_snapshot_json",
+      "kind": "json",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "proposed_snapshot_json",
+      "kind": "json",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "initial_sn_quantity",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "initial_stock_quantity",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "audit_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "pending_sku_guard",
+      "kind": "varchar",
+      "extra": "STORED GENERATED",
+      "gen": "(case when (`audit_status` = _ascii\\'pending\\') then `sku_id` else NULL end)"
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "apply_remark",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "audit_remark",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "reject_reason",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "reviewer_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "submitted_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "reviewed_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "version",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "request_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "request_hash",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "previous_audit_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "base_sku_version",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_stock",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_stock",
+      "c": "sku_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_stock",
+      "c": "total_quantity",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_stock",
+      "c": "rentable_base_quantity",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_stock",
+      "c": "available_quantity",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_stock",
+      "c": "locked_quantity",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_stock",
+      "c": "renting_quantity",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_stock",
+      "c": "lost_quantity",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_stock",
+      "c": "scrapped_quantity",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_stock",
+      "c": "last_counted_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_stock",
+      "c": "last_counted_by",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_stock",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_stock",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_style",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_style",
+      "c": "sku_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_style",
+      "c": "style_code",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_style",
+      "c": "sort_order",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sku_style",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_audit",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_audit",
+      "c": "sku_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_audit",
+      "c": "factory_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_audit",
+      "c": "adjustment_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_audit",
+      "c": "increase_scene",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_audit",
+      "c": "requested_quantity",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_audit",
+      "c": "audit_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_audit",
+      "c": "applicant_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_audit",
+      "c": "reviewer_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_audit",
+      "c": "apply_remark",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_audit",
+      "c": "audit_remark",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_audit",
+      "c": "reject_reason",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_audit",
+      "c": "submitted_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_audit",
+      "c": "reviewed_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_audit",
+      "c": "version",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_audit",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_audit",
+      "c": "request_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_audit",
+      "c": "request_hash",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_audit",
+      "c": "related_sku_audit_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_audit",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_item",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_item",
+      "c": "adjustment_audit_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_item",
+      "c": "sku_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_item",
+      "c": "sn_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_item",
+      "c": "sn_code_snapshot",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_item",
+      "c": "before_instance_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_item",
+      "c": "target_instance_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_item",
+      "c": "item_remark",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_adjustment_item",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_instance",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_instance",
+      "c": "sku_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_instance",
+      "c": "source_adjustment_audit_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_instance",
+      "c": "sn_code",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_instance",
+      "c": "qr_code_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_instance",
+      "c": "instance_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_instance",
+      "c": "current_order_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_instance",
+      "c": "status_remark",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_instance",
+      "c": "status_changed_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_instance",
+      "c": "status_changed_by",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_instance",
+      "c": "remark",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_instance",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_instance",
+      "c": "version",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_sn_instance",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "sku_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "asset_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "adjustment_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "quantity_delta",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "abnormal_result",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "before_total_quantity",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "before_available_quantity",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "reason",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "audit_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "applicant_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "reviewer_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "audit_remark",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "reject_reason",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "related_movement_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "related_sku_audit_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "submitted_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "reviewed_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "version",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "request_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "request_hash",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_movement",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_movement",
+      "c": "sku_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_movement",
+      "c": "movement_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_movement",
+      "c": "source_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_movement",
+      "c": "quantity",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_movement",
+      "c": "before_quantity",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_movement",
+      "c": "after_quantity",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_movement",
+      "c": "before_stock_snapshot_json",
+      "kind": "json",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_movement",
+      "c": "after_stock_snapshot_json",
+      "kind": "json",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_movement",
+      "c": "related_audit_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_movement",
+      "c": "related_order_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_movement",
+      "c": "related_reservation_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_movement",
+      "c": "related_arbitration_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_movement",
+      "c": "operator_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_movement",
+      "c": "operator_role",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_movement",
+      "c": "remark",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_movement",
+      "c": "business_key",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "prop_stock_movement",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "sys_user",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "sys_user",
+      "c": "nickname",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "sys_user",
+      "c": "avatar_url",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "sys_user",
+      "c": "phone",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "sys_user",
+      "c": "phone_verified",
+      "kind": "tinyint",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "sys_user",
+      "c": "phone_source",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "sys_user",
+      "c": "phone_verified_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "sys_user",
+      "c": "user_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "sys_user",
+      "c": "register_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "sys_user",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "sys_user",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "sys_user_role",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "sys_user_role",
+      "c": "user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "sys_user_role",
+      "c": "role_code",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "sys_user_role",
+      "c": "enabled",
+      "kind": "tinyint",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "sys_user_role",
+      "c": "enabled_user_guard",
+      "kind": "varchar",
+      "extra": "STORED GENERATED",
+      "gen": "(case when (`enabled` = 1) then `user_id` else NULL end)"
+    },
+    {
+      "t": "sys_user_role",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "sys_user_role",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_login_identity",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_login_identity",
+      "c": "user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_login_identity",
+      "c": "identity_type",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_login_identity",
+      "c": "provider",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_login_identity",
+      "c": "app_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_login_identity",
+      "c": "identifier",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_login_identity",
+      "c": "openid",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_login_identity",
+      "c": "unionid",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_login_identity",
+      "c": "phone",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_login_identity",
+      "c": "country_code",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_login_identity",
+      "c": "verified_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_login_identity",
+      "c": "active_phone_guard",
+      "kind": "varchar",
+      "extra": "STORED GENERATED",
+      "gen": "(case when ((`identity_type` = _utf8mb4\\'phone\\') and (`verified_status` = _utf8mb4\\'verified\\')) then `phone` else NULL end)"
+    },
+    {
+      "t": "user_login_identity",
+      "c": "active_phone_user_guard",
+      "kind": "varchar",
+      "extra": "STORED GENERATED",
+      "gen": "(case when ((`identity_type` = _utf8mb4\\'phone\\') and (`verified_status` = _utf8mb4\\'verified\\')) then `user_id` else NULL end)"
+    },
+    {
+      "t": "user_login_identity",
+      "c": "verified_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_login_identity",
+      "c": "source",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_login_identity",
+      "c": "is_primary",
+      "kind": "tinyint",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_login_identity",
+      "c": "last_login_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_login_identity",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_login_identity",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_realname_verification",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_realname_verification",
+      "c": "user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_realname_verification",
+      "c": "real_name_ciphertext",
+      "kind": "varbinary",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_realname_verification",
+      "c": "id_card_ciphertext",
+      "kind": "varbinary",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_realname_verification",
+      "c": "encryption_key_version",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_realname_verification",
+      "c": "id_card_front_object_key",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_realname_verification",
+      "c": "id_card_back_object_key",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_realname_verification",
+      "c": "submit_request_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_realname_verification",
+      "c": "submitted_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_realname_verification",
+      "c": "material_consent_version",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_realname_verification",
+      "c": "material_consent_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_realname_verification",
+      "c": "reviewed_by_admin_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_realname_verification",
+      "c": "reviewed_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_realname_verification",
+      "c": "audit_remark",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_realname_verification",
+      "c": "version",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_realname_verification",
+      "c": "active_user_guard",
+      "kind": "varchar",
+      "extra": "STORED GENERATED",
+      "gen": "(case when (`verification_status` in (_utf8mb4\\'pending\\',_utf8mb4\\'verified\\')) then `user_id` else NULL end)"
+    },
+    {
+      "t": "user_realname_verification",
+      "c": "verification_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_realname_verification",
+      "c": "provider",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_realname_verification",
+      "c": "provider_request_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_realname_verification",
+      "c": "reject_reason",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_realname_verification",
+      "c": "verified_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_realname_verification",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_realname_verification",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_rule_acceptance",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_rule_acceptance",
+      "c": "user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_rule_acceptance",
+      "c": "rule_document_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_rule_acceptance",
+      "c": "rule_code",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_rule_acceptance",
+      "c": "rule_version",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_rule_acceptance",
+      "c": "content_hash",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_rule_acceptance",
+      "c": "acceptance_scene",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_rule_acceptance",
+      "c": "accepted_role_code",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_rule_acceptance",
+      "c": "accepted_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_rule_acceptance",
+      "c": "client_ip",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_rule_acceptance",
+      "c": "user_agent",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_rule_acceptance",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_student_verification",
+      "c": "id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_student_verification",
+      "c": "application_no",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_student_verification",
+      "c": "submit_request_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_student_verification",
+      "c": "user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_student_verification",
+      "c": "school_name",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_student_verification",
+      "c": "student_card_urls",
+      "kind": "json",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_student_verification",
+      "c": "id_card_last4",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_student_verification",
+      "c": "verification_status",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_student_verification",
+      "c": "pending_user_guard",
+      "kind": "varchar",
+      "extra": "STORED GENERATED",
+      "gen": "(case when (`verification_status` = _utf8mb4\\'pending\\') then `user_id` else NULL end)"
+    },
+    {
+      "t": "user_student_verification",
+      "c": "reject_reason",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_student_verification",
+      "c": "reviewed_by_admin_user_id",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_student_verification",
+      "c": "submitted_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_student_verification",
+      "c": "material_consent_version",
+      "kind": "varchar",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_student_verification",
+      "c": "material_consent_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_student_verification",
+      "c": "reviewed_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_student_verification",
+      "c": "expire_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_student_verification",
+      "c": "version",
+      "kind": "int",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_student_verification",
+      "c": "created_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    },
+    {
+      "t": "user_student_verification",
+      "c": "updated_at",
+      "kind": "datetime",
+      "extra": "",
+      "gen": ""
+    }
+  ],
+  "foreignKeys": [
+    {
+      "t": "admin_account",
+      "c": "user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "admin_account_role",
+      "c": "admin_account_id",
+      "parent": "admin_account",
+      "pc": "id"
+    },
+    {
+      "t": "admin_account_role",
+      "c": "admin_role_id",
+      "parent": "admin_role",
+      "pc": "id"
+    },
+    {
+      "t": "admin_account_role",
+      "c": "granted_by_admin_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "admin_case",
+      "c": "buyer_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "admin_case",
+      "c": "closed_by_admin_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "admin_case",
+      "c": "created_by_admin_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "admin_case",
+      "c": "factory_id",
+      "parent": "factory_profile",
+      "pc": "id"
+    },
+    {
+      "t": "admin_case_action",
+      "c": "admin_case_id",
+      "parent": "admin_case",
+      "pc": "id"
+    },
+    {
+      "t": "admin_case_action",
+      "c": "operator_admin_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "admin_case_action",
+      "c": "parent_action_id",
+      "parent": "admin_case_action",
+      "pc": "id"
+    },
+    {
+      "t": "admin_case_relation",
+      "c": "admin_case_id",
+      "parent": "admin_case",
+      "pc": "id"
+    },
+    {
+      "t": "admin_menu",
+      "c": "parent_id",
+      "parent": "admin_menu",
+      "pc": "id"
+    },
+    {
+      "t": "admin_operation_audit",
+      "c": "admin_case_id",
+      "parent": "admin_case",
+      "pc": "id"
+    },
+    {
+      "t": "admin_operation_audit",
+      "c": "admin_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "admin_operation_audit",
+      "c": "case_action_id",
+      "parent": "admin_case_action",
+      "pc": "id"
+    },
+    {
+      "t": "admin_role",
+      "c": "created_by_admin_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "admin_role_menu",
+      "c": "admin_menu_id",
+      "parent": "admin_menu",
+      "pc": "id"
+    },
+    {
+      "t": "admin_role_menu",
+      "c": "admin_role_id",
+      "parent": "admin_role",
+      "pc": "id"
+    },
+    {
+      "t": "admin_role_menu",
+      "c": "created_by_admin_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "coupon_reward_record",
+      "c": "rule_id",
+      "parent": "coupon_reward_rule",
+      "pc": "id"
+    },
+    {
+      "t": "coupon_reward_record",
+      "c": "user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "coupon_reward_rule",
+      "c": "created_by_admin_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "coupon_reward_rule",
+      "c": "template_id",
+      "parent": "coupon_template",
+      "pc": "id"
+    },
+    {
+      "t": "coupon_template",
+      "c": "created_by_admin_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "factory_invite_code",
+      "c": "created_by_admin_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "factory_invite_code",
+      "c": "locked_by_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "factory_invite_code",
+      "c": "revoked_by_admin_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "factory_invite_code",
+      "c": "used_by_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "applicant_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "created_factory_id",
+      "parent": "factory_profile",
+      "pc": "id"
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "invite_code_id",
+      "parent": "factory_invite_code",
+      "pc": "id"
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "previous_application_id",
+      "parent": "factory_onboarding_audit",
+      "pc": "id"
+    },
+    {
+      "t": "factory_onboarding_audit",
+      "c": "reviewed_by_admin_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "factory_profile",
+      "c": "approved_audit_id",
+      "parent": "factory_onboarding_audit",
+      "pc": "id"
+    },
+    {
+      "t": "factory_profile",
+      "c": "approved_by_admin_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "factory_profile",
+      "c": "owner_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "factory_profile_change_audit",
+      "c": "applicant_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "factory_profile_change_audit",
+      "c": "factory_id",
+      "parent": "factory_profile",
+      "pc": "id"
+    },
+    {
+      "t": "factory_profile_change_audit",
+      "c": "reviewed_by_admin_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "inventory_reservation",
+      "c": "sku_id",
+      "parent": "prop_sku",
+      "pc": "id"
+    },
+    {
+      "t": "inventory_reservation",
+      "c": "sn_id",
+      "parent": "prop_sn_instance",
+      "pc": "id"
+    },
+    {
+      "t": "prop_image",
+      "c": "sku_id",
+      "parent": "prop_sku",
+      "pc": "id"
+    },
+    {
+      "t": "prop_instance_status_log",
+      "c": "operator_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "prop_instance_status_log",
+      "c": "prop_instance_id",
+      "parent": "prop_sn_instance",
+      "pc": "id"
+    },
+    {
+      "t": "prop_instance_status_log",
+      "c": "related_adjustment_audit_id",
+      "parent": "prop_sn_adjustment_audit",
+      "pc": "id"
+    },
+    {
+      "t": "prop_instance_status_log",
+      "c": "sku_id",
+      "parent": "prop_sku",
+      "pc": "id"
+    },
+    {
+      "t": "prop_operation_record",
+      "c": "actor_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "prop_operation_record",
+      "c": "sku_id",
+      "parent": "prop_sku",
+      "pc": "id"
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "created_by_admin_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "revoked_by_admin_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "sku_id",
+      "parent": "prop_sku",
+      "pc": "id"
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "supersedes_qr_code_id",
+      "parent": "prop_qr_code",
+      "pc": "id"
+    },
+    {
+      "t": "prop_qr_code",
+      "c": "used_by_factory_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "factory_id",
+      "parent": "factory_profile",
+      "pc": "id"
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "original_qr_code_id",
+      "parent": "prop_qr_code",
+      "pc": "id"
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "replacement_qr_code_id",
+      "parent": "prop_qr_code",
+      "pc": "id"
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "reported_by_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "resolved_by_admin_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "sku_id",
+      "parent": "prop_sku",
+      "pc": "id"
+    },
+    {
+      "t": "prop_qr_exception_record",
+      "c": "sn_id",
+      "parent": "prop_sn_instance",
+      "pc": "id"
+    },
+    {
+      "t": "prop_sku",
+      "c": "factory_id",
+      "parent": "factory_profile",
+      "pc": "id"
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "applicant_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "previous_audit_id",
+      "parent": "prop_sku_audit",
+      "pc": "id"
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "reviewer_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "prop_sku_audit",
+      "c": "sku_id",
+      "parent": "prop_sku",
+      "pc": "id"
+    },
+    {
+      "t": "prop_sku_stock",
+      "c": "last_counted_by",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "prop_sku_stock",
+      "c": "sku_id",
+      "parent": "prop_sku",
+      "pc": "id"
+    },
+    {
+      "t": "prop_sku_style",
+      "c": "sku_id",
+      "parent": "prop_sku",
+      "pc": "id"
+    },
+    {
+      "t": "prop_sn_adjustment_audit",
+      "c": "applicant_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "prop_sn_adjustment_audit",
+      "c": "factory_id",
+      "parent": "factory_profile",
+      "pc": "id"
+    },
+    {
+      "t": "prop_sn_adjustment_audit",
+      "c": "related_sku_audit_id",
+      "parent": "prop_sku_audit",
+      "pc": "id"
+    },
+    {
+      "t": "prop_sn_adjustment_audit",
+      "c": "reviewer_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "prop_sn_adjustment_audit",
+      "c": "sku_id",
+      "parent": "prop_sku",
+      "pc": "id"
+    },
+    {
+      "t": "prop_sn_adjustment_item",
+      "c": "adjustment_audit_id",
+      "parent": "prop_sn_adjustment_audit",
+      "pc": "id"
+    },
+    {
+      "t": "prop_sn_adjustment_item",
+      "c": "sku_id",
+      "parent": "prop_sku",
+      "pc": "id"
+    },
+    {
+      "t": "prop_sn_adjustment_item",
+      "c": "sn_id",
+      "parent": "prop_sn_instance",
+      "pc": "id"
+    },
+    {
+      "t": "prop_sn_instance",
+      "c": "qr_code_id",
+      "parent": "prop_qr_code",
+      "pc": "qr_code_id"
+    },
+    {
+      "t": "prop_sn_instance",
+      "c": "sku_id",
+      "parent": "prop_sku",
+      "pc": "id"
+    },
+    {
+      "t": "prop_sn_instance",
+      "c": "source_adjustment_audit_id",
+      "parent": "prop_sn_adjustment_audit",
+      "pc": "id"
+    },
+    {
+      "t": "prop_sn_instance",
+      "c": "status_changed_by",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "applicant_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "related_movement_id",
+      "parent": "prop_stock_movement",
+      "pc": "id"
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "related_sku_audit_id",
+      "parent": "prop_sku_audit",
+      "pc": "id"
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "reviewer_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "prop_stock_adjustment_audit",
+      "c": "sku_id",
+      "parent": "prop_sku",
+      "pc": "id"
+    },
+    {
+      "t": "prop_stock_movement",
+      "c": "operator_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "prop_stock_movement",
+      "c": "related_audit_id",
+      "parent": "prop_stock_adjustment_audit",
+      "pc": "id"
+    },
+    {
+      "t": "prop_stock_movement",
+      "c": "sku_id",
+      "parent": "prop_sku",
+      "pc": "id"
+    },
+    {
+      "t": "sys_user_role",
+      "c": "user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "user_login_identity",
+      "c": "user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "user_realname_verification",
+      "c": "reviewed_by_admin_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "user_realname_verification",
+      "c": "user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "user_rule_acceptance",
+      "c": "rule_document_id",
+      "parent": "platform_rule_document",
+      "pc": "id"
+    },
+    {
+      "t": "user_rule_acceptance",
+      "c": "user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "user_student_verification",
+      "c": "reviewed_by_admin_user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    },
+    {
+      "t": "user_student_verification",
+      "c": "user_id",
+      "parent": "sys_user",
+      "pc": "id"
+    }
+  ],
+  "roleIndexes": [
+    {
+      "n": "PRIMARY",
+      "nu": 0,
+      "c": "id"
+    },
+    {
+      "n": "uk_user_enabled_role",
+      "nu": 0,
+      "c": "enabled_user_guard"
+    },
+    {
+      "n": "uk_user_role",
+      "nu": 0,
+      "c": "user_id"
+    },
+    {
+      "n": "uk_user_role",
+      "nu": 0,
+      "c": "role_code"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.planning.mapper.PlanningOperationMapper">
+
+  <select id="selectPlanningOperationByActorAndRequestId" resultType="com.mujian.backend.planning.domain.PlanningOperationDO" useCache="false" flushCache="true">
+    SELECT
+      id,
+      user_id,
+      request_id,
+      operation_code,
+      request_hash,
+      resource_type,
+      resource_id,
+      result_json,
+      created_at
+    FROM planning_operation_record
+    WHERE user_id=#{actor}
+      AND request_id=#{requestId}
+  </select>
+
+  <insert id="insertPlanningOperation">
+    INSERT INTO planning_operation_record (id,
+      user_id,
+      request_id,
+      operation_code,
+      request_hash,
+      resource_type,
+      resource_id,
+      result_json,
+      created_at)
+    VALUES (#{row.id},
+      #{row.userId},
+      #{row.requestId},
+      #{row.operationCode},
+      #{row.requestHash},
+      #{row.resourceType},
+      #{row.resourceId},
+      #{row.resultJson},
+      #{row.createdAt})
+  </insert>
+</mapper>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.account.mapper.AccountMapper">
+ <select id="selectAccountContextByUserId" resultType="com.mujian.backend.infrastructure.persistence.record.account.UserRecord">
+ SELECT u.id,u.nickname,u.user_status,u.register_status,r.role_code FROM sys_user u LEFT JOIN sys_user_role r ON r.user_id=u.id AND r.enabled=1 WHERE u.id=#{id}
+ </select>
+ <insert id="insertAdminUser">INSERT INTO sys_user(id,nickname,phone_verified,user_status,register_status,created_at,updated_at) VALUES(#{id},#{nickname},0,'active','new',#{now},#{now})</insert>
+ <insert id="insertUserRole">INSERT INTO sys_user_role(id,user_id,role_code,enabled,created_at,updated_at) VALUES(#{id},#{userId},#{role},1,#{now},#{now})</insert>
+ <select id="countInvalidSystemIdentity" resultType="int">
+ SELECT CASE WHEN COUNT(*)=1 AND SUM(u.nickname='自动操作' AND u.user_status='disabled' AND u.register_status='new' AND u.phone_verified=0 AND u.avatar_url IS NULL AND u.phone IS NULL AND u.phone_source IS NULL AND u.phone_verified_at IS NULL)=1 AND NOT EXISTS(SELECT 1 FROM sys_user_role WHERE user_id=#{id}) AND NOT EXISTS(SELECT 1 FROM admin_account WHERE user_id=#{id}) THEN 0 ELSE 1 END FROM sys_user u WHERE u.id=#{id}
+ </select>
+  <select id="countLoginIdentitiesByUserId" resultType="long">
+    SELECT COUNT(*) FROM user_login_identity WHERE user_id=#{userId}
+  </select>
+</mapper>

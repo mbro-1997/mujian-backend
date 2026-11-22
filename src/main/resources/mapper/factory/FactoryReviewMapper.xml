@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.factory.mapper.FactoryReviewMapper">
+
+<sql id="columns_factory_onboarding_audit">id,application_no,submit_request_id,request_hash,accepted_rule_document_ids_json,previous_application_id,applicant_user_id,invite_code_id,factory_name,factory_avatar_url,unified_social_credit_code,business_license_url,factory_photo_urls,contact_name,contact_phone,factory_address,main_business,worker_count,specialty_category_ids_json,specialty_category_names_snapshot_json,case_materials_json,remark,audit_status,pending_applicant_guard,audit_remark,reject_reason,reviewed_by_admin_user_id,submitted_at,reviewed_at,created_factory_id,version,created_at,updated_at</sql>
+  
+
+  
+<sql id="columns_factory_profile">id,owner_user_id,factory_name,factory_avatar_url,unified_social_credit_code,business_license_url,factory_photo_urls,contact_name,contact_phone,factory_address,main_business,worker_count,case_materials_json,specialty_category_ids_json,specialty_category_names_snapshot_json,profile_version,remark,factory_status,approved_audit_id,approved_by_admin_user_id,approved_at,created_at,updated_at</sql>
+  
+<sql id="aliased_factory_profile">s.id,s.owner_user_id,s.factory_name,s.factory_avatar_url,s.unified_social_credit_code,s.business_license_url,s.factory_photo_urls,s.contact_name,s.contact_phone,s.factory_address,s.main_business,s.worker_count,s.case_materials_json,s.specialty_category_ids_json,s.specialty_category_names_snapshot_json,s.profile_version,s.remark,s.factory_status,s.approved_audit_id,s.approved_by_admin_user_id,s.approved_at,s.created_at,s.updated_at</sql>
+  
+<sql id="columns_factory_profile_change_audit">id,application_no,submit_request_id,request_hash,factory_id,applicant_user_id,change_payload_json,audit_status,reject_reason,reviewed_by_admin_user_id,submitted_at,reviewed_at,version,pending_factory_guard,created_at,updated_at</sql>
+  
+
+  
+<sql id="table">
+    <bind name="validTable" value="@com.mujian.backend.infrastructure.persistence.MappingInputs@table(table,'factory_onboarding_audit,factory_profile,factory_profile_change_audit')" />
+    <choose>
+      <when test="table == 'factory_onboarding_audit'">factory_onboarding_audit</when>
+      <when test="table == 'factory_profile'">factory_profile</when>
+      <when test="table == 'factory_profile_change_audit'">factory_profile_change_audit</when>
+    </choose>
+  </sql>
+  
+<sql id="columns">
+    <choose>
+      <when test="table == 'factory_onboarding_audit'">
+        <include refid="com.mujian.backend.factory.mapper.FactoryReviewMapper.columns_factory_onboarding_audit" />
+      </when>
+      <when test="table == 'factory_profile'">
+        <include refid="com.mujian.backend.factory.mapper.FactoryReviewMapper.columns_factory_profile" />
+      </when>
+      <when test="table == 'factory_profile_change_audit'">
+        <include refid="com.mujian.backend.factory.mapper.FactoryReviewMapper.columns_factory_profile_change_audit" />
+      </when>
+    </choose>
+  </sql>
+
+<sql id="queueWhere">
+     WHERE s.audit_status=#{factoryPageQueryDTO.status}
+    <if test="factoryPageQueryDTO.from != null"> AND s.submitted_at&gt;=#{factoryPageQueryDTO.from}</if>
+    <if test="factoryPageQueryDTO.to != null"> AND s.submitted_at&lt;#{factoryPageQueryDTO.to}</if>
+    <if test="factoryPageQueryDTO.keyword != null">
+       AND (LOCATE(#{factoryPageQueryDTO.keyword},CONVERT(s.application_no USING utf8mb4) COLLATE utf8mb4_bin)&gt;0 OR LOCATE(#{factoryPageQueryDTO.keyword},
+      <choose>
+        <when test="source.name() == 'ONBOARDING'">s.factory_name</when>
+        <otherwise>JSON_UNQUOTE(JSON_EXTRACT(s.change_payload_json,'$.proposed.factory_name'))</otherwise>
+      </choose>
+      )&gt;0)
+    </if>
+  </sql>
+
+<select id="selectFactorySourceById" resultType="com.mujian.backend.factory.projection.FactorySourceProjection" useCache="false" flushCache="true">
+    <bind name="table" value="source.table" />
+    SELECT 
+    <include refid="com.mujian.backend.factory.mapper.FactoryReviewMapper.columns" />
+     FROM 
+    <include refid="com.mujian.backend.factory.mapper.FactoryReviewMapper.table" />
+     WHERE id=#{id} 
+    <if test="lock">FOR UPDATE</if>
+  </select>
+  
+<select id="selectCurrentFactoryAuditByOwner" resultType="com.mujian.backend.factory.projection.FactorySourceProjection" useCache="false" flushCache="true">
+    <bind name="table" value="source.table" />
+    SELECT 
+    <include refid="com.mujian.backend.factory.mapper.FactoryReviewMapper.columns" />
+     FROM 
+    <include refid="com.mujian.backend.factory.mapper.FactoryReviewMapper.table" />
+     WHERE 
+    <choose>
+      <when test="source.name() == 'CHANGE'">factory_id</when>
+      <otherwise>applicant_user_id</otherwise>
+    </choose>
+    =#{owner} ORDER BY (audit_status='pending') DESC,submitted_at DESC,id DESC LIMIT 1
+  </select>
+  
+<select id="selectFactoryAuditByRequest" resultType="com.mujian.backend.factory.projection.FactorySourceProjection" useCache="false" flushCache="true">
+    <bind name="table" value="source.table" />
+    SELECT 
+    <include refid="com.mujian.backend.factory.mapper.FactoryReviewMapper.columns" />
+     FROM 
+    <include refid="com.mujian.backend.factory.mapper.FactoryReviewMapper.table" />
+     WHERE 
+    <choose>
+      <when test="source.name() == 'CHANGE'">factory_id</when>
+      <otherwise>applicant_user_id</otherwise>
+    </choose>
+    =#{owner} AND submit_request_id=#{key}
+  </select>
+  
+<select id="selectFactorySourcesMissingCase" resultType="com.mujian.backend.factory.projection.FactorySourceProjection" useCache="false" flushCache="true">
+    <bind name="table" value="source.table" />
+    SELECT s.id FROM 
+    <include refid="com.mujian.backend.factory.mapper.FactoryReviewMapper.table" />
+     s LEFT JOIN admin_case_relation r ON r.relation_type=#{source.table} AND r.relation_id=s.id AND r.is_primary=1 AND r.relation_role='source' WHERE s.audit_status='pending' AND r.id IS NULL ORDER BY s.submitted_at,s.id LIMIT 100
+  </select>
+  
+<select id="selectFactoryReviewCountByQuery" resultType="long" useCache="false" flushCache="true">
+    <bind name="table" value="source.table" />
+    SELECT COUNT(*) FROM 
+    <include refid="com.mujian.backend.factory.mapper.FactoryReviewMapper.table" />
+     s
+    <include refid="com.mujian.backend.factory.mapper.FactoryReviewMapper.queueWhere" />
+  </select>
+  
+<select id="selectFactoryReviewPageByQuery" resultType="com.mujian.backend.factory.projection.FactorySourceProjection" useCache="false" flushCache="true">
+    <bind name="table" value="source.table" />
+    SELECT 
+    <choose>
+      <when test="table == 'factory_onboarding_audit'">
+        s.id,s.application_no,s.created_factory_id,s.factory_name,s.unified_social_credit_code,s.applicant_user_id,s.submitted_at,s.audit_status
+      </when>
+      <when test="table == 'factory_profile'">
+        <include refid="com.mujian.backend.factory.mapper.FactoryReviewMapper.aliased_factory_profile" />
+      </when>
+      <when test="table == 'factory_profile_change_audit'">
+        s.id,s.application_no,s.factory_id,s.applicant_user_id,s.submitted_at,s.audit_status,s.change_payload_json
+      </when>
+    </choose>
+    ,u.nickname AS applicant_nickname FROM 
+    <include refid="com.mujian.backend.factory.mapper.FactoryReviewMapper.table" />
+     s JOIN sys_user u ON u.id=s.applicant_user_id
+    <include refid="com.mujian.backend.factory.mapper.FactoryReviewMapper.queueWhere" />
+     ORDER BY s.submitted_at DESC,s.id DESC LIMIT #{factoryPageQueryDTO.limit} OFFSET #{factoryPageQueryDTO.offset}
+  </select>
+  
+</mapper>

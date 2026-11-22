@@ -1,0 +1,390 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.payment.mapper.RefundMapper">
+  <select id="extensionSuborderMatches" resultType="boolean">SELECT EXISTS(SELECT 1 FROM order_extension_request e JOIN payment_channel_suborder s ON s.payment_order_id=e.payment_order_id
+    WHERE e.id=#{ext} AND e.rental_order_id=#{orderId} AND s.id=#{sub} AND s.rental_order_id=e.rental_order_id)</select>
+  <select id="selectNormalRefundSourceExists" resultType="boolean" useCache="false" flushCache="true">
+    <choose>
+      <when test="sourceType == 'order_claim'">SELECT EXISTS(SELECT 1 FROM order_claim c JOIN claim_user_response u ON u.claim_id=c.id
+        WHERE c.id=#{sourceId} AND c.rental_order_id=#{orderId} AND u.response_type IN ('confirm','timeout_auto_confirm'))</when>
+      <when test="sourceType == 'arbitration_decision'">SELECT EXISTS(SELECT 1 FROM arbitration_decision WHERE id=#{sourceId} AND rental_order_id=#{orderId} AND decision_status='confirmed')</when>
+      <when test="sourceType == 'return_check'">SELECT EXISTS(SELECT 1 FROM order_return_check
+        WHERE id=#{sourceId} AND rental_order_id=#{orderId}
+        AND check_status IN ('no_issue','auto_closed','admin_closed') AND claim_created=0 AND closed_at IS NOT NULL)</when>
+      <when test="sourceType == 'expense_statement'">SELECT EXISTS(SELECT 1 FROM order_transport_expense_statement
+        WHERE id=#{sourceId} AND rental_order_id=#{orderId} AND review_status='approved')</when>
+      <when test="sourceType == 'admin_case_action'">SELECT EXISTS(SELECT 1 FROM admin_case_action WHERE id=#{sourceId}
+        AND action_type='resolve_order_issue' AND target_type='rental_order' AND target_id=#{orderId}
+        AND operator_confirmed_at IS NOT NULL AND action_status='executing')</when>
+      <otherwise>SELECT FALSE</otherwise>
+    </choose>
+  </select>
+
+
+  <select id="selectRefundSourceByChannelNo" resultType="com.mujian.backend.payment.projection.RefundSourceProjection">
+    SELECT
+      r.id,
+      r.payment_order_id,
+      r.payment_channel_suborder_id,
+      r.channel_out_refund_no,
+      r.channel_out_trade_no,
+      r.channel_transaction_id,
+      r.refund_amount_fen,
+      p.channel_app_id,
+      p.channel_mch_id,
+      s.sub_mchid_snapshot,
+      s.channel_suborder_amount_fen
+    FROM refund_order r JOIN payment_order p ON p.id=r.payment_order_id JOIN payment_channel_suborder s ON s.id=r.payment_channel_suborder_id
+      AND s.payment_order_id=p.id
+    WHERE r.channel_out_refund_no=#{no}
+  </select>
+  <sql id="columns">
+    r.id,
+      r.refund_no,
+      r.request_idempotency_key,
+      r.biz_order_type,
+      r.biz_order_id,
+      r.rental_order_id,
+      r.payment_order_id,
+      r.payment_channel_suborder_id,
+      r.refund_type,
+      r.refund_status,
+      r.channel_transaction_id,
+      r.channel_out_trade_no,
+      r.channel_out_refund_no,
+      r.channel_refund_no,
+      r.custom_goods_refund_amount_fen,
+      r.rent_refund_amount_fen,
+      r.deposit_refund_amount_fen,
+      r.freight_refund_amount_fen,
+      r.refund_amount_fen,
+      r.refund_reason,
+      r.requested_by,
+      r.requested_at,
+      r.success_at,
+      r.failed_at,
+      r.fail_reason,
+      r.created_at,
+      r.updated_at,
+      r.next_attempt_at,
+      r.last_checked_at,
+      r.attempt_count,
+      r.last_error_code,
+      r.version
+  </sql>
+
+  <select id="selectRefundBySourceKey" resultType="com.mujian.backend.payment.domain.RefundOrderDO" useCache="false" flushCache="true">
+    SELECT
+    <include refid="columns"/>
+    FROM refund_order r
+    WHERE request_idempotency_key=#{key}
+  </select>
+
+  <select id="selectRefundById" resultType="com.mujian.backend.payment.domain.RefundOrderDO" useCache="false" flushCache="true">
+    SELECT
+    <include refid="columns"/>
+    FROM refund_order r
+    WHERE id=#{id}
+    <if test="lock">
+      FOR UPDATE
+    </if>
+  </select>
+
+  <select id="selectRefundExposureBySuborder" resultType="com.mujian.backend.payment.projection.RefundExposureProjection" useCache="false" flushCache="true">
+    SELECT
+      COALESCE(SUM(rent_refund_amount_fen),
+      0) rent_fen,
+      COALESCE(SUM(deposit_refund_amount_fen),
+      0) deposit_fen,
+      COALESCE(SUM(freight_refund_amount_fen),
+      0) freight_fen,
+      COALESCE(SUM(refund_amount_fen),
+      0) total_fen
+    FROM refund_order
+    WHERE payment_channel_suborder_id=#{id}
+      AND refund_status!='cancelled'
+  </select>
+
+  <insert id="insertRefund">
+    INSERT INTO refund_order(id,
+      refund_no,
+      request_idempotency_key,
+      biz_order_type,
+      biz_order_id,
+      rental_order_id,
+      payment_order_id,
+      payment_channel_suborder_id,
+      refund_type,
+      refund_status,
+      pay_channel,
+      channel_transaction_id,
+      channel_out_trade_no,
+      channel_out_refund_no,
+      rent_refund_amount_fen,
+      deposit_refund_amount_fen,
+      service_fee_refund_fen,
+      freight_refund_amount_fen,
+      compensation_refund_amount_fen,
+      custom_goods_refund_amount_fen,
+      refund_amount_fen,
+      refund_reason,
+      requested_by,
+      requested_at,
+      created_at,
+      updated_at,
+      next_attempt_at)
+    VALUES (#{refund.id},
+      #{refund.refundNo},
+      #{refund.requestIdempotencyKey},
+      #{refund.bizOrderType},
+      #{refund.bizOrderId},
+      #{refund.rentalOrderId},
+      #{refund.paymentOrderId},
+      #{refund.paymentChannelSuborderId},
+      #{refund.refundType},
+      'pending',
+      'wechat_pay',
+      #{refund.channelTransactionId},
+      #{refund.channelOutTradeNo},
+      #{refund.channelOutRefundNo},
+      #{refund.rentRefundAmountFen},
+      #{refund.depositRefundAmountFen},
+      0,
+      #{refund.freightRefundAmountFen},
+      0,
+      0,
+      #{refund.refundAmountFen},
+      #{refund.refundReason},
+      #{refund.requestedBy},
+      #{refund.requestedAt},
+      #{refund.createdAt},
+      #{refund.updatedAt},
+      #{refund.nextAttemptAt})
+  </insert>
+
+  <select id="selectRefundsByPayment" resultType="com.mujian.backend.payment.domain.RefundOrderDO">SELECT <include refid="columns"/> FROM refund_order r WHERE r.payment_order_id=#{id} ORDER BY r.id</select>
+  <select id="selectRefundsByBatch" resultType="com.mujian.backend.payment.domain.RefundOrderDO" useCache="false" flushCache="true">
+    SELECT
+    <include refid="columns"/>
+    FROM refund_order r JOIN payment_order p ON p.id=r.payment_order_id
+    WHERE p.checkout_batch_id=#{id}
+    ORDER BY r.id
+  </select>
+
+  <update id="claimRefundAttempt">
+    UPDATE refund_order
+    SET
+      next_attempt_at=#{attempt.next},
+      last_checked_at=#{attempt.now},
+      attempt_count=attempt_count+1,
+      version=version+1,
+      updated_at=#{attempt.now}
+    WHERE id=#{attempt.id}
+      AND version=#{attempt.version}
+      AND refund_status NOT IN ('success',
+      'cancelled')
+      AND (next_attempt_at IS NULL
+      OR next_attempt_at&lt;=#{attempt.now})
+  </update>
+
+  <update id="finishRefundAttempt">
+    UPDATE refund_order
+    SET
+      next_attempt_at=#{finish.next},
+      last_error_code=#{finish.errorCode},
+      updated_at=#{finish.now},
+      version=version+1
+    WHERE id=#{finish.id}
+      AND version=#{finish.version}
+      AND refund_status NOT IN ('success',
+      'cancelled')
+  </update>
+
+  <update id="mergeRefundFact">
+    UPDATE refund_order
+    SET
+      refund_status=#{fact.status},
+      channel_refund_no=#{fact.channelRefundNo},
+      success_at=#{fact.successAt},
+      failed_at=CASE WHEN #{fact.status}='failed' THEN #{fact.now} ELSE NULL END,
+      fail_reason=#{fact.error},
+      last_error_code=#{fact.error},
+      last_checked_at=#{fact.now},
+      next_attempt_at=#{fact.next},
+      version=version+1,
+      updated_at=#{fact.now}
+    WHERE id=#{fact.id}
+      AND refund_status NOT IN ('success',
+      'cancelled')
+  </update>
+
+  <update id="refreshSuborderRefunds">
+    UPDATE payment_channel_suborder s JOIN (
+    SELECT
+      payment_channel_suborder_id,
+      SUM(refund_amount_fen) amount
+    FROM refund_order
+    WHERE payment_channel_suborder_id=#{id}
+      AND refund_status='success'
+    GROUP BY payment_channel_suborder_id) r ON r.payment_channel_suborder_id=s.id
+    SET
+      s.refunded_amount_fen=r.amount,
+      s.channel_suborder_status=CASE WHEN r.amount=s.paid_amount_fen THEN 'fully_refunded' ELSE 'partially_refunded' END,
+      s.version=s.version+1,
+      s.updated_at=#{now}
+    WHERE s.id=#{id}
+      AND r.amount&lt;=s.paid_amount_fen
+  </update>
+
+  <update id="refreshPaymentRefunds">
+    UPDATE payment_order p JOIN (
+    SELECT
+      payment_order_id,
+      SUM(refunded_amount_fen) amount
+    FROM payment_channel_suborder
+    WHERE payment_order_id=#{id}
+    GROUP BY payment_order_id) s ON s.payment_order_id=p.id
+    SET
+      p.refunded_amount_fen=s.amount,
+      p.version=p.version+1,
+      p.updated_at=#{now}
+    WHERE p.id=#{id}
+      AND s.amount&lt;=p.paid_amount_fen
+  </update>
+
+  <update id="refreshOrderRefunds">
+    UPDATE rental_order o JOIN (
+    SELECT
+      rental_order_id,
+      SUM(CASE WHEN refund_status='success' THEN rent_refund_amount_fen ELSE 0 END) rent,
+      SUM(CASE WHEN refund_status='success' THEN deposit_refund_amount_fen ELSE 0 END) deposit,
+      SUM(CASE WHEN refund_status='success' THEN freight_refund_amount_fen ELSE 0 END) freight,
+      SUM(CASE WHEN refund_status='success' THEN refund_amount_fen ELSE 0 END) total,
+      SUM(refund_status IN ('pending',
+      'processing')) pending,
+      SUM(refund_status='failed') failed,
+      SUM(deposit_refund_amount_fen&gt;0 AND refund_status IN ('pending','processing','failed')) deposit_pending
+    FROM refund_order
+    WHERE rental_order_id=#{id}
+    GROUP BY rental_order_id) r ON r.rental_order_id=o.id
+    SET
+      o.rent_refunded_amount_fen=r.rent,
+      o.deposit_refunded_amount_fen=r.deposit,
+      o.freight_refunded_amount_fen=r.freight,
+      o.total_refunded_amount_fen=r.total,
+      o.refund_status=CASE WHEN r.total=o.total_paid_amount_fen THEN 'full_refunded' WHEN r.pending&gt;0 THEN 'processing' WHEN r.failed&gt;0 THEN 'failed' WHEN r.total&gt;0 THEN 'partial_refunded' ELSE 'none' END,
+      o.deposit_status=CASE WHEN o.deposit_paid_amount_fen=0 THEN 'settled' WHEN r.deposit=o.deposit_paid_amount_fen THEN 'refunded' WHEN r.deposit_pending&gt;0 THEN 'refunding' WHEN r.deposit+o.deposit_deducted_amount_fen=o.deposit_paid_amount_fen THEN 'settled' ELSE o.deposit_status END,
+      o.version=o.version+1,
+      o.updated_at=#{now}
+    WHERE o.id=#{id}
+      AND r.rent&lt;=o.rent_paid_amount_fen-o.rent_deducted_amount_fen
+      AND r.deposit&lt;=o.deposit_paid_amount_fen-o.deposit_deducted_amount_fen
+      AND r.freight&lt;=o.freight_prepaid_paid_amount_fen
+  </update>
+
+  <update id="refreshFreightRefunds">
+    UPDATE rental_order_freight_account f JOIN rental_order o ON o.id=f.rental_order_id
+    SET
+      f.refunded_amount_fen=o.freight_refunded_amount_fen,
+      f.refundable_amount_fen=f.initial_prepaid_amount_fen-f.online_settle_amount_fen-o.freight_refunded_amount_fen,
+      f.freight_status=CASE WHEN f.freight_status='cancelled' THEN 'cancelled' WHEN o.freight_refunded_amount_fen+f.online_settle_amount_fen=f.initial_prepaid_amount_fen AND o.order_status IN ('manual_rejected','timeout_rejected','user_cancelled','cancelled') THEN 'cancelled' WHEN o.freight_refunded_amount_fen+f.online_settle_amount_fen=f.initial_prepaid_amount_fen AND (f.initial_prepaid_amount_fen&gt;0 OR f.freight_status IN ('refunding','refundable','settled')) THEN 'settled' ELSE f.freight_status END,
+      f.settled_at=CASE WHEN f.freight_status='cancelled' THEN f.settled_at WHEN o.freight_refunded_amount_fen+f.online_settle_amount_fen=f.initial_prepaid_amount_fen AND (f.initial_prepaid_amount_fen&gt;0 OR f.freight_status IN ('refunding','refundable','settled')) THEN COALESCE(f.settled_at,#{now}) ELSE f.settled_at END,
+      f.version=f.version+1,
+      f.updated_at=#{now}
+    WHERE f.rental_order_id=#{id}
+      AND o.freight_refunded_amount_fen+f.online_settle_amount_fen&lt;=f.initial_prepaid_amount_fen
+  </update>
+
+  <select id="hasBatchDeductions" resultType="boolean">
+    SELECT
+      EXISTS(
+    SELECT
+      1
+    FROM rental_order
+    WHERE checkout_batch_id=#{id}
+      AND total_deducted_amount_fen&gt;0)
+  </select>
+
+  <select id="selectDueRefundIds" resultType="string">
+    SELECT
+      id
+    FROM refund_order
+    WHERE refund_status IN ('pending',
+      'processing',
+      'failed')
+      AND (next_attempt_at IS NULL
+      OR next_attempt_at&lt;=#{now})
+    AND NOT EXISTS(SELECT 1 FROM admin_case_action step JOIN admin_case_action a ON a.id=step.parent_action_id
+      WHERE step.target_type='refund_order' AND step.target_id=refund_order.id AND a.action_type='resolve_order_issue'
+        AND a.request_payload_json->>'$.fulfillment_decision'='terminate' AND (<include refid="com.mujian.backend.delivery.mapper.IssuePlanMapper.dispatchedFact"><property name="orderRef" value="a.target_id"/></include>)
+        AND NOT (<include refid="com.mujian.backend.delivery.mapper.IssuePlanMapper.physicallyReceivedFact"><property name="orderRef" value="a.target_id"/></include>))
+    ORDER BY next_attempt_at,
+      id
+    LIMIT 100
+  </select>
+  <sql id="refundQueryWhere">
+    WHERE 1=1
+    <if test="query.status!=null">
+        AND r.refund_status=#{query.status}
+    </if>
+    <if test="query.businessType!=null">
+        AND r.biz_order_type=#{query.businessType}
+    </if>
+    <if test="query.factoryId!=null">
+        AND EXISTS(
+      SELECT
+        1
+      FROM payment_channel_suborder s
+      WHERE s.id=r.payment_channel_suborder_id
+        AND s.factory_id=#{query.factoryId})
+    </if>
+  </sql>
+
+  <select id="selectRefundPage" resultType="com.mujian.backend.payment.domain.RefundOrderDO">
+    SELECT
+    <include refid="columns"/>
+    FROM refund_order r
+    <include refid="refundQueryWhere"/>
+    ORDER BY r.created_at DESC,
+      r.id DESC
+    LIMIT #{query.page.pageSize}
+    OFFSET #{query.page.offset}
+  </select>
+
+  <select id="countRefunds" resultType="long">
+    SELECT
+      COUNT(*)
+    FROM refund_order r
+    <include refid="refundQueryWhere"/>
+  </select>
+
+  <select id="selectCouponReturnsByPayments" resultType="com.mujian.backend.payment.projection.RefundCouponReturnProjection">
+    SELECT
+      p.id payment_id,
+      u.usage_status,
+      u.user_coupon_id,
+      u.return_confirmed_at returned_at,
+      c.valid_until
+    FROM payment_order p LEFT JOIN coupon_usage u ON u.checkout_batch_id=p.checkout_batch_id LEFT JOIN user_coupon c ON c.id=u.user_coupon_id
+    WHERE p.id IN
+    <foreach collection="paymentIds" item="id" open="(" close=")" separator=",">
+      #{id}
+    </foreach>
+  </select>
+
+  <select id="selectRefundIdsByBatch" resultType="string">
+    SELECT
+      r.id
+    FROM refund_order r JOIN payment_order p ON p.id=r.payment_order_id
+    WHERE p.checkout_batch_id=#{batchId}
+    ORDER BY r.id
+  </select>
+
+  <select id="selectRefundIdsByOrder" resultType="string">
+    SELECT
+      id
+    FROM refund_order
+    WHERE rental_order_id=#{orderId}
+    ORDER BY id
+  </select>
+</mapper>

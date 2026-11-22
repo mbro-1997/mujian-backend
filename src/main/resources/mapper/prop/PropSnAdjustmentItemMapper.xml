@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.prop.mapper.PropSnAdjustmentItemMapper">
+<sql id="columns_prop_sn_adjustment_item">id,adjustment_audit_id,sku_id,sn_id,sn_code_snapshot,before_instance_status,target_instance_status,item_remark,created_at</sql>
+<sql id="aliased_prop_sn_adjustment_item">s.id,s.adjustment_audit_id,s.sku_id,s.sn_id,s.sn_code_snapshot,s.before_instance_status,s.target_instance_status,s.item_remark,s.created_at</sql>
+<select id="selectSnAdjustmentItemListByAuditId" resultType="com.mujian.backend.prop.domain.PropSnAdjustmentItemDO" useCache="false" flushCache="true">
+    SELECT id,adjustment_audit_id,sku_id,sn_id,sn_code_snapshot,before_instance_status,target_instance_status,item_remark,created_at FROM prop_sn_adjustment_item WHERE adjustment_audit_id=#{adjustmentId} ORDER BY sn_id
+  </select>
+<select id="selectReviewSnAdjustmentItemListByAuditId" resultType="com.mujian.backend.prop.domain.PropSnAdjustmentItemDO" useCache="false" flushCache="true">
+    SELECT id,adjustment_audit_id,sku_id,sn_id,sn_code_snapshot,before_instance_status,target_instance_status,item_remark,created_at FROM prop_sn_adjustment_item WHERE adjustment_audit_id=#{adjustmentId} ORDER BY sn_id
+  </select>
+<select id="selectApprovalSnAdjustmentItemListByAuditId" resultType="com.mujian.backend.prop.domain.PropSnAdjustmentItemDO" useCache="false" flushCache="true">
+    SELECT id,adjustment_audit_id,sku_id,sn_id,sn_code_snapshot,before_instance_status,target_instance_status,item_remark,created_at FROM prop_sn_adjustment_item WHERE adjustment_audit_id=#{adjustmentId} ORDER BY sn_id
+  </select>
+<select id="selectReviewedSnAdjustmentItemListByAuditId" resultType="com.mujian.backend.prop.domain.PropSnAdjustmentItemDO" useCache="false" flushCache="true">
+    SELECT id,adjustment_audit_id,sku_id,sn_id,sn_code_snapshot,before_instance_status,target_instance_status,item_remark,created_at FROM prop_sn_adjustment_item WHERE adjustment_audit_id=#{adjustmentId} ORDER BY sn_id
+  </select>
+<select id="selectPropSnAdjustmentItem" resultType="com.mujian.backend.prop.domain.PropSnAdjustmentItemDO" useCache="false" flushCache="true">
+    SELECT id,adjustment_audit_id,sku_id,sn_id,sn_code_snapshot,before_instance_status,target_instance_status,item_remark,created_at FROM prop_sn_adjustment_item WHERE id=#{id} <if test="lock">FOR UPDATE</if>
+  </select>
+<insert id="insertPropSnAdjustmentItem">INSERT INTO prop_sn_adjustment_item
+<trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="row.id != null">id,</if>
+<if test="row.adjustmentAuditId != null">adjustment_audit_id,</if>
+<if test="row.skuId != null">sku_id,</if>
+<if test="row.snId != null">sn_id,</if>
+<if test="row.snCodeSnapshot != null">sn_code_snapshot,</if>
+<if test="row.beforeInstanceStatus != null">before_instance_status,</if>
+<if test="row.targetInstanceStatus != null">target_instance_status,</if>
+<if test="row.itemRemark != null">item_remark,</if>
+<if test="row.createdAt != null">created_at,</if>
+</trim> VALUES
+<trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="row.id != null">#{row.id},</if>
+<if test="row.adjustmentAuditId != null">#{row.adjustmentAuditId},</if>
+<if test="row.skuId != null">#{row.skuId},</if>
+<if test="row.snId != null">#{row.snId},</if>
+<if test="row.snCodeSnapshot != null">#{row.snCodeSnapshot},</if>
+<if test="row.beforeInstanceStatus != null">#{row.beforeInstanceStatus},</if>
+<if test="row.targetInstanceStatus != null">#{row.targetInstanceStatus},</if>
+<if test="row.itemRemark != null">#{row.itemRemark},</if>
+<if test="row.createdAt != null">#{row.createdAt},</if>
+</trim></insert>
+</mapper>

@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.coupon.mapper.CouponUsageMapper">
+
+  <update id="lockCoupon">
+    UPDATE user_coupon
+    SET
+      coupon_status='locked',
+      locked_until=#{expiry},
+      version=version+1,
+      updated_at=#{now}
+    WHERE id=#{id}
+      AND version=#{version}
+      AND coupon_status IN ('available',
+      'returned')
+      AND valid_from&lt;=#{now}
+      AND valid_until&gt;#{now}
+  </update>
+
+  <insert id="insertUsage">
+    INSERT INTO coupon_usage(id,
+      usage_no,
+      user_coupon_id,
+      user_id,
+      checkout_batch_id,
+      payment_order_id,
+      eligible_rent_amount_fen,
+      discount_amount_fen,
+      cost_bearer_snapshot,
+      usage_status,
+      lock_expire_at,
+      created_at,
+      updated_at)
+    VALUES (#{usage.id},
+      #{usage.usageNo},
+      #{usage.userCouponId},
+      #{usage.userId},
+      #{usage.checkoutBatchId},
+      #{usage.paymentOrderId},
+      #{usage.eligibleRentAmountFen},
+      #{usage.discountAmountFen},
+      #{usage.costBearerSnapshot},
+      'locked',
+      #{usage.lockExpireAt},
+      #{usage.createdAt},
+      #{usage.updatedAt})
+  </insert>
+
+  <insert id="insertAllocation">
+    INSERT INTO coupon_allocation(id,
+      coupon_usage_id,
+      checkout_batch_id,
+      checkout_batch_item_snapshot_id,
+      factory_id,
+      sku_id,
+      eligible_rent_amount_fen,
+      allocated_discount_amount_fen,
+      cost_bearer_snapshot,
+      allocation_status,
+      created_at,
+      updated_at)
+    VALUES (#{allocation.id},
+      #{allocation.usageId},
+      #{allocation.batchId},
+      #{allocation.snapshotId},
+      #{allocation.factoryId},
+      #{allocation.skuId},
+      #{allocation.eligibleRentFen},
+      #{allocation.discountFen},
+      'shared_by_settlement_ratio',
+      'locked',
+      #{allocation.at},
+      #{allocation.at})
+  </insert>
+
+  <insert id="insertPriceAdjustment">
+    INSERT INTO order_price_adjustment(id,
+      checkout_batch_id,
+      factory_id,
+      adjustment_type,
+      fund_component,
+      adjustment_direction,
+      amount_fen,
+      source_type,
+      source_id,
+      adjustment_status,
+      snapshot_json,
+      created_at,
+      updated_at)
+    VALUES (#{adjustment.id},
+      #{adjustment.batchId},
+      #{adjustment.factoryId},
+      'coupon',
+      'rent',
+      'discount',
+      #{adjustment.discountFen},
+      'user_coupon',
+      #{adjustment.couponId},
+      'applied',
+      #{adjustment.snapshotJson},
+      #{adjustment.at},
+      #{adjustment.at})
+  </insert>
+
+  <insert id="insertOperationLog">
+    INSERT INTO coupon_operation_log(id,
+      operation_request_id,
+      user_coupon_id,
+      coupon_usage_id,
+      operation_type,
+      from_status,
+      to_status,
+      operator_type,
+      operator_id,
+      biz_type,
+      biz_id,
+      reason,
+      created_at)
+    VALUES (#{log.id},
+      #{log.requestId},
+      #{log.couponId},
+      #{log.usageId},
+      #{log.operation},
+      #{log.fromStatus},
+      #{log.toStatus},
+      #{log.operatorType},
+      #{log.actor},
+      'checkout_batch',
+      #{log.batchId},
+      #{log.reason},
+      #{log.at})
+  </insert>
+
+  <select id="selectUsageByBatch" resultType="com.mujian.backend.coupon.domain.CouponUsageDO" useCache="false" flushCache="true">
+    SELECT
+      id,
+      usage_no,
+      user_coupon_id,
+      user_id,
+      checkout_batch_id,
+      payment_order_id,
+      eligible_rent_amount_fen,
+      discount_amount_fen,
+      cost_bearer_snapshot,
+      usage_status,
+      lock_expire_at,
+      used_at,
+      released_at,
+      return_confirmed_at,
+      version,
+      created_at,
+      updated_at
+    FROM coupon_usage
+    WHERE checkout_batch_id=#{id}
+    <if test="lock">
+      FOR UPDATE
+    </if>
+  </select>
+
+  <update id="markCouponUsed">
+    UPDATE user_coupon
+    SET
+      coupon_status='used',
+      used_at=#{now},
+      locked_until=NULL,
+      version=version+1,
+      updated_at=#{now}
+    WHERE id=#{id}
+      AND coupon_status='locked'
+  </update>
+
+  <update id="markUsageUsed">
+    UPDATE coupon_usage
+    SET
+      usage_status='used',
+      used_at=#{now},
+      version=version+1,
+      updated_at=#{now}
+    WHERE id=#{id}
+      AND usage_status='locked'
+  </update>
+
+  <update id="bindAllocationsToOrders">
+    UPDATE coupon_allocation a JOIN rental_order_item i ON i.checkout_batch_item_snapshot_id=a.checkout_batch_item_snapshot_id
+    SET
+      a.rental_order_id=i.rental_order_id,
+      a.rental_order_item_id=i.id,
+      a.allocation_status='effective',
+      a.updated_at=#{now}
+    WHERE a.checkout_batch_id=#{batch}
+      AND a.allocation_status='locked'
+  </update>
+
+  <update id="bindAdjustmentsToOrders">
+    UPDATE order_price_adjustment a JOIN rental_order o ON o.checkout_batch_id=a.checkout_batch_id
+      AND o.factory_id=a.factory_id
+    SET
+      a.rental_order_id=o.id,
+      a.updated_at=#{now}
+    WHERE a.checkout_batch_id=#{batch}
+      AND a.rental_order_id IS NULL
+  </update>
+
+  <update id="releaseCoupon">
+    UPDATE user_coupon
+    SET
+      coupon_status=CASE WHEN valid_until&gt;#{now} THEN 'available' ELSE 'expired' END,
+      locked_until=NULL,
+      version=version+1,
+      updated_at=#{now}
+    WHERE id=#{id}
+      AND coupon_status='locked'
+  </update>
+
+  <update id="returnCoupon">
+    UPDATE user_coupon
+    SET
+      coupon_status='returned',
+      returned_at=#{now},
+      valid_until=GREATEST(valid_until,
+      DATE_ADD(#{now},
+      INTERVAL 7 DAY)),
+      locked_until=NULL,
+      version=version+1,
+      updated_at=#{now}
+    WHERE id=#{id}
+      AND coupon_status IN ('locked',
+      'used')
+  </update>
+
+  <update id="finishUsage">
+    UPDATE coupon_usage
+    SET
+      usage_status=#{status},
+      released_at=CASE WHEN #{status}='released' THEN #{now} ELSE released_at END,
+      return_confirmed_at=CASE WHEN #{status}='returned' THEN #{now} ELSE return_confirmed_at END,
+      version=version+1,
+      updated_at=#{now}
+    WHERE id=#{id}
+      AND usage_status IN ('locked',
+      'used')
+  </update>
+
+  <update id="finishAllocations">
+    UPDATE coupon_allocation
+    SET
+      allocation_status=#{status},
+      updated_at=#{now}
+    WHERE coupon_usage_id=#{usage}
+      AND allocation_status IN ('locked',
+      'effective')
+  </update>
+</mapper>

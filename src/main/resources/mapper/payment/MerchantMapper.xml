@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.payment.mapper.MerchantMapper">
+  <sql id="columns">
+    m.id,
+      f.id factory_id,
+      f.owner_user_id owner_id,
+      f.factory_name,
+      m.applyment_id,
+      m.sub_mchid,
+      COALESCE(m.subject_name_snapshot,
+      f.factory_name) subject_name,
+      COALESCE(m.account_status,
+      'not_applied') account_status,
+      COALESCE(m.profit_sharing_status,
+      'unavailable') profit_sharing_status,
+      m.channel_status_snapshot_json,
+      m.last_synced_at,
+      COALESCE(m.version,
+      0) version,
+      m.onboarding_request_no
+  </sql>
+  <sql id="from">
+    FROM factory_profile f LEFT JOIN factory_wechat_merchant_account m ON m.factory_id=f.id
+  </sql>
+  <sql id="where">
+    WHERE 1=1
+    <if test="factory!=null">
+        AND f.id=#{factory}
+    </if>
+    <if test="status!=null">
+        AND COALESCE(m.account_status,
+        'not_applied')=#{status}
+    </if>
+  </sql>
+
+  <select id="selectMerchantByFactory" resultType="com.mujian.backend.payment.projection.MerchantSourceProjection" useCache="false" flushCache="true">
+    SELECT
+    <include refid="columns"/>
+    <include refid="from"/>
+    WHERE f.id=#{factory}
+    <if test="lock">
+      FOR UPDATE
+    </if>
+  </select>
+
+  <select id="selectMerchantPage" resultType="com.mujian.backend.payment.projection.MerchantSourceProjection">
+    SELECT
+    <include refid="columns"/>
+    <include refid="from"/>
+    <include refid="where"/>
+    ORDER BY f.created_at DESC,
+      f.id DESC
+    LIMIT #{page.pageSize}
+    OFFSET #{page.offset}
+  </select>
+
+  <select id="countMerchants" resultType="long">
+    SELECT
+      COUNT(*)
+    <include refid="from"/>
+    <include refid="where"/>
+  </select>
+
+  <update id="updateMerchantStatus">
+    UPDATE factory_wechat_merchant_account
+    SET
+      applyment_id=#{sync.applymentId},
+      onboarding_request_no=#{sync.requestNo},
+      sub_mchid=COALESCE(#{sync.subMchid},
+      sub_mchid),
+      account_status=#{sync.accountStatus},
+      profit_sharing_status=#{sync.profitSharingStatus},
+      channel_status_snapshot_json=#{sync.snapshot},
+      last_synced_at=#{sync.now},
+      verified_at=CASE WHEN #{sync.accountStatus}='active' THEN COALESCE(verified_at,
+      #{sync.now}) ELSE verified_at END,
+      version=version+1,
+      updated_at=#{sync.now}
+    WHERE id=#{sync.id}
+      AND version=#{sync.version}
+  </update>
+</mapper>

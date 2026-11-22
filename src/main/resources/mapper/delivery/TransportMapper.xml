@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.delivery.mapper.TransportMapper">
+
+  <select id="selectVehicleById" resultType="com.mujian.backend.delivery.domain.VehicleDO" useCache="false" flushCache="true">
+    SELECT
+      id,
+      tier_code,
+      tier_name,
+      cargo_length_mm,
+      cargo_width_mm,
+      cargo_height_mm,
+      effective_volume_cm3,
+      safe_payload_gram,
+      sort_no,
+      tier_status,
+      created_at,
+      updated_at,
+      version
+    FROM transport_vehicle_tier
+    WHERE id=#{id}
+    <if test="lock">
+      FOR UPDATE
+    </if>
+  </select>
+  <sql id="vehicleFilter">
+    <where>
+      <if test="transportQuery.keyword!=null">
+        (LOCATE(#{transportQuery.keyword},
+          tier_name)&gt;0
+          OR LOCATE(#{transportQuery.keyword},
+          CONVERT(tier_code USING utf8mb4) COLLATE utf8mb4_bin)&gt;0)
+      </if>
+      <if test="transportQuery.status!=null">
+          AND tier_status=#{transportQuery.status}
+      </if>
+    </where>
+  </sql>
+
+  <select id="selectVehiclesByQuery" resultType="com.mujian.backend.delivery.domain.VehicleDO">
+    SELECT
+      id,
+      tier_code,
+      tier_name,
+      cargo_length_mm,
+      cargo_width_mm,
+      cargo_height_mm,
+      effective_volume_cm3,
+      safe_payload_gram,
+      sort_no,
+      tier_status,
+      created_at,
+      updated_at,
+      version
+    FROM transport_vehicle_tier
+    <include refid="vehicleFilter"/>
+    ORDER BY sort_no,
+      id
+    LIMIT #{transportQuery.limit}
+    OFFSET #{transportQuery.offset}
+  </select>
+
+  <select id="countVehiclesByQuery" resultType="long">
+    SELECT
+      COUNT(*)
+    FROM transport_vehicle_tier
+    <include refid="vehicleFilter"/>
+  </select>
+
+  <select id="selectEnabledVehicles" resultType="com.mujian.backend.delivery.domain.VehicleDO">
+    SELECT
+      id,
+      tier_code,
+      tier_name,
+      cargo_length_mm,
+      cargo_width_mm,
+      cargo_height_mm,
+      effective_volume_cm3,
+      safe_payload_gram,
+      sort_no,
+      tier_status,
+      created_at,
+      updated_at,
+      version
+    FROM transport_vehicle_tier
+    WHERE tier_status='enabled'
+    ORDER BY sort_no,
+      id
+  </select>
+
+  <insert id="insertVehicle">
+    INSERT INTO transport_vehicle_tier(id,
+      tier_code,
+      tier_name,
+      cargo_length_mm,
+      cargo_width_mm,
+      cargo_height_mm,
+      effective_volume_cm3,
+      safe_payload_gram,
+      sort_no,
+      tier_status,
+      created_at,
+      updated_at,
+      version)
+    VALUES (#{row.id},
+      #{row.tierCode},
+      #{row.tierName},
+      #{row.cargoLengthMm},
+      #{row.cargoWidthMm},
+      #{row.cargoHeightMm},
+      #{row.effectiveVolumeCm3},
+      #{row.safePayloadGram},
+      #{row.sortNo},
+      #{row.tierStatus},
+      #{row.createdAt},
+      #{row.updatedAt},
+      #{row.version})
+  </insert>
+
+  <update id="updateVehicle">
+    UPDATE transport_vehicle_tier
+    SET
+      tier_code=#{row.tierCode},
+      tier_name=#{row.tierName},
+      cargo_length_mm=#{row.cargoLengthMm},
+      cargo_width_mm=#{row.cargoWidthMm},
+      cargo_height_mm=#{row.cargoHeightMm},
+      effective_volume_cm3=#{row.effectiveVolumeCm3},
+      safe_payload_gram=#{row.safePayloadGram},
+      sort_no=#{row.sortNo},
+      tier_status=#{row.tierStatus},
+      updated_at=#{row.updatedAt},
+      version=#{row.version}
+    WHERE id=#{row.id}
+      AND version=#{expected}
+  </update>
+
+  <select id="selectPriceRuleById" resultType="com.mujian.backend.delivery.domain.PriceRuleDO" useCache="false" flushCache="true">
+    SELECT
+      id,
+      rule_version,
+      city_code,
+      vehicle_tier_id,
+      distance_min_meter,
+      distance_max_meter,
+      guide_min_amount_fen,
+      guide_max_amount_fen,
+      own_vehicle_settle_amount_fen,
+      extra_km_amount_fen,
+      allowed_extra_fee_json,
+      rule_status,
+      effective_at,
+      expire_at,
+      created_at,
+      updated_at,
+      version,
+      included_distance_meter
+    FROM transport_pricing_rule
+    WHERE id=#{id}
+    <if test="lock">
+      FOR UPDATE
+    </if>
+  </select>
+  <sql id="ruleFilter">
+    <where>
+      <if test="transportQuery.cityCode!=null">
+        city_code=#{transportQuery.cityCode}
+      </if>
+      <if test="transportQuery.vehicleTierId!=null">
+          AND vehicle_tier_id=#{transportQuery.vehicleTierId}
+      </if>
+      <if test="transportQuery.status!=null">
+        <choose>
+          <when test="transportQuery.status=='expired'">
+              AND (rule_status='expired'
+              OR (rule_status='active'
+              AND expire_at&lt;=#{now}))
+          </when>
+          <when test="transportQuery.status=='active'">
+              AND rule_status='active'
+              AND (expire_at IS NULL
+              OR expire_at&gt;#{now})
+          </when>
+          <otherwise>
+              AND rule_status=#{transportQuery.status}
+          </otherwise>
+        </choose>
+      </if>
+    </where>
+  </sql>
+
+  <select id="selectPriceRulesByQuery" resultType="com.mujian.backend.delivery.domain.PriceRuleDO">
+    SELECT
+      id,
+      rule_version,
+      city_code,
+      vehicle_tier_id,
+      distance_min_meter,
+      distance_max_meter,
+      guide_min_amount_fen,
+      guide_max_amount_fen,
+      own_vehicle_settle_amount_fen,
+      extra_km_amount_fen,
+      allowed_extra_fee_json,
+      rule_status,
+      effective_at,
+      expire_at,
+      created_at,
+      updated_at,
+      version,
+      included_distance_meter
+    FROM transport_pricing_rule
+    <include refid="ruleFilter"/>
+    ORDER BY created_at DESC,
+      id DESC
+    LIMIT #{transportQuery.limit}
+    OFFSET #{transportQuery.offset}
+  </select>
+
+  <select id="countPriceRulesByQuery" resultType="long">
+    SELECT
+      COUNT(*)
+    FROM transport_pricing_rule
+    <include refid="ruleFilter"/>
+  </select>
+
+  <select id="selectActivePriceRules" resultType="com.mujian.backend.delivery.domain.PriceRuleDO">
+    SELECT
+      id,
+      rule_version,
+      city_code,
+      vehicle_tier_id,
+      distance_min_meter,
+      distance_max_meter,
+      guide_min_amount_fen,
+      guide_max_amount_fen,
+      own_vehicle_settle_amount_fen,
+      extra_km_amount_fen,
+      allowed_extra_fee_json,
+      rule_status,
+      effective_at,
+      expire_at,
+      created_at,
+      updated_at,
+      version,
+      included_distance_meter
+    FROM transport_pricing_rule
+    WHERE rule_status='active'
+      AND effective_at&lt;=#{now}
+      AND (expire_at IS NULL
+      OR expire_at&gt;#{now})
+    <if test="cityCode!=null">
+        AND city_code=#{cityCode}
+    </if>
+    ORDER BY city_code,
+      vehicle_tier_id,
+      distance_min_meter,
+      id
+  </select>
+
+  <select id="countOverlappingPriceRules" resultType="long">
+    SELECT
+      COUNT(*)
+    FROM transport_pricing_rule
+    WHERE rule_status='active'
+      AND id&lt;&gt;#{row.id}
+      AND city_code=#{row.cityCode}
+      AND vehicle_tier_id=#{row.vehicleTierId}
+      AND (distance_max_meter IS NULL
+      OR distance_max_meter&gt;#{row.distanceMinMeter})
+      AND (#{row.distanceMaxMeter} IS NULL
+      OR distance_min_meter&lt;#{row.distanceMaxMeter})
+      AND (expire_at IS NULL
+      OR expire_at&gt;#{row.effectiveAt})
+      AND (#{row.expireAt} IS NULL
+      OR effective_at&lt;#{row.expireAt})
+  </select>
+
+  <insert id="insertRule">
+    INSERT INTO transport_pricing_rule(id,
+      rule_version,
+      city_code,
+      vehicle_tier_id,
+      distance_min_meter,
+      distance_max_meter,
+      guide_min_amount_fen,
+      guide_max_amount_fen,
+      own_vehicle_settle_amount_fen,
+      extra_km_amount_fen,
+      allowed_extra_fee_json,
+      rule_status,
+      effective_at,
+      expire_at,
+      created_at,
+      updated_at,
+      version,
+      included_distance_meter)
+    VALUES (#{row.id},
+      #{row.ruleVersion},
+      #{row.cityCode},
+      #{row.vehicleTierId},
+      #{row.distanceMinMeter},
+      #{row.distanceMaxMeter},
+      #{row.guideMinAmountFen},
+      #{row.guideMaxAmountFen},
+      #{row.ownVehicleSettleAmountFen},
+      #{row.extraKmAmountFen},
+      #{row.allowedExtraFeeJson},
+      #{row.ruleStatus},
+      #{row.effectiveAt},
+      #{row.expireAt},
+      #{row.createdAt},
+      #{row.updatedAt},
+      #{row.version},
+      #{row.includedDistanceMeter})
+  </insert>
+
+  <update id="updateRule">
+    UPDATE transport_pricing_rule
+    SET
+      rule_version=#{row.ruleVersion},
+      city_code=#{row.cityCode},
+      vehicle_tier_id=#{row.vehicleTierId},
+      distance_min_meter=#{row.distanceMinMeter},
+      distance_max_meter=#{row.distanceMaxMeter},
+      guide_min_amount_fen=#{row.guideMinAmountFen},
+      guide_max_amount_fen=#{row.guideMaxAmountFen},
+      own_vehicle_settle_amount_fen=#{row.ownVehicleSettleAmountFen},
+      extra_km_amount_fen=#{row.extraKmAmountFen},
+      allowed_extra_fee_json=#{row.allowedExtraFeeJson},
+      rule_status=#{row.ruleStatus},
+      effective_at=#{row.effectiveAt},
+      expire_at=#{row.expireAt},
+      updated_at=#{row.updatedAt},
+      version=#{row.version},
+      included_distance_meter=#{row.includedDistanceMeter}
+    WHERE id=#{row.id}
+      AND version=#{expected}
+  </update>
+</mapper>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.prop.mapper.PropStockMovementMapper">
+<sql id="columns_prop_stock_movement">id,sku_id,movement_type,source_type,quantity,before_quantity,after_quantity,before_stock_snapshot_json,after_stock_snapshot_json,related_audit_id,related_order_id,related_reservation_id,related_arbitration_id,operator_user_id,operator_role,remark,business_key,created_at</sql>
+<sql id="aliased_prop_stock_movement">s.id,s.sku_id,s.movement_type,s.source_type,s.quantity,s.before_quantity,s.after_quantity,s.before_stock_snapshot_json,s.after_stock_snapshot_json,s.related_audit_id,s.related_order_id,s.related_reservation_id,s.related_arbitration_id,s.operator_user_id,s.operator_role,s.remark,s.business_key,s.created_at</sql>
+<select id="selectPropStockMovementCountByQuery" resultType="long" useCache="false" flushCache="true">
+        SELECT COUNT(*) FROM prop_stock_movement WHERE sku_id=#{movementQueryDTO.skuId}
+        <if test="movementQueryDTO.sourceType != null"> AND source_type=#{movementQueryDTO.sourceType}</if>
+        <if test="movementQueryDTO.movementType != null"> AND movement_type=#{movementQueryDTO.movementType}</if>
+        <if test="movementQueryDTO.start != null"> AND created_at&gt;=#{movementQueryDTO.start}</if>
+        <if test="movementQueryDTO.end != null"> AND created_at&lt;#{movementQueryDTO.end}</if>
+      </select>
+<select id="selectPropStockMovementPageByQuery" resultType="com.mujian.backend.prop.domain.PropStockMovementDO" useCache="false" flushCache="true">
+        SELECT id, after_quantity, after_stock_snapshot_json, before_quantity, before_stock_snapshot_json, created_at, movement_type, operator_role, operator_user_id, quantity, related_arbitration_id, related_audit_id, related_order_id, related_reservation_id, remark, source_type FROM prop_stock_movement WHERE sku_id=#{movementQueryDTO.skuId}
+        <if test="movementQueryDTO.sourceType != null"> AND source_type=#{movementQueryDTO.sourceType}</if>
+        <if test="movementQueryDTO.movementType != null"> AND movement_type=#{movementQueryDTO.movementType}</if>
+        <if test="movementQueryDTO.start != null"> AND created_at&gt;=#{movementQueryDTO.start}</if>
+        <if test="movementQueryDTO.end != null"> AND created_at&lt;#{movementQueryDTO.end}</if>
+         ORDER BY created_at DESC,id DESC LIMIT #{movementQueryDTO.limit} OFFSET #{movementQueryDTO.offset}
+      </select>
+<select id="selectPropStockMovement" resultType="com.mujian.backend.prop.domain.PropStockMovementDO" useCache="false" flushCache="true">
+    SELECT id,sku_id,movement_type,source_type,quantity,before_quantity,after_quantity,before_stock_snapshot_json,after_stock_snapshot_json,related_audit_id,related_order_id,related_reservation_id,related_arbitration_id,operator_user_id,operator_role,remark,business_key,created_at FROM prop_stock_movement WHERE id=#{id} <if test="lock">FOR UPDATE</if>
+  </select>
+<insert id="insertPropStockMovement">INSERT INTO prop_stock_movement
+<trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="row.id != null">id,</if>
+<if test="row.skuId != null">sku_id,</if>
+<if test="row.movementType != null">movement_type,</if>
+<if test="row.sourceType != null">source_type,</if>
+<if test="row.quantity != null">quantity,</if>
+<if test="row.beforeQuantity != null">before_quantity,</if>
+<if test="row.afterQuantity != null">after_quantity,</if>
+<if test="row.beforeStockSnapshotJson != null">before_stock_snapshot_json,</if>
+<if test="row.afterStockSnapshotJson != null">after_stock_snapshot_json,</if>
+<if test="row.relatedAuditId != null">related_audit_id,</if>
+<if test="row.relatedOrderId != null">related_order_id,</if>
+<if test="row.relatedReservationId != null">related_reservation_id,</if>
+<if test="row.relatedArbitrationId != null">related_arbitration_id,</if>
+<if test="row.operatorUserId != null">operator_user_id,</if>
+<if test="row.operatorRole != null">operator_role,</if>
+<if test="row.remark != null">remark,</if>
+<if test="row.businessKey != null">business_key,</if>
+<if test="row.createdAt != null">created_at,</if>
+</trim> VALUES
+<trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="row.id != null">#{row.id},</if>
+<if test="row.skuId != null">#{row.skuId},</if>
+<if test="row.movementType != null">#{row.movementType},</if>
+<if test="row.sourceType != null">#{row.sourceType},</if>
+<if test="row.quantity != null">#{row.quantity},</if>
+<if test="row.beforeQuantity != null">#{row.beforeQuantity},</if>
+<if test="row.afterQuantity != null">#{row.afterQuantity},</if>
+<if test="row.beforeStockSnapshotJson != null">#{row.beforeStockSnapshotJson},</if>
+<if test="row.afterStockSnapshotJson != null">#{row.afterStockSnapshotJson},</if>
+<if test="row.relatedAuditId != null">#{row.relatedAuditId},</if>
+<if test="row.relatedOrderId != null">#{row.relatedOrderId},</if>
+<if test="row.relatedReservationId != null">#{row.relatedReservationId},</if>
+<if test="row.relatedArbitrationId != null">#{row.relatedArbitrationId},</if>
+<if test="row.operatorUserId != null">#{row.operatorUserId},</if>
+<if test="row.operatorRole != null">#{row.operatorRole},</if>
+<if test="row.remark != null">#{row.remark},</if>
+<if test="row.businessKey != null">#{row.businessKey},</if>
+<if test="row.createdAt != null">#{row.createdAt},</if>
+</trim></insert>
+</mapper>

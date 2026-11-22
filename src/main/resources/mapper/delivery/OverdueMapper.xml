@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.delivery.mapper.OverdueMapper">
+  <select id="selectActiveRiskIds" resultType="string">
+    SELECT id FROM order_fulfillment_risk WHERE risk_status IN ('pending','processing') AND id&gt;#{after} ORDER BY id LIMIT 100
+  </select>
+  <select id="selectRiskSource" resultType="com.mujian.backend.delivery.mapper.OverdueMapper$RiskSource" flushCache="true" useCache="false">
+    SELECT r.id,r.source_rental_order_id source_id,r.affected_rental_order_id affected_id,r.sku_id,r.sn_id,r.risk_status status,
+      COALESCE(s.reservation_status,h.reservation_status) source_status,o.order_status affected_status,
+      (SELECT MIN(a.occupy_start_date) FROM inventory_reservation a WHERE a.rental_order_id=o.id AND a.rental_order_item_id=r.affected_order_item_id
+        AND a.sn_id&lt;=&gt;r.sn_id AND a.reservation_status='paid_locked') start_date,
+      (SELECT MAX(a.occupy_end_date) FROM inventory_reservation a WHERE a.rental_order_id=o.id AND a.rental_order_item_id=r.affected_order_item_id
+        AND a.sn_id&lt;=&gt;r.sn_id AND a.reservation_status='paid_locked') end_date
+    FROM order_fulfillment_risk r JOIN rental_order o ON o.id=r.affected_rental_order_id
+    LEFT JOIN inventory_reservation s ON s.id=r.source_reservation_id AND s.rental_order_id=r.source_rental_order_id
+    LEFT JOIN inventory_reservation_history h ON h.origin_reservation_id=r.source_reservation_id AND h.rental_order_id=r.source_rental_order_id
+    WHERE r.id=#{id}
+  </select>
+  <update id="resolveRiskBySource">
+    UPDATE order_fulfillment_risk r JOIN admin_case_relation l ON l.relation_type='fulfillment_risk' AND l.relation_id=r.id AND l.is_primary=1
+    JOIN admin_case c ON c.id=l.admin_case_id AND c.case_type='fulfillment_risk'
+    SET r.risk_status='resolved',r.resolution_remark=#{reason},r.resolved_at=#{at},r.updated_at=#{at},
+      c.case_status='closed',c.active_case_key=NULL,c.resolution_summary=#{reason},c.closed_at=#{at},c.closed_by_admin_user_id=#{systemId},
+      c.version=c.version+1,c.updated_at=#{at}
+    WHERE r.id=#{id} AND r.risk_status IN ('pending','processing') AND c.case_status NOT IN ('closed','cancelled')
+  </update>
+  <select id="selectDue" resultType="string">
+    SELECT o.id FROM rental_order o WHERE o.id&gt;#{after} AND o.current_due_date&lt;#{today}
+      AND EXISTS (SELECT 1 FROM inventory_reservation r WHERE r.rental_order_id=o.id AND r.reservation_status='renting')
+    ORDER BY o.id LIMIT 100
+  </select>
+  <update id="markOverdue">
+    UPDATE inventory_reservation SET reservation_status='overdue_holding', updated_at=#{at},version=version+1
+    WHERE rental_order_id=#{orderId} AND reservation_status='renting' AND EXISTS (SELECT 1 FROM rental_order o WHERE o.id=#{orderId} AND o.current_due_date&lt;DATE(#{at}))
+  </update>
+  <select id="selectPending" resultType="string">
+    SELECT id FROM order_fulfillment_event WHERE event_type='rental_overdue' AND processed_at IS NULL AND id&gt;#{after}
+    ORDER BY id LIMIT 100
+  </select>
+  <select id="selectEvent" resultType="com.mujian.backend.delivery.mapper.OverdueMapper$Event" useCache="false" flushCache="true">
+    SELECT id,rental_order_id order_id,event_time FROM order_fulfillment_event
+    WHERE id=#{id} AND event_type='rental_overdue' AND processed_at IS NULL <if test="lock">FOR UPDATE</if>
+  </select>
+  <select id="selectCandidates" resultType="com.mujian.backend.delivery.mapper.OverdueMapper$Candidate" useCache="false" flushCache="true">
+    SELECT s.id reservation_id,a.rental_order_id order_id,a.rental_order_item_id item_id,a.sku_id,a.sn_id,
+           s.quantity source_quantity,GREATEST(#{today},a.occupy_start_date,DATE_ADD(s.occupy_end_date,INTERVAL 1 DAY)) start_date,
+           a.occupy_end_date end_date
+    FROM inventory_reservation s JOIN inventory_reservation a ON a.sku_id=s.sku_id AND a.sn_id&lt;=&gt;s.sn_id
+      AND a.rental_order_id&lt;&gt;s.rental_order_id AND a.reservation_status='paid_locked'
+      AND a.occupy_end_date&gt;s.occupy_end_date AND a.occupy_end_date&gt;=#{today}
+    JOIN rental_order o ON o.id=a.rental_order_id AND o.order_status IN ('pending_accept','accepted')
+    WHERE s.rental_order_id=#{source} AND s.reservation_status='overdue_holding'
+    ORDER BY a.rental_order_id,a.rental_order_item_id,s.id
+  </select>
+  <select id="lockOrder" resultType="string">SELECT id FROM rental_order WHERE id=#{id} FOR UPDATE</select>
+  <select id="selectRiskIdByKey" resultType="string">SELECT id FROM order_fulfillment_risk WHERE risk_idempotency_key=#{key}</select>
+  <insert id="insertRisk">
+    INSERT INTO order_fulfillment_risk(id,source_rental_order_id,risk_idempotency_key,risk_type,source_reservation_id,
+      affected_rental_order_id,affected_order_item_id,sku_id,sn_id,risk_status,created_at,updated_at)
+    VALUES(#{id},#{source},#{key},'overdue_impact',#{row.reservationId},#{row.orderId},#{row.itemId},#{row.skuId},
+      #{row.snId},'pending',#{at},#{at})
+    ON DUPLICATE KEY UPDATE risk_idempotency_key=order_fulfillment_risk.risk_idempotency_key
+  </insert>
+  <update id="markProcessed">UPDATE order_fulfillment_event SET processed_at=#{at} WHERE id=#{id} AND processed_at IS NULL AND event_type='rental_overdue'</update>
+  <select id="hasActiveRisk" resultType="boolean">SELECT EXISTS(SELECT 1 FROM order_fulfillment_risk
+    WHERE affected_rental_order_id=#{orderId} AND risk_status IN ('pending','processing'))</select>
+</mapper>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC '-//mybatis.org//DTD Mapper 3.0//EN'
+  'https://mybatis.org/dtd/mybatis-3-mapper.dtd'>
+<mapper namespace="com.mujian.backend.account.mapper.LoginMapper">
+  <select id="selectWritablePrimaryFlag" resultType="int">
+    SELECT IF(@@global.read_only=0 AND @@global.super_read_only=0,1,0)
+  </select>
+  <select id="selectUserByIdForUpdate" resultType="string">
+    SELECT id FROM sys_user WHERE id=#{id} FOR UPDATE
+  </select>
+  <select id="selectWechatIdentityByAppAndOpenId" resultType="com.mujian.backend.infrastructure.persistence.record.account.LoginIdentity">
+    SELECT id,user_id,verified_status,phone FROM user_login_identity WHERE app_id=#{appId} AND openid=#{openid}
+  </select>
+  <select id="selectPhoneIdentityByPhone" resultType="com.mujian.backend.infrastructure.persistence.record.account.LoginIdentity">
+    SELECT id,user_id,verified_status,phone FROM user_login_identity WHERE active_phone_guard=#{phone}
+  </select>
+  <select id="selectPrimaryPhoneIdentityByUser" resultType="com.mujian.backend.infrastructure.persistence.record.account.LoginIdentity">
+    SELECT id,user_id,verified_status,phone FROM user_login_identity WHERE active_phone_user_guard=#{user}
+  </select>
+  <select id="selectIdentityIdsByUserForUpdate" resultType="string">
+    SELECT id FROM user_login_identity WHERE user_id=#{user} ORDER BY id FOR UPDATE
+  </select>
+  <select id="selectRequiredRegistrationRulesForShare" resultType="com.mujian.backend.infrastructure.persistence.record.account.RuleRecord">
+    SELECT id,rule_code,rule_title,rule_version,content_hash,effective_at,COALESCE(content_text,content_url) AS content_text,rule_status FROM platform_rule_document WHERE rule_status='active' AND rule_scope='all_user' AND is_required=1 AND rule_code IN ('user_service_agreement','privacy_policy','rental_transaction_rule','deposit_compensation_rule','logistics_transport_rule') ORDER BY rule_code FOR SHARE
+  </select>
+  <select id="selectRegistrationRuleById" resultType="com.mujian.backend.infrastructure.persistence.record.account.RuleRecord">
+    SELECT id,rule_code,rule_title,rule_version,content_hash,effective_at,COALESCE(content_text,content_url) AS content_text,rule_status FROM platform_rule_document WHERE id=#{id} AND rule_status IN ('active','archived')
+  </select>
+  <select id="countAcceptedRegistrationRuleVersion" resultType="int">
+    SELECT COUNT(*) FROM user_rule_acceptance WHERE user_id=#{user} AND rule_document_id=#{document} AND rule_version=#{version} AND content_hash=#{hash}
+  </select>
+  <insert id="insertRegistrationRuleAcceptance">
+    INSERT INTO user_rule_acceptance (id,user_id,rule_document_id,rule_code,rule_version,content_hash,acceptance_scene,accepted_at,created_at) VALUES (#{id},#{user},#{ruleRecord.id},#{ruleRecord.ruleCode},#{ruleRecord.ruleVersion},#{ruleRecord.contentHash},'register',#{now},#{now})
+  </insert>
+  <insert id="insertRegisteredUser">
+    INSERT INTO sys_user (id,nickname,user_status,register_status,created_at,updated_at) VALUES (#{id},'幕间用户','active','new',#{now},#{now})
+  </insert>
+  <insert id="insertWechatIdentity">
+    INSERT INTO user_login_identity (id,user_id,identity_type,provider,app_id,identifier,openid,unionid,verified_status,verified_at,source,is_primary,last_login_at,created_at,updated_at) VALUES (#{id},#{user},'wechat_miniapp','wechat',#{appId},#{openid},#{openid},#{unionid},'verified',#{now},'wechat_oauth',0,#{now},#{now},#{now})
+  </insert>
+  <insert id="insertPhoneIdentity">
+    INSERT INTO user_login_identity (id,user_id,identity_type,provider,identifier,phone,country_code,verified_status,verified_at,source,is_primary,last_login_at,created_at,updated_at) VALUES (#{id},#{user},'phone','phone',#{phone},#{phone},#{country},'verified',#{now},'wechat_get_phone_number',1,#{now},#{now},#{now})
+  </insert>
+  <update id="updateUserPhoneSnapshot">
+    UPDATE sys_user SET phone=#{phone},phone_verified=1,phone_source='wechat_get_phone_number',phone_verified_at=#{now},updated_at=#{now} WHERE id=#{user}
+  </update>
+  <update id="updateUserLoginTime">
+    UPDATE user_login_identity SET last_login_at=#{now},updated_at=#{now} WHERE user_id=#{user} AND verified_status='verified'
+  </update>
+  <insert id="insertDemanderRole">
+    INSERT INTO sys_user_role (id,user_id,role_code,enabled,created_at,updated_at) VALUES (#{id},#{user},'demander',1,#{now},#{now})
+  </insert>
+  <update id="markDemanderBound">
+    UPDATE sys_user SET register_status='demander_bound',updated_at=#{now} WHERE id=#{user}
+  </update>
+  <select id="selectUserNicknameById" resultType="string">
+    SELECT nickname FROM sys_user WHERE id=#{user}
+  </select>
+  <select id="selectUserPhoneById" resultType="string">
+    SELECT phone FROM sys_user WHERE id=#{user}
+  </select>
+  <select id="countWechatIdentitiesByUserAndApp" resultType="int">
+    SELECT COUNT(*) FROM user_login_identity WHERE user_id=#{user} AND app_id=#{appId} AND identity_type='wechat_miniapp' AND verified_status='verified'
+  </select>
+<update id="markFactoryInvitationLocked">
+    UPDATE sys_user SET register_status='factory_invite_locked',updated_at=#{now} WHERE id=#{id}
+  </update>
+  
+<insert id="insertSupplierRole">
+    INSERT INTO sys_user_role(id,user_id,role_code,enabled,created_at,updated_at) VALUES(#{id},#{user},'supplier',1,#{now},#{now})
+  </insert>
+  
+<update id="updateRegistrationStage">
+    UPDATE sys_user SET register_status=#{stage},updated_at=#{now} WHERE id=#{id}
+  </update>
+  
+<update id="markFactoryPending">
+    UPDATE sys_user SET register_status='factory_pending',updated_at=#{now} WHERE id=#{id}
+  </update>
+  
+  <select id="selectWechatOpenIdByUserAndApp" resultType="string">SELECT openid FROM user_login_identity WHERE user_id=#{user} AND app_id=#{appId} AND identity_type='wechat_miniapp' AND verified_status='verified'</select>
+</mapper>

@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.custom.mapper.CustomFulfillmentMapper">
+  <select id="selectDeliveriesByCustomOrder" resultType="com.mujian.backend.custom.mapper.CustomFulfillmentMapper$Delivery" useCache="false" flushCache="true">
+    SELECT id,delivery_version,delivery_mode mode,delivery_status state,pickup_registered_at,delivered_at,evidence_json evidence,remark FROM custom_delivery_record WHERE custom_order_id=#{order} ORDER BY delivery_version DESC
+  </select>
+  <select id="selectCustomDeliveryRecordById" resultType="com.mujian.backend.custom.mapper.CustomFulfillmentMapper$Delivery" useCache="false" flushCache="true">
+    SELECT id,delivery_version,delivery_mode mode,delivery_status state,pickup_registered_at,delivered_at,evidence_json evidence,remark FROM custom_delivery_record WHERE id=#{id}
+  </select>
+  <insert id="insertCustomDeliveryRecord">
+    INSERT INTO custom_delivery_record(id,custom_order_id,delivery_version,delivery_request_id,delivery_mode,delivery_status,pickup_registered_at,delivered_at,acceptance_deadline_at,
+ delivery_address_snapshot,evidence_json,order_item_ids_json,remark,operator_user_id,version,created_at,updated_at)
+ SELECT #{id},o.id,COALESCE(old.delivery_version,0)+1,#{key},o.delivery_mode,IF(#{pickup},'awaiting_pickup_confirmation','delivered'),IF(#{pickup},#{occurred},NULL),
+ IF(#{pickup},NULL,#{occurred}),IF(#{pickup},NULL,DATE_ADD(CAST(#{occurred} AS DATETIME(3)),INTERVAL 48 HOUR)),o.delivery_address_snapshot,#{evidence},#{items},#{remark},#{actor},0,#{at},#{at}
+ FROM custom_order o LEFT JOIN custom_delivery_record old ON old.id=o.current_delivery_record_id WHERE o.id=#{order}
+  </insert>
+  <update id="activateDelivery">
+    UPDATE custom_order o JOIN custom_delivery_record d ON d.custom_order_id=o.id AND d.id=#{delivery}
+ SET o.current_delivery_record_id=d.id,o.delivered_at=d.delivered_at,o.acceptance_deadline_at=d.acceptance_deadline_at,o.acceptance_paused_at=NULL,o.acceptance_remaining_seconds=NULL,
+ o.acceptance_status=IF(d.delivered_at IS NULL,'not_started','running'),o.order_status=IF(d.delivered_at IS NULL,'delivering','pending_acceptance'),o.updated_at=#{at},o.version=o.version+1 WHERE o.id=#{order}
+  </update>
+  <update id="updateCustomDeliveryRecordPickup">
+    UPDATE custom_delivery_record SET delivery_status='delivered',delivered_at=#{at},acceptance_deadline_at=DATE_ADD(CAST(#{at} AS DATETIME(3)),INTERVAL 48 HOUR),
+ version=version+1,updated_at=#{at} WHERE id=#{id} AND delivery_status='awaiting_pickup_confirmation'
+  </update>
+  <update id="completeCustomOrder">
+    UPDATE custom_order o JOIN custom_delivery_record d ON d.id=o.current_delivery_record_id AND d.id=#{delivery}
+ SET o.order_status='completed',o.acceptance_status='accepted',o.accepted_at=#{at},o.completed_at=#{at},o.version=o.version+1,o.updated_at=#{at},d.delivery_status='accepted',d.updated_at=#{at},d.version=d.version+1
+ WHERE o.id=#{id} AND o.order_status='pending_acceptance' AND o.acceptance_status='running' AND d.delivery_status='delivered' AND NOT EXISTS(SELECT 1 FROM custom_after_sale_request a WHERE a.active_order_guard=o.id)
+  </update>
+  <select id="selectOrdersDueForAcceptance" resultType="com.mujian.backend.custom.mapper.CustomFulfillmentMapper$Due" useCache="false" flushCache="true">
+    SELECT o.id,d.id delivery,d.delivery_version FROM custom_order o JOIN custom_delivery_record d ON d.id=o.current_delivery_record_id
+ WHERE o.order_status='pending_acceptance' AND o.acceptance_status='running' AND o.acceptance_deadline_at&lt;=#{at} ORDER BY o.acceptance_deadline_at,o.id LIMIT 100
+  </select>
+  <select id="selectExtensionsByCustomOrder" resultType="com.mujian.backend.custom.mapper.CustomFulfillmentMapper$Extension" useCache="false" flushCache="true">
+    SELECT id,custom_order_id order_id,version,request_status state,original_promised_date original_date,requested_promised_date requested_date,
+ request_reason reason,evidence_json evidence,resolution_summary decision_note,admin_case_id case_id FROM custom_order_extension_request WHERE custom_order_id=#{order} <if test="!factory">AND request_status!='draft'</if> ORDER BY created_at DESC,id
+  </select>
+  <select id="selectCustomOrderExtensionRequestById" resultType="com.mujian.backend.custom.mapper.CustomFulfillmentMapper$Extension" useCache="false" flushCache="true">
+    SELECT id,custom_order_id order_id,version,request_status state,original_promised_date original_date,requested_promised_date requested_date,
+ request_reason reason,evidence_json evidence,resolution_summary decision_note,admin_case_id case_id FROM custom_order_extension_request WHERE id=#{id}
+  </select>
+  <select id="activeExtension" resultType="String" useCache="false" flushCache="true">
+    SELECT id FROM custom_order_extension_request WHERE pending_order_guard=#{order}
+  </select>
+  <select id="draftExtension" resultType="String" useCache="false" flushCache="true">
+    SELECT id FROM custom_order_extension_request WHERE custom_order_id=#{order} AND request_status='draft'
+  </select>
+  <insert id="insertCustomOrderExtensionRequestDraft">
+    INSERT INTO custom_order_extension_request(id,extension_request_no,submit_idempotency_key,custom_order_id,factory_id,original_promised_date,requested_promised_date,request_reason,evidence_json,request_status,version,created_at,updated_at)
+ SELECT #{id},CONCAT('CE',#{id}),#{key},o.id,o.factory_id,o.promised_completion_date,#{input.requestedDate},#{input.reason},#{evidence},'draft',0,#{at},#{at} FROM custom_order o WHERE o.id=#{order}
+ ON DUPLICATE KEY UPDATE requested_promised_date=#{input.requestedDate},request_reason=#{input.reason},evidence_json=#{evidence},version=custom_order_extension_request.version+1,updated_at=#{at}
+  </insert>
+  <update id="submitExtension">
+    UPDATE custom_order_extension_request SET original_promised_date=#{original},request_status='submitted',admin_case_id=#{caseId},submitted_at=#{at},updated_at=#{at},version=version+1 WHERE id=#{id}
+  </update>
+  <update id="updateCustomOrderExtensionRequestDecide">
+    UPDATE custom_order_extension_request SET request_status=#{decision.decision},resolution_summary=#{decision.note},resolved_at=#{at},updated_at=#{at},version=version+1 WHERE id=#{id}
+  </update>
+  <update id="updatePromisedCompletionDate">
+    UPDATE custom_order SET promised_completion_date=#{date},version=version+1,updated_at=#{at} WHERE id=#{order}
+  </update>
+  <select id="selectAfterSalesByCustomOrder" resultType="com.mujian.backend.custom.mapper.CustomFulfillmentMapper$Sale" useCache="false" flushCache="true">
+    SELECT a.id,a.custom_order_id order_id,a.version,a.after_sale_status state,a.source_delivery_record_id delivery_id,a.problem_summary problem,a.evidence_json evidence,
+ a.requested_solution,a.resolution_type,a.resolution_summary resolution_note,COALESCE(r.custom_goods_refund_amount_fen,0) goods_refund_fen,COALESCE(r.freight_refund_amount_fen,0) freight_refund_fen,
+ a.refund_order_id refund_id,r.refund_status,a.resolution_delivery_record_id replacement_delivery_id,a.after_sale_type issue_type,a.admin_case_id case_id
+ FROM custom_after_sale_request a LEFT JOIN refund_order r ON r.id=a.refund_order_id WHERE a.custom_order_id=#{order} ORDER BY a.created_at DESC,a.id
+  </select>
+  <select id="selectCustomAfterSaleRequestById" resultType="com.mujian.backend.custom.mapper.CustomFulfillmentMapper$Sale" useCache="false" flushCache="true">
+    SELECT a.id,a.custom_order_id order_id,a.version,a.after_sale_status state,a.source_delivery_record_id delivery_id,a.problem_summary problem,a.evidence_json evidence,
+ a.requested_solution,a.resolution_type,a.resolution_summary resolution_note,COALESCE(r.custom_goods_refund_amount_fen,0) goods_refund_fen,COALESCE(r.freight_refund_amount_fen,0) freight_refund_fen,
+ a.refund_order_id refund_id,r.refund_status,a.resolution_delivery_record_id replacement_delivery_id,a.after_sale_type issue_type,a.admin_case_id case_id
+ FROM custom_after_sale_request a LEFT JOIN refund_order r ON r.id=a.refund_order_id WHERE a.id=#{id}
+  </select>
+  <select id="activeSale" resultType="com.mujian.backend.custom.mapper.CustomFulfillmentMapper$Sale" useCache="false" flushCache="true">
+    SELECT a.id,a.custom_order_id order_id,a.version,a.after_sale_status state,a.source_delivery_record_id delivery_id,a.problem_summary problem,a.evidence_json evidence,
+ a.requested_solution,a.resolution_type,a.resolution_summary resolution_note,COALESCE(r.custom_goods_refund_amount_fen,0) goods_refund_fen,COALESCE(r.freight_refund_amount_fen,0) freight_refund_fen,
+ a.refund_order_id refund_id,r.refund_status,a.resolution_delivery_record_id replacement_delivery_id,a.after_sale_type issue_type,a.admin_case_id case_id
+ FROM custom_after_sale_request a LEFT JOIN refund_order r ON r.id=a.refund_order_id WHERE a.active_order_guard=#{order}
+  </select>
+  <insert id="insertCustomAfterSaleRequest">
+    INSERT INTO custom_after_sale_request(id,after_sale_no,submit_idempotency_key,custom_order_id,buyer_user_id,after_sale_type,problem_summary,evidence_json,
+ requested_solution,after_sale_status,source_delivery_record_id,approved_refund_amount_fen,admin_case_id,submitted_at,version,created_at,updated_at)
+ VALUES(#{id},CONCAT('CS',#{id}),#{key},#{order},#{actor},#{input.type},#{input.problem},#{evidence},#{input.requestedSolution},'submitted',#{input.deliveryId},0,#{caseId},#{at},0,#{at},#{at})
+  </insert>
+  <update id="pauseCustomOrderAcceptance">
+    UPDATE custom_order SET order_status='after_sale',acceptance_status='paused',acceptance_paused_at=#{at},
+ acceptance_remaining_seconds=GREATEST(0,CEIL(TIMESTAMPDIFF(MICROSECOND,#{at},acceptance_deadline_at)/1000000)),acceptance_deadline_at=NULL,updated_at=#{at},version=version+1 WHERE id=#{order}
+  </update>
+  <update id="processSale">
+    UPDATE custom_after_sale_request SET after_sale_status='processing',version=version+1,updated_at=#{at} WHERE id=#{id}
+  </update>
+  <update id="updateCustomAfterSaleRequestResolve">
+    UPDATE custom_after_sale_request SET after_sale_status=#{state},resolution_type=#{input.resolutionType},resolution_summary=#{input.reason},approved_refund_amount_fen=#{input.goodsRefundFen}+#{input.freightRefundFen},
+ refund_order_id=#{refund},version=version+1,updated_at=#{at} WHERE id=#{id}
+  </update>
+  <update id="updateCustomAfterSaleRequestReplacement">
+    UPDATE custom_after_sale_request SET resolution_delivery_record_id=#{delivery},version=version+1,updated_at=#{at} WHERE id=#{id}
+  </update>
+  <update id="markCustomDeliveryException">
+    UPDATE custom_delivery_record SET delivery_status='exception',updated_at=#{at},version=version+1 WHERE id=#{id}
+  </update>
+  <update id="markAfterSaleResolved">
+    UPDATE custom_after_sale_request SET after_sale_status='resolved',resolved_at=#{at},updated_at=#{at},version=version+1 WHERE id=#{id}
+  </update>
+  <update id="resumeCustomOrderAcceptance">
+    UPDATE custom_order o JOIN custom_delivery_record d ON d.id=o.current_delivery_record_id SET o.order_status='pending_acceptance',o.acceptance_status='running',
+ d.acceptance_deadline_at=IF(#{replacement},DATE_ADD(d.delivered_at,INTERVAL 48 HOUR),TIMESTAMPADD(SECOND,o.acceptance_remaining_seconds,#{at})),
+ o.acceptance_deadline_at=IF(#{replacement},DATE_ADD(d.delivered_at,INTERVAL 48 HOUR),TIMESTAMPADD(SECOND,o.acceptance_remaining_seconds,#{at})),
+ o.acceptance_paused_at=NULL,o.acceptance_remaining_seconds=NULL,o.updated_at=#{at},o.version=o.version+1,d.updated_at=#{at},d.version=d.version+1 WHERE o.id=#{id}
+  </update>
+  <update id="waitForRefund">
+    UPDATE custom_order SET order_status='after_sale',acceptance_status='paused',acceptance_deadline_at=NULL,acceptance_paused_at=#{at},updated_at=#{at} WHERE id=#{id}
+  </update>
+  <update id="markCustomOrderCancelled">
+    UPDATE custom_order SET order_status='cancelled',acceptance_status='cancelled',acceptance_remaining_seconds=NULL,acceptance_deadline_at=NULL,updated_at=#{at},version=version+1 WHERE id=#{id}
+  </update>
+  <update id="closeCase">
+    UPDATE admin_case SET case_status='closed',active_case_key=NULL,resolution_summary=#{note},resolution_code='resolved',closed_at=#{at},closed_by_admin_user_id=#{actor},version=version+1,updated_at=#{at} WHERE id=#{id} AND case_status!='closed'
+  </update>
+  <select id="extensionsPage" resultType="com.mujian.backend.custom.mapper.CustomFulfillmentMapper$Extension" useCache="false" flushCache="true">
+    SELECT id,custom_order_id order_id,version,request_status state,original_promised_date original_date,requested_promised_date requested_date,
+ request_reason reason,evidence_json evidence,resolution_summary decision_note,admin_case_id case_id FROM custom_order_extension_request WHERE request_status!='draft' <if test="status!=null">AND request_status=#{status}</if> ORDER BY created_at DESC,id LIMIT #{page.pageSize} OFFSET #{page.offset}
+  </select>
+  <select id="extensionsCount" resultType="long" useCache="false" flushCache="true">
+    SELECT COUNT(*) FROM custom_order_extension_request WHERE request_status!='draft' <if test="status!=null">AND request_status=#{status}</if>
+  </select>
+  <select id="salesPage" resultType="com.mujian.backend.custom.mapper.CustomFulfillmentMapper$Sale" useCache="false" flushCache="true">
+    SELECT a.id,a.custom_order_id order_id,a.version,a.after_sale_status state,a.source_delivery_record_id delivery_id,a.problem_summary problem,a.evidence_json evidence,
+ a.requested_solution,a.resolution_type,a.resolution_summary resolution_note,COALESCE(r.custom_goods_refund_amount_fen,0) goods_refund_fen,COALESCE(r.freight_refund_amount_fen,0) freight_refund_fen,
+ a.refund_order_id refund_id,r.refund_status,a.resolution_delivery_record_id replacement_delivery_id,a.after_sale_type issue_type,a.admin_case_id case_id
+ FROM custom_after_sale_request a LEFT JOIN refund_order r ON r.id=a.refund_order_id WHERE 1=1 <if test="status!=null">AND after_sale_status=#{status}</if> ORDER BY a.created_at DESC,a.id LIMIT #{page.pageSize} OFFSET #{page.offset}
+  </select>
+  <select id="salesCount" resultType="long" useCache="false" flushCache="true">
+    SELECT COUNT(*) FROM custom_after_sale_request WHERE 1=1 <if test="status!=null">AND after_sale_status=#{status}</if>
+  </select>
+</mapper>

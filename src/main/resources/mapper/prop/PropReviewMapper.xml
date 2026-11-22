@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.prop.mapper.PropReviewMapper">
+<update id="updatePropCaseForCancelledSource">
+    UPDATE admin_case SET case_status='closed',active_case_key=NULL,closed_by_admin_user_id=#{operatorId},resolution_code='cancelled',resolution_summary=#{reason},closure_checklist_json=#{facts},closed_at=#{at},updated_at=#{at},version=version+1 WHERE id=#{id} AND case_status='pending'
+  </update>
+<select id="selectPropApplicantNameByUserId" resultType="com.mujian.backend.prop.projection.PropApplicantProjection" useCache="false" flushCache="true">
+    SELECT nickname FROM sys_user WHERE id=#{id}
+  </select>
+<sql id="reviewWhere">
+     WHERE 1=1
+    <if test="reviewQueryDTO.factory != null"> AND s.factory_id=#{reviewQueryDTO.factory}</if>
+    <if test="reviewQueryDTO.skuId != null"> AND s.id=#{reviewQueryDTO.skuId}</if>
+    <if test="reviewQueryDTO.assetType != null"> AND s.asset_type=#{reviewQueryDTO.assetType}</if>
+    <if test="reviewQueryDTO.keyword != null"> AND (LOCATE(#{reviewQueryDTO.keyword},CONVERT(a.id USING utf8mb4) COLLATE utf8mb4_bin)&gt;0 OR LOCATE(#{reviewQueryDTO.keyword},CONVERT(s.sku_code USING utf8mb4) COLLATE utf8mb4_bin)&gt;0 OR LOCATE(#{reviewQueryDTO.keyword},s.prop_name)&gt;0)</if>
+    <if test="reviewQueryDTO.factoryKeyword != null"> AND LOCATE(#{reviewQueryDTO.factoryKeyword},f.factory_name)&gt;0</if>
+  </sql>
+<sql id="reviewBase">
+     FROM (
+    <trim suffixOverrides="UNION ALL">
+      <if test="reviewQueryDTO.sourceType == null or reviewQueryDTO.sourceType == 'sku_audit'">
+        SELECT a.id,'sku_audit' source_type,CASE WHEN a.action_type IN ('create','update') THEN 'sku' ELSE 'sku_status' END category,a.sku_id,s.sku_code,JSON_UNQUOTE(JSON_EXTRACT(a.proposed_snapshot_json,'$.fields.prop_name')) prop_name,s.factory_id,f.factory_name,s.asset_type,a.action_type action_type,a.audit_status,a.submitted_at,a.reviewed_at,u.nickname applicant_name,a.version,a.apply_remark apply_remark,COALESCE(a.initial_sn_quantity,a.initial_stock_quantity) initial_quantity,NULL quantity,NULL quantity_delta,NULL related_sku_audit_id FROM prop_sku_audit a JOIN prop_sku s ON s.id=a.sku_id JOIN factory_profile f ON f.id=s.factory_id JOIN sys_user u ON u.id=a.applicant_user_id 
+        <include refid="reviewWhere"/>
+         UNION ALL 
+      </if>
+      <if test="reviewQueryDTO.sourceType == null or reviewQueryDTO.sourceType == 'sn_adjustment'">
+        SELECT a.id,'sn_adjustment' source_type,'inventory' category,a.sku_id,s.sku_code,s.prop_name prop_name,s.factory_id,f.factory_name,s.asset_type,a.adjustment_type action_type,a.audit_status,a.submitted_at,a.reviewed_at,u.nickname applicant_name,a.version,a.apply_remark apply_remark,NULL initial_quantity,a.requested_quantity quantity,NULL quantity_delta,a.related_sku_audit_id FROM prop_sn_adjustment_audit a JOIN prop_sku s ON s.id=a.sku_id JOIN factory_profile f ON f.id=s.factory_id JOIN sys_user u ON u.id=a.applicant_user_id 
+        <include refid="reviewWhere"/>
+         UNION ALL 
+      </if>
+      <if test="reviewQueryDTO.sourceType == null or reviewQueryDTO.sourceType == 'stock_adjustment'">
+        SELECT a.id,'stock_adjustment' source_type,'inventory' category,a.sku_id,s.sku_code,s.prop_name prop_name,s.factory_id,f.factory_name,s.asset_type,a.adjustment_type action_type,a.audit_status,a.submitted_at,a.reviewed_at,u.nickname applicant_name,a.version,a.reason apply_remark,NULL initial_quantity,NULL quantity,a.quantity_delta,a.related_sku_audit_id FROM prop_stock_adjustment_audit a JOIN prop_sku s ON s.id=a.sku_id JOIN factory_profile f ON f.id=s.factory_id JOIN sys_user u ON u.id=a.applicant_user_id 
+        <include refid="reviewWhere"/>
+         UNION ALL 
+      </if>
+    </trim>
+    ) merged WHERE 1=1
+    <if test="reviewQueryDTO.category != null"> AND category=#{reviewQueryDTO.category}</if>
+  </sql>
+<select id="selectPropReviewPendingCountByQuery" resultType="com.mujian.backend.prop.projection.PropReviewCountProjection" useCache="false" flushCache="true">
+    SELECT category,COUNT(*) amount
+    <include refid="reviewBase"/>
+     AND audit_status='pending' GROUP BY category
+  </select>
+<select id="selectPropReviewCountByQuery" resultType="long" useCache="false" flushCache="true">
+    SELECT COUNT(*)
+    <include refid="reviewBase"/>
+    <if test="reviewQueryDTO.status != null"> AND audit_status=#{reviewQueryDTO.status}</if>
+  </select>
+<select id="selectPropReviewPageByQuery" resultType="com.mujian.backend.prop.projection.PropReviewListProjection" useCache="false" flushCache="true">
+    SELECT id, action_type, applicant_name, apply_remark, asset_type, audit_status, factory_id, factory_name, initial_quantity, prop_name, quantity, quantity_delta, related_sku_audit_id, reviewed_at, sku_code, sku_id, source_type, submitted_at, version
+    <include refid="reviewBase"/>
+    <if test="reviewQueryDTO.status != null"> AND audit_status=#{reviewQueryDTO.status}</if>
+     ORDER BY submitted_at DESC,id DESC,source_type ASC LIMIT #{reviewQueryDTO.limit} OFFSET #{reviewQueryDTO.offset}
+  </select>
+</mapper>

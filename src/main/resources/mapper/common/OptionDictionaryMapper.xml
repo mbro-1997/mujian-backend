@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.common.dictionary.mapper.OptionDictionaryMapper">
+  <select id="selectOptionDictionaryListByGroups" resultType="com.mujian.backend.common.dictionary.projection.OptionDictionaryProjection" useCache="false" flushCache="true">
+    SELECT option_group, option_code AS code, option_label AS label, enabled
+    FROM option_dictionary
+    WHERE option_group IN <foreach collection="groups" item="group" open="(" separator="," close=")">#{group}</foreach>
+    ORDER BY sort_order, id
+  </select>
+  <select id="selectEnabledOptionDictionaryListByGroups" resultType="com.mujian.backend.common.dictionary.projection.OptionDictionaryProjection" useCache="false" flushCache="true">
+    SELECT option_group, option_code AS code, option_label AS label, enabled
+    FROM option_dictionary
+    WHERE enabled = 1 AND option_group IN
+    <foreach collection="groups" item="group" open="(" separator="," close=")">#{group}</foreach>
+    ORDER BY sort_order, id
+  </select>
+  <select id="selectOptionDictionaryListByKeys" resultType="com.mujian.backend.common.dictionary.projection.OptionDictionaryProjection" useCache="false" flushCache="true">
+    SELECT option_group, option_code AS code, option_label AS label, enabled
+    FROM option_dictionary
+    WHERE <foreach collection="keys" item="key" open="(" separator=" OR " close=")">
+      (option_group = #{key.groupCode} AND option_code = #{key.code})
+    </foreach>
+    ORDER BY sort_order, id
+  </select>
+<select id="selectPropTypeOptionsByIdsForShare" resultType="com.mujian.backend.common.dictionary.projection.DictionaryRecordProjection" useCache="false" flushCache="true">
+    
+    SELECT id,option_group,option_code,option_label,sort_order,enabled,remark,created_at,updated_at FROM option_dictionary WHERE option_group='prop_sku-type' AND id IN 
+    <foreach collection="ids" item="value" open="(" separator="," close=")">#{value}</foreach>
+     ORDER BY id FOR SHARE
+  
+  </select>
+  
+<select id="selectDictionaryRecordByGroupAndCode" resultType="com.mujian.backend.common.dictionary.projection.DictionaryRecordProjection" useCache="false" flushCache="true">
+    SELECT id,option_group,option_code,option_label,sort_order,enabled,remark,created_at,updated_at FROM option_dictionary WHERE option_group=#{dictionaryGroup} AND option_code=#{optionCode}
+  </select>
+  
+<select id="selectDictionaryRecordsByGroup" resultType="com.mujian.backend.common.dictionary.projection.DictionaryRecordProjection" useCache="false" flushCache="true">
+    SELECT 
+    id,option_group,option_code,option_label,sort_order,enabled,remark,created_at,updated_at
+     FROM option_dictionary WHERE option_group=#{group} ORDER BY sort_order,id
+  </select>
+  
+</mapper>

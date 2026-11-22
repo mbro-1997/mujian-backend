@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.planning.mapper.ChecklistMapper">
+
+  <select id="selectOwnedChecklistById" resultType="com.mujian.backend.planning.domain.RentalChecklistDO" useCache="false" flushCache="true">
+    SELECT
+      id,
+      owner_user_id,
+      checklist_name,
+      rental_start_date,
+      rental_end_date,
+      rental_days,
+      checklist_status,
+      active_slot_no,
+      current_owner_guard,
+      current_checkout_batch_id,
+      source_type,
+      source_scheme_id,
+      activated_at,
+      checkout_processing_at,
+      converted_order_at,
+      version,
+      created_at,
+      updated_at
+    FROM rental_checklist
+    WHERE owner_user_id=#{actor}
+      AND id=#{id}
+    <if test="lock">
+      FOR UPDATE
+    </if>
+  </select>
+
+  <select id="selectActiveChecklistsByActor" resultType="com.mujian.backend.planning.domain.RentalChecklistDO" useCache="false" flushCache="true">
+    SELECT
+      id,
+      owner_user_id,
+      checklist_name,
+      rental_start_date,
+      rental_end_date,
+      rental_days,
+      checklist_status,
+      active_slot_no,
+      current_owner_guard,
+      current_checkout_batch_id,
+      source_type,
+      source_scheme_id,
+      activated_at,
+      checkout_processing_at,
+      converted_order_at,
+      version,
+      created_at,
+      updated_at
+    FROM rental_checklist
+    WHERE owner_user_id=#{actor}
+      AND active_slot_no IS NOT NULL
+    ORDER BY id
+    <if test="lock">
+      FOR UPDATE
+    </if>
+  </select>
+  <sql id="filter">
+    owner_user_id=#{query.actor}
+    <if test="query.scope == 'active'">
+        AND active_slot_no IS NOT NULL
+    </if>
+    <if test="query.scope == 'history'">
+        AND checklist_status='converted_to_order'
+    </if>
+  </sql>
+
+  <select id="selectChecklistCountByQuery" resultType="long" useCache="false" flushCache="true">
+    SELECT
+      COUNT(*)
+    FROM rental_checklist
+    WHERE
+    <include refid="filter"/>
+  </select>
+
+  <select id="selectChecklistPageByQuery" resultType="com.mujian.backend.planning.domain.RentalChecklistDO" useCache="false" flushCache="true">
+    SELECT
+      id,
+      owner_user_id,
+      checklist_name,
+      rental_start_date,
+      rental_end_date,
+      rental_days,
+      checklist_status,
+      active_slot_no,
+      current_owner_guard,
+      current_checkout_batch_id,
+      source_type,
+      source_scheme_id,
+      activated_at,
+      checkout_processing_at,
+      converted_order_at,
+      version,
+      created_at,
+      updated_at
+    FROM rental_checklist
+    WHERE
+    <include refid="filter"/>
+    ORDER BY rental_start_date,
+      id
+    LIMIT #{query.limit}
+    OFFSET #{query.offset}
+  </select>
+
+  <insert id="insertChecklist">
+    INSERT INTO rental_checklist (id,
+      owner_user_id,
+      checklist_name,
+      rental_start_date,
+      rental_end_date,
+      rental_days,
+      checklist_status,
+      active_slot_no,
+      current_checkout_batch_id,
+      source_type,
+      source_scheme_id,
+      activated_at,
+      checkout_processing_at,
+      converted_order_at,
+      version,
+      created_at,
+      updated_at)
+    VALUES (#{row.id},
+      #{row.ownerUserId},
+      #{row.checklistName},
+      #{row.rentalStartDate},
+      #{row.rentalEndDate},
+      #{row.rentalDays},
+      #{row.checklistStatus},
+      #{row.activeSlotNo},
+      #{row.currentCheckoutBatchId},
+      #{row.sourceType},
+      #{row.sourceSchemeId},
+      #{row.activatedAt},
+      #{row.checkoutProcessingAt},
+      #{row.convertedOrderAt},
+      #{row.version},
+      #{row.createdAt},
+      #{row.updatedAt})
+  </insert>
+
+  <update id="updateChecklist">
+    UPDATE rental_checklist
+    SET
+      checklist_status=#{row.checklistStatus},
+      version=#{row.version},
+      activated_at=#{row.activatedAt},
+      updated_at=#{row.updatedAt}
+    WHERE id=#{row.id}
+  </update>
+
+  <select id="selectChecklistItemsByChecklistIds" resultType="com.mujian.backend.planning.domain.RentalChecklistItemDO" useCache="false" flushCache="true">
+    SELECT
+      id,
+      checklist_id,
+      sku_id,
+      factory_id,
+      quantity,
+      remark,
+      sort_order,
+      max_rentable_quantity_snapshot,
+      unavailable_reason,
+      sku_snapshot_json,
+      created_at,
+      updated_at
+    FROM rental_checklist_item
+    WHERE checklist_id IN
+    <foreach collection="ids" item="id" open="(" close=")" separator=",">
+      #{id}
+    </foreach>
+    ORDER BY checklist_id,
+      sort_order,
+      id
+  </select>
+
+  <insert id="insertChecklistItem">
+    INSERT INTO rental_checklist_item (id,
+      checklist_id,
+      sku_id,
+      factory_id,
+      quantity,
+      remark,
+      sort_order,
+      max_rentable_quantity_snapshot,
+      unavailable_reason,
+      sku_snapshot_json,
+      created_at,
+      updated_at)
+    VALUES (#{row.id},
+      #{row.checklistId},
+      #{row.skuId},
+      #{row.factoryId},
+      #{row.quantity},
+      #{row.remark},
+      #{row.sortOrder},
+      #{row.maxRentableQuantitySnapshot},
+      #{row.unavailableReason},
+      #{row.skuSnapshotJson},
+      #{row.createdAt},
+      #{row.updatedAt})
+  </insert>
+
+  <delete id="deleteChecklistItemsByChecklistId">
+    DELETE FROM rental_checklist_item
+    WHERE checklist_id=#{id}
+  </delete>
+</mapper>

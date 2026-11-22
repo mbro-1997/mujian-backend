@@ -1,0 +1,460 @@
+[
+  {
+    "operation": "submitSkuChange",
+    "path": "/api/me/factory-props/10000000000040008000000000000001/change-applications",
+    "method": "POST",
+    "headers": {
+      "Idempotency-Key": "10000000000040008000000000000001"
+    },
+    "body": {
+      "expectedSkuVersion": 0,
+      "previousApplicationId": "10000000000040008000000000000001",
+      "fields": {
+        "propName": "x",
+        "sizeDesc": "x",
+        "lengthCm": "1.00",
+        "widthCm": "1.00",
+        "heightCm": "1.00",
+        "materialDesc": "x",
+        "fireResistantCode": "sample",
+        "weightKg": "1.00",
+        "dailyRentPriceFen": 1,
+        "depositAmountFen": 0,
+        "images": [
+          {
+            "kind": "upload",
+            "uploadId": "10000000000040008000000000000001"
+          }
+        ],
+        "remark": "x",
+        "packagingFactorBps": 10000
+      },
+      "applyRemark": "x"
+    }
+  },
+  {
+    "operation": "quoteCheckout",
+    "path": "/api/me/checkout-quotes",
+    "method": "POST",
+    "headers": {},
+    "body": {
+      "checklistId": "10000000000040008000000000000001",
+      "expectedVersion": 0,
+      "addressId": "10000000000040008000000000000001",
+      "addressVersion": 0,
+      "couponId": "10000000000040008000000000000001",
+      "deliveries": []
+    }
+  },
+  {
+    "operation": "checkoutCoupons",
+    "path": "/api/me/checkout-coupons",
+    "method": "POST",
+    "headers": {},
+    "body": {
+      "checklistId": "10000000000040008000000000000001",
+      "expectedVersion": 0,
+      "addressId": "10000000000040008000000000000001",
+      "addressVersion": 0,
+      "couponId": "10000000000040008000000000000001",
+      "deliveries": []
+    }
+  },
+  {
+    "operation": "submitCheckout",
+    "path": "/api/me/checkout-batches",
+    "method": "POST",
+    "headers": {
+      "Idempotency-Key": "10000000-0000-4000-8000-000000000001"
+    },
+    "body": {
+      "quoteToken": "x"
+    }
+  },
+  {
+    "operation": "tradingOperation",
+    "path": "/api/me/trading-operations/by-request/10000000-0000-4000-8000-000000000001",
+    "method": "GET",
+    "headers": {},
+    "body": null
+  },
+  {
+    "operation": "checkoutBatch",
+    "path": "/api/me/checkout-batches/10000000000040008000000000000001",
+    "method": "GET",
+    "headers": {},
+    "body": null
+  },
+  {
+    "operation": "launchCheckoutPayment",
+    "path": "/api/me/checkout-batches/10000000000040008000000000000001/pay",
+    "method": "POST",
+    "headers": {
+      "Idempotency-Key": "10000000-0000-4000-8000-000000000001"
+    },
+    "body": {
+      "expectedVersion": 0
+    }
+  },
+  {
+    "operation": "cancelCheckoutPayment",
+    "path": "/api/me/checkout-batches/10000000000040008000000000000001/cancel",
+    "method": "POST",
+    "headers": {
+      "Idempotency-Key": "10000000-0000-4000-8000-000000000001"
+    },
+    "body": {
+      "expectedVersion": 0
+    }
+  },
+  {
+    "operation": "listMyCoupons",
+    "path": "/api/me/coupons",
+    "method": "GET",
+    "headers": {},
+    "body": null
+  },
+  {
+    "operation": "myCouponUseRecords",
+    "path": "/api/me/coupon-use-records",
+    "method": "GET",
+    "headers": {},
+    "body": null
+  },
+  {
+    "operation": "myCoupon",
+    "path": "/api/me/coupons/10000000000040008000000000000001",
+    "method": "GET",
+    "headers": {},
+    "body": null
+  },
+  {
+    "operation": "listMyOrders",
+    "path": "/api/me/rental-orders",
+    "method": "GET",
+    "headers": {},
+    "body": null
+  },
+  {
+    "operation": "myOrder",
+    "path": "/api/me/rental-orders/10000000000040008000000000000001",
+    "method": "GET",
+    "headers": {},
+    "body": null
+  },
+  {
+    "operation": "quoteOrderCancellation",
+    "path": "/api/me/rental-orders/10000000000040008000000000000001/cancel-quote",
+    "method": "POST",
+    "headers": {},
+    "body": {
+      "expectedVersion": 0
+    }
+  },
+  {
+    "operation": "cancelRentalOrder",
+    "path": "/api/me/rental-orders/10000000000040008000000000000001/cancel",
+    "method": "POST",
+    "headers": {
+      "Idempotency-Key": "10000000-0000-4000-8000-000000000001"
+    },
+    "body": {
+      "confirmToken": "x",
+      "reason": "x"
+    }
+  },
+  {
+    "operation": "myRefund",
+    "path": "/api/me/refunds/10000000000040008000000000000001",
+    "method": "GET",
+    "headers": {},
+    "body": null
+  },
+  {
+    "operation": "listFactoryOrders",
+    "path": "/api/me/factory-orders",
+    "method": "GET",
+    "headers": {},
+    "body": null
+  },
+  {
+    "operation": "factoryOrder",
+    "path": "/api/me/factory-orders/10000000000040008000000000000001",
+    "method": "GET",
+    "headers": {},
+    "body": null
+  },
+  {
+    "operation": "factoryOrderOverview",
+    "path": "/api/me/factory-orders/overview",
+    "method": "GET",
+    "headers": {},
+    "body": null
+  },
+  {
+    "operation": "acceptFactoryOrder",
+    "path": "/api/me/factory-orders/10000000000040008000000000000001/accept",
+    "method": "POST",
+    "headers": {
+      "Idempotency-Key": "10000000-0000-4000-8000-000000000001"
+    },
+    "body": {
+      "expectedVersion": 0
+    }
+  },
+  {
+    "operation": "rejectFactoryOrder",
+    "path": "/api/me/factory-orders/10000000000040008000000000000001/reject",
+    "method": "POST",
+    "headers": {
+      "Idempotency-Key": "10000000-0000-4000-8000-000000000001"
+    },
+    "body": {
+      "expectedVersion": 0,
+      "reason": "x"
+    }
+  },
+  {
+    "operation": "factoryMerchantAccount",
+    "path": "/api/me/factory-wechat-account",
+    "method": "GET",
+    "headers": {},
+    "body": null
+  },
+  {
+    "operation": "startFactoryMerchantOnboarding",
+    "path": "/api/me/factory-wechat-account/onboarding",
+    "method": "POST",
+    "headers": {
+      "Idempotency-Key": "10000000-0000-4000-8000-000000000001"
+    },
+    "body": {
+      "expectedVersion": 0
+    }
+  },
+  {
+    "operation": "syncFactoryMerchantAccount",
+    "path": "/api/me/factory-wechat-account/sync",
+    "method": "POST",
+    "headers": {
+      "Idempotency-Key": "10000000-0000-4000-8000-000000000001"
+    },
+    "body": {}
+  },
+  {
+    "operation": "transportPriceSheet",
+    "path": "/api/me/transport-price-sheet",
+    "method": "GET",
+    "headers": {},
+    "body": null
+  },
+  {
+    "operation": "adminTradingOperation",
+    "path": "/api/admin/trading-operations/by-request/10000000-0000-4000-8000-000000000001",
+    "method": "GET",
+    "headers": {},
+    "body": null
+  },
+  {
+    "operation": "adminRentalOrders",
+    "path": "/api/admin/rental-orders",
+    "method": "GET",
+    "headers": {},
+    "body": null
+  },
+  {
+    "operation": "adminRentalOrder",
+    "path": "/api/admin/rental-orders/10000000000040008000000000000001",
+    "method": "GET",
+    "headers": {},
+    "body": null
+  },
+  {
+    "operation": "adminPayments",
+    "path": "/api/admin/payments",
+    "method": "GET",
+    "headers": {},
+    "body": null
+  },
+  {
+    "operation": "adminPayment",
+    "path": "/api/admin/payments/10000000000040008000000000000001",
+    "method": "GET",
+    "headers": {},
+    "body": null
+  },
+  {
+    "operation": "adminRefunds",
+    "path": "/api/admin/refunds",
+    "method": "GET",
+    "headers": {},
+    "body": null
+  },
+  {
+    "operation": "adminRefund",
+    "path": "/api/admin/refunds/10000000000040008000000000000001",
+    "method": "GET",
+    "headers": {},
+    "body": null
+  },
+  {
+    "operation": "adminMerchantAccounts",
+    "path": "/api/admin/factory-wechat-accounts",
+    "method": "GET",
+    "headers": {},
+    "body": null
+  },
+  {
+    "operation": "adminMerchantAccount",
+    "path": "/api/admin/factory-wechat-accounts/10000000000040008000000000000001",
+    "method": "GET",
+    "headers": {},
+    "body": null
+  },
+  {
+    "operation": "adminSyncMerchantAccount",
+    "path": "/api/admin/factory-wechat-accounts/10000000000040008000000000000001/sync",
+    "method": "POST",
+    "headers": {
+      "Idempotency-Key": "10000000-0000-4000-8000-000000000001"
+    },
+    "body": {}
+  },
+  {
+    "operation": "listVehicle",
+    "path": "/api/admin/transport-vehicles",
+    "method": "GET",
+    "headers": {},
+    "body": null
+  },
+  {
+    "operation": "createVehicle",
+    "path": "/api/admin/transport-vehicles",
+    "method": "POST",
+    "headers": {
+      "Idempotency-Key": "10000000-0000-4000-8000-000000000001"
+    },
+    "body": {
+      "tierCode": "x",
+      "tierName": "x",
+      "cargoLengthMm": 1,
+      "cargoWidthMm": 1,
+      "cargoHeightMm": 1,
+      "effectiveVolumeCm3": "1",
+      "safePayloadGram": "1",
+      "sortNo": 0,
+      "status": "enabled"
+    }
+  },
+  {
+    "operation": "getVehicle",
+    "path": "/api/admin/transport-vehicles/10000000000040008000000000000001",
+    "method": "GET",
+    "headers": {},
+    "body": null
+  },
+  {
+    "operation": "updateVehicle",
+    "path": "/api/admin/transport-vehicles/10000000000040008000000000000001/update",
+    "method": "POST",
+    "headers": {
+      "Idempotency-Key": "10000000-0000-4000-8000-000000000001"
+    },
+    "body": {
+      "expectedVersion": 0,
+      "tierCode": "x",
+      "tierName": "x",
+      "cargoLengthMm": 1,
+      "cargoWidthMm": 1,
+      "cargoHeightMm": 1,
+      "effectiveVolumeCm3": "1",
+      "safePayloadGram": "1",
+      "sortNo": 0,
+      "status": "enabled"
+    }
+  },
+  {
+    "operation": "listPriceRule",
+    "path": "/api/admin/transport-price-rules",
+    "method": "GET",
+    "headers": {},
+    "body": null
+  },
+  {
+    "operation": "createPriceRule",
+    "path": "/api/admin/transport-price-rules",
+    "method": "POST",
+    "headers": {
+      "Idempotency-Key": "10000000-0000-4000-8000-000000000001"
+    },
+    "body": {
+      "ruleVersion": "x",
+      "cityCode": "x",
+      "vehicleTierId": "10000000000040008000000000000001",
+      "distanceMinMeter": 0,
+      "distanceMaxMeter": 1,
+      "includedDistanceMeter": 0,
+      "guideMinFen": 0,
+      "guideMaxFen": 0,
+      "ownVehicleSettleFen": 0,
+      "extraKmFen": 0,
+      "effectiveAt": "2026-11-06T10:59:00.000+08:00",
+      "expireAt": "2026-11-06T10:59:00.000+08:00",
+      "extraFees": []
+    }
+  },
+  {
+    "operation": "getPriceRule",
+    "path": "/api/admin/transport-price-rules/10000000000040008000000000000001",
+    "method": "GET",
+    "headers": {},
+    "body": null
+  },
+  {
+    "operation": "updatePriceRule",
+    "path": "/api/admin/transport-price-rules/10000000000040008000000000000001/update",
+    "method": "POST",
+    "headers": {
+      "Idempotency-Key": "10000000-0000-4000-8000-000000000001"
+    },
+    "body": {
+      "expectedVersion": 0,
+      "ruleVersion": "x",
+      "cityCode": "x",
+      "vehicleTierId": "10000000000040008000000000000001",
+      "distanceMinMeter": 0,
+      "distanceMaxMeter": 1,
+      "includedDistanceMeter": 0,
+      "guideMinFen": 0,
+      "guideMaxFen": 0,
+      "ownVehicleSettleFen": 0,
+      "extraKmFen": 0,
+      "effectiveAt": "2026-11-06T10:59:00.000+08:00",
+      "expireAt": "2026-11-06T10:59:00.000+08:00",
+      "extraFees": []
+    }
+  },
+  {
+    "operation": "publishPriceRule",
+    "path": "/api/admin/transport-price-rules/10000000000040008000000000000001/publish",
+    "method": "POST",
+    "headers": {
+      "Idempotency-Key": "10000000-0000-4000-8000-000000000001"
+    },
+    "body": {
+      "expectedVersion": 0
+    }
+  },
+  {
+    "operation": "endPriceRule",
+    "path": "/api/admin/transport-price-rules/10000000000040008000000000000001/end",
+    "method": "POST",
+    "headers": {
+      "Idempotency-Key": "10000000-0000-4000-8000-000000000001"
+    },
+    "body": {
+      "expectedVersion": 0,
+      "expireAt": "2026-11-06T10:59:00.000+08:00"
+    }
+  }
+]

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.prop.mapper.PropSnInstanceMapper">
+<sql id="columns_prop_sn_instance">id,sku_id,source_adjustment_audit_id,sn_code,qr_code_id,instance_status,current_order_id,status_remark,status_changed_at,status_changed_by,remark,created_at,version,updated_at</sql>
+<sql id="aliased_prop_sn_instance">s.id,s.sku_id,s.source_adjustment_audit_id,s.sn_code,s.qr_code_id,s.instance_status,s.current_order_id,s.status_remark,s.status_changed_at,s.status_changed_by,s.remark,s.created_at,s.version,s.updated_at</sql>
+<select id="selectRentableSnQuantityListBySkuIdsAndDates" resultType="com.mujian.backend.prop.projection.PropQuantityProjection" useCache="false" flushCache="true">
+    
+    SELECT s.sku_id,COUNT(*) AS amount FROM prop_sn_instance s WHERE s.sku_id IN 
+    <foreach collection="skuIds" item="value" open="(" separator="," close=")">#{value}</foreach>
+     AND s.instance_status='idle' AND NOT EXISTS(SELECT 1 FROM prop_sn_adjustment_item i JOIN prop_sn_adjustment_audit a ON a.id=i.adjustment_audit_id WHERE i.sn_id=s.id AND a.audit_status='pending') AND NOT EXISTS(SELECT 1 FROM inventory_reservation r WHERE r.sn_id=s.id AND r.reservation_status IN ('held','paid_locked','renting','overdue_holding','disputed_holding') AND r.occupy_start_date&lt;=#{endDate} AND <include refid="com.mujian.backend.prop.mapper.InventoryReservationMapper.effectiveOccupyEnd"><property name="alias" value="r."/></include>&gt;=#{startDate}) GROUP BY s.sku_id
+  
+  </select>
+<select id="selectPropSnStatusCountBySkuId" resultType="com.mujian.backend.prop.projection.PropInstanceCountProjection" useCache="false" flushCache="true">
+    SELECT instance_status,COUNT(*) amount FROM prop_sn_instance WHERE sku_id=#{skuId} GROUP BY instance_status
+  </select>
+<select id="selectPropSnInstanceListByIds" resultType="com.mujian.backend.prop.domain.PropSnInstanceDO" useCache="false" flushCache="true">
+    
+    SELECT id,sku_id,source_adjustment_audit_id,sn_code,qr_code_id,instance_status,current_order_id,status_remark,status_changed_at,status_changed_by,remark,created_at,version,updated_at FROM prop_sn_instance WHERE id IN 
+    <foreach collection="ids" item="value" open="(" separator="," close=")">#{value}</foreach>
+  </select>
+<select id="selectPropSnInstanceCountByQuery" resultType="long" useCache="false" flushCache="true">
+        SELECT COUNT(*) FROM prop_sn_instance WHERE sku_id=#{instanceQueryDTO.skuId}
+        <if test="instanceQueryDTO.status != null"> AND instance_status=#{instanceQueryDTO.status}</if>
+      </select>
+<select id="selectPropSnInstancePageByQuery" resultType="com.mujian.backend.prop.domain.PropSnInstanceDO" useCache="false" flushCache="true">
+        SELECT id, current_order_id, instance_status, qr_code_id, remark, sn_code, status_changed_at, status_remark, updated_at, version FROM prop_sn_instance WHERE sku_id=#{instanceQueryDTO.skuId}
+        <if test="instanceQueryDTO.status != null"> AND instance_status=#{instanceQueryDTO.status}</if>
+         ORDER BY created_at DESC,id DESC LIMIT #{instanceQueryDTO.limit} OFFSET #{instanceQueryDTO.offset}
+      </select>
+<select id="selectPropSnInstance" resultType="com.mujian.backend.prop.domain.PropSnInstanceDO" useCache="false" flushCache="true">
+    SELECT id,sku_id,source_adjustment_audit_id,sn_code,qr_code_id,instance_status,current_order_id,status_remark,status_changed_at,status_changed_by,remark,created_at,version,updated_at FROM prop_sn_instance WHERE id=#{id} <if test="lock">FOR UPDATE</if>
+  </select>
+<insert id="insertPropSnInstance">INSERT INTO prop_sn_instance
+<trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="row.id != null">id,</if>
+<if test="row.skuId != null">sku_id,</if>
+<if test="row.sourceAdjustmentAuditId != null">source_adjustment_audit_id,</if>
+<if test="row.snCode != null">sn_code,</if>
+<if test="row.qrCodeId != null">qr_code_id,</if>
+<if test="row.instanceStatus != null">instance_status,</if>
+<if test="row.currentOrderId != null">current_order_id,</if>
+<if test="row.statusRemark != null">status_remark,</if>
+<if test="row.statusChangedAt != null">status_changed_at,</if>
+<if test="row.statusChangedBy != null">status_changed_by,</if>
+<if test="row.remark != null">remark,</if>
+<if test="row.createdAt != null">created_at,</if>
+<if test="row.version != null">version,</if>
+<if test="row.updatedAt != null">updated_at,</if>
+</trim> VALUES
+<trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="row.id != null">#{row.id},</if>
+<if test="row.skuId != null">#{row.skuId},</if>
+<if test="row.sourceAdjustmentAuditId != null">#{row.sourceAdjustmentAuditId},</if>
+<if test="row.snCode != null">#{row.snCode},</if>
+<if test="row.qrCodeId != null">#{row.qrCodeId},</if>
+<if test="row.instanceStatus != null">#{row.instanceStatus},</if>
+<if test="row.currentOrderId != null">#{row.currentOrderId},</if>
+<if test="row.statusRemark != null">#{row.statusRemark},</if>
+<if test="row.statusChangedAt != null">#{row.statusChangedAt},</if>
+<if test="row.statusChangedBy != null">#{row.statusChangedBy},</if>
+<if test="row.remark != null">#{row.remark},</if>
+<if test="row.createdAt != null">#{row.createdAt},</if>
+<if test="row.version != null">#{row.version},</if>
+<if test="row.updatedAt != null">#{row.updatedAt},</if>
+</trim></insert>
+<update id="updatePropSnQrBinding">UPDATE prop_sn_instance SET qr_code_id=#{command.qrCodeId},version=#{command.version},updated_at=#{command.updatedAt} WHERE id=#{command.id}</update>
+<update id="updatePropSnStatusByVersion">UPDATE prop_sn_instance SET instance_status=#{command.instanceStatus},status_remark=#{command.statusRemark},status_changed_at=#{command.statusChangedAt},status_changed_by=#{command.statusChangedBy},version=#{command.version},updated_at=#{command.updatedAt} WHERE id=#{command.id}</update>
+  <select id="selectAvailableSnIdsForUpdate" resultType="string" useCache="false" flushCache="true">
+    SELECT s.id FROM prop_sn_instance s WHERE s.sku_id=#{skuId} AND s.instance_status='idle'
+      AND NOT EXISTS(SELECT 1 FROM prop_sn_adjustment_item i JOIN prop_sn_adjustment_audit a ON a.id=i.adjustment_audit_id WHERE i.sn_id=s.id AND a.audit_status='pending')
+      AND NOT EXISTS(SELECT 1 FROM inventory_reservation r WHERE r.sn_id=s.id AND r.reservation_status IN ('held','paid_locked','renting','overdue_holding','disputed_holding') AND r.occupy_start_date&lt;=#{end} AND <include refid="com.mujian.backend.prop.mapper.InventoryReservationMapper.effectiveOccupyEnd"><property name="alias" value="r."/></include>&gt;=#{start})
+    ORDER BY s.id LIMIT #{quantity} FOR UPDATE
+  </select>
+  <update id="transitionFulfillment">UPDATE prop_sn_instance SET current_order_id=#{orderId},instance_status=#{status},status_changed_by=#{actor},status_changed_at=#{at},
+    updated_at=#{at},version=version+1 WHERE id=#{id} AND version=#{version}</update>
+</mapper>

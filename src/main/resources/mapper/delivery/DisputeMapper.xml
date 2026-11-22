@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.delivery.mapper.DisputeMapper">
+  <select id="selectSources" resultType="com.mujian.backend.delivery.mapper.DisputeMapper$Source">
+    SELECT 'issue' kind,id FROM order_issue_report WHERE rental_order_id=#{orderId}
+    UNION ALL SELECT 'extension',id FROM order_extension_request WHERE active_order_guard=#{orderId}
+      <if test="factory and !admin">AND extension_status!='pending_payment'</if>
+    UNION ALL SELECT 'claim',id FROM order_claim WHERE rental_order_id=#{orderId}
+      <choose><when test="admin">AND claim_status!='draft'</when>
+        <when test="!factory">AND user_response_deadline_at IS NOT NULL</when></choose>
+    UNION ALL SELECT 'arbitration',id FROM arbitration_case WHERE rental_order_id=#{orderId}
+    UNION ALL SELECT 'receivable',id FROM order_compensation_receivable WHERE rental_order_id=#{orderId}
+    ORDER BY kind,id
+  </select>
+  <select id="terminationSettled" resultType="boolean">SELECT EXISTS(SELECT 1 FROM admin_case_action ac WHERE ac.target_id=#{orderId} AND ac.target_type='rental_order'
+    AND ac.action_type='resolve_order_issue' AND ac.operator_confirmed_at IS NOT NULL AND ac.action_status='succeeded' AND ac.request_payload_json->>'$.fulfillment_decision'='terminate')</select>
+  <sql id="facts">
+    SELECT o.id,
+      NOT (EXISTS (SELECT 1 FROM order_return_check rc WHERE rc.rental_order_id=o.id AND rc.claim_created=1)
+        AND NOT EXISTS (SELECT 1 FROM order_claim cl WHERE cl.rental_order_id=o.id
+          AND cl.claim_status NOT IN ('draft','withdrawn','rejected'))) ready,
+      EXISTS (SELECT 1 FROM order_issue_report i WHERE i.rental_order_id=o.id AND i.fulfillment_effect='paused'
+         AND i.issue_status NOT IN ('resolved','closed')) source_paused,
+       EXISTS (SELECT 1 FROM order_receipt_check rc WHERE rc.rental_order_id=o.id
+         AND (rc.check_status='problem_reported' OR rc.remaining_check_ms IS NOT NULL)) timer_paused,
+      (EXISTS (SELECT 1 FROM order_claim cl WHERE cl.rental_order_id=o.id
+         AND cl.claim_status NOT IN ('draft','withdrawn','rejected','closed'))
+       OR EXISTS (SELECT 1 FROM arbitration_case ac WHERE ac.rental_order_id=o.id AND ac.case_status NOT IN ('closed','cancelled'))
+       OR EXISTS (SELECT 1 FROM order_return_check rc WHERE rc.rental_order_id=o.id AND rc.remaining_close_ms IS NOT NULL)
+       OR EXISTS (SELECT 1 FROM platform_intervention_record pi WHERE pi.rental_order_id=o.id AND pi.intervention_status IN ('open','processing'))) claim_active,
+      (EXISTS (SELECT 1 FROM admin_case_action a WHERE a.target_id=o.id AND a.parent_action_id IS NULL
+          AND a.action_type='resolve_order_issue' AND a.operator_confirmed_at IS NOT NULL AND a.action_status IN ('executing','failed','succeeded')
+          AND a.request_payload_json->>'$.fulfillment_decision'='terminate')
+       OR EXISTS (SELECT 1 FROM order_issue_report i WHERE i.rental_order_id=o.id AND i.resolution_type='cancel_refund'
+         AND i.issue_status NOT IN ('resolved','closed'))) termination_active
+    FROM rental_order o
+  </sql>
+  <select id="selectFactsByOrderId" resultType="com.mujian.backend.delivery.service.DisputeGuard$Facts" useCache="false" flushCache="true">
+    SELECT f.ready,(f.source_paused OR f.timer_paused) paused,f.claim_active,f.termination_active FROM (<include refid="facts"/> WHERE o.id=#{orderId}) f
+  </select>
+  <select id="selectPageFacts" resultType="com.mujian.backend.delivery.mapper.DisputeMapper$OrderFacts">
+    SELECT f.id,f.ready,(f.source_paused OR f.timer_paused) paused,f.claim_active,f.termination_active
+    FROM (<include refid="facts"/> WHERE o.id IN
+      <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>) f
+  </select>
+  <select id="canResumeReceipt" resultType="boolean" useCache="false" flushCache="true">
+    SELECT EXISTS(SELECT 1 FROM (<include refid="facts"/> WHERE o.id=#{orderId}) f
+      WHERE f.ready AND f.timer_paused AND NOT f.source_paused AND NOT f.claim_active AND NOT f.termination_active
+        AND EXISTS (SELECT 1 FROM order_issue_report i WHERE i.rental_order_id=f.id
+          AND i.issue_scene='receipt' AND ((i.fulfillment_effect='paused' AND i.issue_status IN ('resolved','closed') AND i.resolved_at IS NOT NULL)
+          OR i.resolution_type='continue_fulfillment')))
+  </select>
+  <select id="selectBlockedOrderIds" resultType="string" useCache="false" flushCache="true">
+    SELECT f.id FROM (<include refid="facts"/>
+      <where><if test="buyerId!=null">AND o.buyer_user_id=#{buyerId}</if>
+        <if test="factoryId!=null">AND o.factory_id=#{factoryId}</if></where>) f
+    WHERE NOT f.ready OR f.source_paused OR f.timer_paused OR f.claim_active OR f.termination_active
+  </select>
+</mapper>

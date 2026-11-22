@@ -1,0 +1,6 @@
+{
+  "enabled": false,
+  "environment": "local",
+  "allowedUserId": "REQUIRED_EXACT_USER_FROM_CONFIRMED_REAL_LOGIN_CONTEXT",
+  "serverUuid": "REQUIRED_LOCAL_MYSQL_SERVER_UUID"
+}

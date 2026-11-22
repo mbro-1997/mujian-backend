@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.custom.mapper.CustomMaterialMapper">
+  <select id="byKey" resultType="com.mujian.backend.custom.mapper.CustomMaterialMapper$File" useCache="false" flushCache="true">
+    SELECT id,owner_user_id owner,requirement_id,custom_order_id order_id,purpose,payload_hash digest,storage_key,file_name name,attachment_type type,created_at FROM custom_material WHERE owner_user_id=#{owner} AND upload_key=#{key}
+  </select>
+  <select id="selectCustomMaterialById" resultType="com.mujian.backend.custom.mapper.CustomMaterialMapper$File" useCache="false" flushCache="true">
+    SELECT id,owner_user_id owner,requirement_id,custom_order_id order_id,purpose,payload_hash digest,storage_key,file_name name,attachment_type type,created_at FROM custom_material WHERE id=#{id}
+  </select>
+  <select id="orderFiles" resultType="com.mujian.backend.custom.mapper.CustomMaterialMapper$File" useCache="false" flushCache="true">
+    SELECT id,owner_user_id owner,requirement_id,custom_order_id order_id,purpose,payload_hash digest,storage_key,file_name name,attachment_type type,created_at FROM custom_material WHERE custom_order_id IN
+    <foreach collection="orders" item="id" open="(" separator="," close=")">#{id}</foreach>
+  </select>
+  <select id="onRequirement" resultType="boolean" useCache="false" flushCache="true">
+    SELECT EXISTS(SELECT 1 FROM custom_requirement_attachment WHERE material_id=#{id} AND requirement_id=#{root})
+  </select>
+  <select id="onOrder" resultType="boolean" useCache="false" flushCache="true">
+    SELECT EXISTS(SELECT 1 FROM custom_delivery_record WHERE custom_order_id=#{root} AND JSON_CONTAINS(evidence_json,JSON_QUOTE(#{key})))
+ OR EXISTS(SELECT 1 FROM custom_order_extension_request WHERE custom_order_id=#{root} AND request_status!='draft' AND JSON_CONTAINS(evidence_json,JSON_QUOTE(#{key})))
+ OR EXISTS(SELECT 1 FROM custom_after_sale_request WHERE custom_order_id=#{root} AND JSON_CONTAINS(evidence_json,JSON_QUOTE(#{key})))
+  </select>
+  <select id="onFactoryStatement" resultType="boolean">SELECT EXISTS(SELECT 1 FROM custom_after_sale_factory_statement s JOIN custom_after_sale_request a ON a.id=s.after_sale_id WHERE a.custom_order_id=#{root} AND JSON_CONTAINS(s.evidence_json,JSON_QUOTE(#{key})))
+  </select>
+  <select id="adminScope" resultType="boolean" useCache="false" flushCache="true">
+    SELECT EXISTS(SELECT 1 FROM custom_order o WHERE <choose><when test="order!=null">o.id=#{order}</when><otherwise>o.requirement_id=#{requirement}</otherwise></choose>
+ AND <choose><when test="extension">EXISTS(SELECT 1 FROM custom_order_extension_request e WHERE e.custom_order_id=o.id AND e.submitted_at IS NOT NULL)</when>
+ <otherwise>EXISTS(SELECT 1 FROM custom_after_sale_request a WHERE a.custom_order_id=o.id)</otherwise></choose>)
+  </select>
+  <insert id="insertCustomMaterial">
+    INSERT INTO custom_material(id,owner_user_id,requirement_id,custom_order_id,purpose,upload_key,payload_hash,storage_key,file_name,attachment_type,created_at)
+ VALUES(#{id},#{owner},#{requirement},#{order},#{purpose},#{key},#{digest},#{storage},#{name},#{type},#{at})
+  </insert>
+</mapper>

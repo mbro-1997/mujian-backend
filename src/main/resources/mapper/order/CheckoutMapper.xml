@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.order.mapper.CheckoutMapper">
+
+  <select id="selectFactoriesByIds" resultType="com.mujian.backend.order.projection.CheckoutFactoryProjection" useCache="false" flushCache="true">
+    SELECT
+      f.id,
+      f.owner_user_id,
+      f.factory_name,
+      f.factory_address,
+      f.profile_version,
+      f.factory_status,
+      u.user_status AS owner_status,
+      m.id AS merchant_id,
+      m.sub_mchid,
+      m.account_status,
+      m.profit_sharing_status,
+      m.version AS merchant_version
+    FROM factory_profile f JOIN sys_user u ON u.id=f.owner_user_id LEFT JOIN factory_wechat_merchant_account m ON m.factory_id=f.id
+    WHERE f.id IN
+    <foreach collection="ids" item="id" open="(" close=")" separator=",">
+      #{id}
+    </foreach>
+    ORDER BY f.id
+  </select>
+
+  <select id="existsOutstandingCompensation" resultType="boolean">
+    SELECT
+      EXISTS(
+    SELECT
+      1
+    FROM order_compensation_receivable
+    WHERE buyer_user_id=#{actor}
+      AND receivable_amount_fen&gt;paid_amount_fen+waived_amount_fen
+      AND receivable_status NOT IN ('cancelled',
+      'waived',
+      'paid'))
+  </select>
+</mapper>

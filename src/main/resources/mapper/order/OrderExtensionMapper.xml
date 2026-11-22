@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.order.mapper.OrderExtensionMapper">
+  <select id="selectExtensionQuoteBasis" resultType="com.mujian.backend.order.mapper.OrderExtensionMapper$QuoteBasis">
+    SELECT (SELECT SUM(i.daily_rent_price_fen*i.quantity) FROM rental_order_item i WHERE i.rental_order_id=o.id) daily_rent_fen,
+      (SELECT MIN(GREATEST(0,DATEDIFF(next.occupy_start_date,own.occupy_end_date)-1))
+       FROM inventory_reservation own JOIN inventory_reservation next ON next.sn_id=own.sn_id
+       WHERE own.rental_order_id=o.id AND own.reservation_status='renting' AND own.sn_id IS NOT NULL
+         AND NOT (next.rental_order_id &lt;=&gt; o.id)
+         AND next.reservation_status IN ('held','paid_locked','renting','overdue_holding','disputed_holding')
+         AND <include refid="com.mujian.backend.prop.mapper.InventoryReservationMapper.effectiveOccupyEnd"><property name="alias" value="next."/></include>&gt;own.occupy_end_date) sn_limit_days,
+      (o.order_status='fulfilling' AND EXISTS (SELECT 1 FROM order_receipt_check c WHERE c.rental_order_id=o.id
+          AND c.check_status IN ('confirmed','auto_confirmed'))
+        AND NOT EXISTS (SELECT 1 FROM order_return_shipment s WHERE s.rental_order_id=o.id AND s.sent_at IS NOT NULL)
+        AND NOT EXISTS (SELECT 1 FROM order_return_check c WHERE c.rental_order_id=o.id)
+        AND NOT EXISTS (SELECT 1 FROM order_issue_report i WHERE i.rental_order_id=o.id AND i.fulfillment_effect='paused'
+          AND i.issue_status NOT IN ('resolved','closed'))) renting
+    FROM rental_order o WHERE o.id=#{orderId}
+  </select>
+</mapper>

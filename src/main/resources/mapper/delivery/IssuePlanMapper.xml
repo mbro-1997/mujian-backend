@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.delivery.mapper.IssuePlanMapper">
+  <sql id="actionColumns">
+    SELECT a.id,a.admin_case_id case_id,r.relation_id issue_id,a.target_id order_id,a.action_status status,
+      a.request_payload_json payload,a.planned_rent_refund_amount_fen rent,a.planned_deposit_refund_amount_fen deposit,
+      a.planned_freight_refund_amount_fen freight,COALESCE(a.request_payload_json->>'$.scheme_version',1) scheme_version,
+      (a.result_payload_json->>'$.termination.first_refund_submit_started_at' IS NOT NULL OR
+       a.result_payload_json->>'$.termination.financial_finalized_at' IS NOT NULL OR a.action_status='succeeded') locked
+    FROM admin_case_action a JOIN admin_case_relation r ON r.admin_case_id=a.admin_case_id AND r.is_primary=1 AND r.relation_type='order_issue_report'
+  </sql>
+  <select id="actionById" resultType="com.mujian.backend.delivery.mapper.IssuePlanMapper$Action" flushCache="true" useCache="false">
+    <include refid="actionColumns"/> WHERE a.id=#{id} AND a.action_type='resolve_order_issue' AND a.operator_confirmed_at IS NOT NULL
+  </select>
+  <select id="selectActive" resultType="com.mujian.backend.delivery.mapper.IssuePlanMapper$Action" flushCache="true" useCache="false">
+    <include refid="actionColumns"/> WHERE a.target_type='rental_order' AND a.target_id=#{orderId} AND a.action_type='resolve_order_issue' AND a.parent_action_id IS NULL
+      AND a.operator_confirmed_at IS NOT NULL AND a.action_status IN ('executing','failed','succeeded')
+      <if test="issueId!=null">AND r.relation_id=#{issueId}</if>
+      <if test="terminateOnly">AND a.request_payload_json->>'$.fulfillment_decision'='terminate'</if>
+  </select>
+  <select id="selectRefundFundingSourcesByOrder" resultType="com.mujian.backend.delivery.mapper.IssuePlanMapper$Source">
+    SELECT a.payment_channel_suborder_id suborder_id,
+      a.rent_allocated_amount_fen-COALESCE(r.rent,0) rent,a.deposit_allocated_amount_fen-COALESCE(r.deposit,0) deposit,
+      a.freight_prepaid_allocated_fen-COALESCE(r.freight,0) freight,
+      a.rent_allocated_amount_fen original_rent,a.deposit_allocated_amount_fen original_deposit,a.freight_prepaid_allocated_fen original_freight
+    FROM payment_allocation a JOIN payment_channel_suborder s ON s.id=a.payment_channel_suborder_id AND s.payment_status='success'
+      AND s.rental_order_id=a.rental_order_id AND s.paid_amount_fen=a.total_allocated_amount_fen
+    JOIN payment_order p ON p.id=s.payment_order_id AND p.payment_scene IN ('initial_order','extension_rent')
+    LEFT JOIN order_extension_request ext ON ext.payment_order_id=p.id
+    LEFT JOIN (SELECT payment_channel_suborder_id,SUM(rent_refund_amount_fen) rent,SUM(deposit_refund_amount_fen) deposit,
+        SUM(freight_refund_amount_fen) freight FROM refund_order WHERE rental_order_id=#{orderId} AND refund_status!='cancelled'
+        <if test="excludeAction!=null">AND id NOT IN (SELECT target_id FROM admin_case_action WHERE parent_action_id=#{excludeAction} AND target_type='refund_order')</if>
+        GROUP BY payment_channel_suborder_id) r ON r.payment_channel_suborder_id=s.id
+    WHERE a.rental_order_id=#{orderId} AND (p.payment_scene='initial_order' OR ext.extension_status='approved') ORDER BY s.paid_at,s.id
+  </select>
+  <select id="selectOrderDeductionOffsets" resultType="com.mujian.backend.delivery.mapper.IssuePlanMapper$Offsets">
+    SELECT COALESCE(SUM(IF(fund_component='rent',amount_fen,0)),0) rent,
+      COALESCE(SUM(IF(fund_component='deposit',amount_fen,0)),0) deposit,
+      COALESCE((SELECT online_settle_amount_fen FROM rental_order_freight_account WHERE rental_order_id=#{orderId}),0) freight
+    FROM order_deduction WHERE rental_order_id=#{orderId} AND deduction_status IN ('pending','confirmed')
+      <if test="excludeAction!=null">AND NOT (source_type='admin_case_action' AND source_id=#{excludeAction})</if>
+  </select>
+  <select id="selectPlannedRefundsByAction" resultType="com.mujian.backend.delivery.mapper.IssuePlanMapper$Refund">
+    SELECT r.id refund_id,r.refund_status status,r.refund_amount_fen amount_fen FROM admin_case_action a
+      JOIN refund_order r ON a.target_id=r.id AND a.target_type='refund_order' WHERE a.parent_action_id=#{actionId} ORDER BY a.step_no
+  </select>
+  <sql id="dispatchedFact">EXISTS(SELECT 1 FROM order_outbound_record WHERE rental_order_id=${orderRef}
+    AND (outbound_status='completed' OR outbound_at IS NOT NULL OR dispatch_at IS NOT NULL))
+    OR EXISTS(SELECT 1 FROM order_receipt_check WHERE rental_order_id=${orderRef})
+    OR EXISTS(SELECT 1 FROM inventory_reservation WHERE rental_order_id=${orderRef} AND reservation_status IN ('renting','overdue_holding','disputed_holding'))</sql>
+  <select id="hasActiveClaimOrArbitration" resultType="boolean">SELECT EXISTS(SELECT 1 FROM order_claim WHERE rental_order_id=#{order} AND claim_status NOT IN ('draft','withdrawn','closed','rejected'))
+    OR EXISTS(SELECT 1 FROM arbitration_case WHERE rental_order_id=#{order} AND case_status NOT IN ('closed','cancelled'))</select>
+  <select id="selectIssuePlanDispatched" resultType="boolean">SELECT (<include refid="dispatchedFact"><property name="orderRef" value="#{orderId}"/></include>)</select>
+  <sql id="physicallyReceivedFact">EXISTS(SELECT 1 FROM order_return_check WHERE rental_order_id=${orderRef}
+    AND checked_at IS NOT NULL AND operator_user_id IS NOT NULL AND closed_at IS NOT NULL AND check_status='no_issue')</sql>
+  <select id="physicallyReceived" resultType="boolean">SELECT (<include refid="physicallyReceivedFact"><property name="orderRef" value="#{orderId}"/></include>)</select>
+  <select id="hasOpenExtension" resultType="boolean">SELECT EXISTS(SELECT 1 FROM order_extension_request WHERE active_order_guard=#{orderId})</select>
+  <select id="referenceExists" resultType="boolean">
+    SELECT EXISTS(SELECT 1 FROM admin_case_relation WHERE admin_case_id=#{caseId} AND relation_type=#{type} AND relation_id=#{id})
+      OR (#{type}='rental_order' AND #{id}=#{orderId})
+      OR (#{type}='order_evidence_record' AND EXISTS(SELECT 1 FROM order_evidence_record WHERE id=#{id} AND rental_order_id=#{orderId} AND draft_removed_at IS NULL))
+  </select>
+  <update id="resolveIssue">UPDATE order_issue_report SET version=version+1,resolution_type=#{type},resolution_summary=#{summary},
+    fulfillment_effect=IF(#{type}='continue_fulfillment','continue','paused'),issue_status=IF(#{done},'resolved','processing'),
+    resolved_at=IF(#{done},#{at},NULL),updated_at=#{at} WHERE id=#{id} AND version=#{version}</update>
+  <update id="cancelDraftRefunds">UPDATE refund_order r JOIN admin_case_action a ON a.target_type='refund_order' AND a.target_id=r.id
+    SET r.refund_status='cancelled',r.next_attempt_at=NULL,r.updated_at=#{at},r.version=r.version+1
+    WHERE a.parent_action_id=#{actionId} AND r.refund_status='pending' AND r.attempt_count=0</update>
+  <update id="cancelPlan">UPDATE admin_case_action SET action_status='cancelled',updated_at=#{at},result_payload_json=JSON_SET(
+    COALESCE(result_payload_json,JSON_OBJECT()),'$.superseded_by',#{replacement}) WHERE id=#{id} OR parent_action_id=#{id}</update>
+  <update id="cancelDeduction">UPDATE order_deduction SET deduction_status='cancelled',confirmed_at=NULL,cancelled_at=#{at},updated_at=#{at}
+    WHERE source_type='admin_case_action' AND source_id=#{id} AND deduction_status IN ('pending','confirmed')</update>
+  <insert id="reserveDeduction">INSERT INTO order_deduction(id,rental_order_id,deduction_type,fund_component,deduction_status,
+    amount_fen,source_type,source_id,reason,evidence_summary,created_by,created_at,updated_at)
+    VALUES(#{id},#{orderId},'platform_adjustment','deposit','pending',#{amount},'admin_case_action',#{actionId},LEFT(#{reason},255),#{reason},#{actor},#{at},#{at})</insert>
+  <update id="confirmDeduction">UPDATE order_deduction SET deduction_status='confirmed',confirmed_at=#{at},updated_at=#{at}
+    WHERE source_type='admin_case_action' AND source_id=#{actionId} AND deduction_status='pending'</update>
+  <update id="updateTotals">UPDATE rental_order o SET deposit_deducted_amount_fen=(SELECT COALESCE(SUM(amount_fen),0) FROM order_deduction d
+      WHERE d.rental_order_id=o.id AND d.fund_component='deposit' AND d.deduction_status='confirmed'),
+    deposit_status=CASE WHEN deposit_paid_amount_fen=0 THEN 'settled'
+      WHEN deposit_refunded_amount_fen=deposit_paid_amount_fen THEN 'refunded'
+      WHEN EXISTS(SELECT 1 FROM refund_order r WHERE r.rental_order_id=o.id AND r.deposit_refund_amount_fen&gt;0
+        AND r.refund_status NOT IN ('success','cancelled')) THEN 'refunding'
+      WHEN deposit_deducted_amount_fen+deposit_refunded_amount_fen=deposit_paid_amount_fen THEN 'settled'
+      WHEN deposit_deducted_amount_fen&gt;0 THEN 'partially_deducted' ELSE 'paid' END,
+    total_deducted_amount_fen=(SELECT COALESCE(SUM(amount_fen),0) FROM order_deduction d WHERE d.rental_order_id=o.id AND d.deduction_status='confirmed'),
+    updated_at=#{at},version=version+1 WHERE o.id=#{orderId}</update>
+  <update id="stopNormalClosure">UPDATE order_return_check SET auto_close_at=NULL,version=version+1,updated_at=#{at}
+    WHERE rental_order_id=#{orderId} AND closed_at IS NULL AND auto_close_at IS NOT NULL</update>
+  <update id="settleTerminationFreight">UPDATE rental_order_freight_account SET online_settle_amount_fen=initial_prepaid_amount_fen-refunded_amount_fen,
+    freight_status='settled',settled_at=#{at},version=version+1,updated_at=#{at} WHERE rental_order_id=#{orderId}</update>
+  <update id="terminateOrder">UPDATE rental_order SET order_status='cancelled',cancel_type='admin_intervention',cancelled_at=COALESCE(cancelled_at,#{at}),updated_at=#{at},version=version+1
+    WHERE id=#{orderId} AND order_status IN ('accepted','fulfilling','return_checking')</update>
+  <update id="finishPlan">UPDATE admin_case_action SET action_status='succeeded',executed_at=#{at},updated_at=#{at},
+    result_payload_json=IF(request_payload_json->>'$.fulfillment_decision'='terminate',
+      JSON_SET(result_payload_json,'$.termination.financial_finalized_at',CAST(#{at} AS CHAR)),result_payload_json) WHERE id=#{action.id}</update>
+  <update id="finishSteps">UPDATE admin_case_action SET action_status='succeeded',executed_at=#{at},updated_at=#{at}
+    WHERE parent_action_id=#{id} AND action_status='executing'</update>
+  <update id="closeIssue">UPDATE order_issue_report SET issue_status='resolved',resolved_at=#{at},updated_at=#{at},version=version+1
+    WHERE id=#{issueId} AND issue_status='processing'</update>
+  <update id="closeCase">UPDATE admin_case SET case_status='closed',active_case_key=NULL,closed_at=#{at},closed_by_admin_user_id=#{actor},updated_at=#{at},version=version+1
+    WHERE id=#{caseId} AND case_status NOT IN ('closed','cancelled')</update>
+  <select id="selectRefundParent" resultType="string">SELECT parent_action_id FROM admin_case_action WHERE target_type='refund_order' AND target_id=#{refundId}
+    AND action_type='issue_refund' AND parent_action_id IS NOT NULL</select>
+  <update id="markSubmitting">UPDATE refund_order SET refund_status='processing',updated_at=#{at} WHERE id=#{refundId} AND refund_status='pending'</update>
+  <update id="lockTerminationPlanForRefundSubmission">UPDATE admin_case_action a SET result_payload_json=JSON_SET(result_payload_json,
+    '$.termination.first_refund_submit_started_at',CAST(#{at} AS CHAR),'$.termination.locked_version',request_payload_json->'$.scheme_version',
+    '$.termination.refund_ids',(SELECT JSON_ARRAYAGG(s.target_id) FROM (SELECT parent_action_id,target_id FROM admin_case_action WHERE target_type='refund_order' GROUP BY parent_action_id,target_id) s WHERE s.parent_action_id=a.id)),
+    updated_at=#{at} WHERE id=#{actionId} AND request_payload_json->>'$.fulfillment_decision'='terminate'
+    AND result_payload_json->>'$.termination.first_refund_submit_started_at' IS NULL</update>
+  <select id="pendingOrders" resultType="string">SELECT DISTINCT target_id FROM admin_case_action WHERE action_type='resolve_order_issue'
+    AND parent_action_id IS NULL AND action_status IN ('executing','failed') AND target_id&gt;#{afterId} ORDER BY target_id LIMIT 100</select>
+</mapper>

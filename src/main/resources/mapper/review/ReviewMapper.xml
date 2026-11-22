@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC '-//mybatis.org//DTD Mapper 3.0//EN' 'https://mybatis.org/dtd/mybatis-3-mapper.dtd'>
+<mapper namespace="com.mujian.backend.review.mapper.ReviewMapper">
+  <select id="selectOrder" resultType="com.mujian.backend.review.projection.ReviewProjection$Order">
+    SELECT buyer_user_id,factory_id,order_status FROM
+    <choose><when test="type=='custom_order'">custom_order</when><otherwise>rental_order</otherwise></choose>
+    WHERE id=#{id} <if test="lock">FOR UPDATE</if>
+  </select>
+  <select id="hasOpenDispute" resultType="boolean">
+    <choose><when test="type=='custom_order'">
+      SELECT EXISTS(SELECT 1 FROM custom_after_sale_request WHERE active_order_guard=#{id})
+    </when><otherwise>
+      SELECT EXISTS(SELECT 1 FROM arbitration_case WHERE rental_order_id=#{id} AND case_status NOT IN ('closed','cancelled'))
+        OR EXISTS(SELECT 1 FROM order_issue_report WHERE rental_order_id=#{id} AND issue_status IN ('submitted','processing','waiting_evidence'))
+        OR EXISTS(SELECT 1 FROM order_claim WHERE rental_order_id=#{id} AND claim_status NOT IN ('draft','withdrawn','closed','rejected'))
+    </otherwise></choose>
+  </select>
+  <sql id="reviewProjection">
+    SELECT r.id,r.business_type,r.business_order_id,r.reviewer_role,r.rating,r.tag_json,r.content,
+      r.review_status AS status,r.created_at,f.reward_status,c.id AS user_coupon_id
+    FROM order_review r LEFT JOIN coupon_reward_record f ON f.event_type='first_rental_review'
+      AND f.source_id=r.id AND f.user_id=#{actor.userId} AND r.reviewer_user_id=f.user_id
+    LEFT JOIN user_coupon c ON c.issue_request_id=CONCAT('reward:',f.id)
+  </sql>
+  <sql id="given">r.reviewer_user_id=#{actor.userId} AND r.reviewer_role=#{actor.role}</sql>
+  <sql id="received">
+    <choose><when test="actor.role=='buyer'">r.target_type='user' AND r.target_id=#{actor.userId}</when>
+      <otherwise>r.target_type='factory' AND r.target_id=#{actor.factoryId}</otherwise></choose>
+  </sql>
+  <sql id="visible">r.review_status='published' AND
+    <choose><when test="direction=='given'">(<include refid="given"/>)</when>
+      <when test="direction=='received'">(<include refid="received"/>)</when>
+      <otherwise>((<include refid="given"/>) OR (<include refid="received"/>))</otherwise></choose>
+    <if test="type!=null">AND r.business_type=#{type}</if>
+  </sql>
+  <select id="selectByOrderRole" resultType="com.mujian.backend.review.projection.ReviewProjection">
+    <include refid="reviewProjection"/> WHERE r.business_type=#{type} AND r.business_order_id=#{id} AND r.reviewer_role=#{role}
+  </select>
+  <select id="selectVisibleById" resultType="com.mujian.backend.review.projection.ReviewProjection">
+    <include refid="reviewProjection"/> WHERE r.id=#{id} AND r.review_status='published'
+      AND ((<include refid="given"/>) OR (<include refid="received"/>))
+  </select>
+  <select id="countVisible" resultType="long">SELECT COUNT(*) FROM order_review r WHERE <include refid="visible"/></select>
+  <select id="selectVisiblePage" resultType="com.mujian.backend.review.projection.ReviewProjection"><bind name="pageOffset" value="page.offset()"/>
+    <include refid="reviewProjection"/> WHERE <include refid="visible"/>
+    ORDER BY r.created_at DESC,r.id DESC LIMIT #{page.pageSize} OFFSET #{pageOffset}
+  </select>
+  <insert id="insertReview">
+    INSERT INTO order_review(id,business_type,business_order_id,reviewer_user_id,reviewer_role,target_type,target_id,rating,
+      tag_json,content,review_status,created_at,updated_at)
+    VALUES(#{id},#{input.businessType},#{input.businessOrderId},#{actor.userId},#{actor.role},
+      IF(#{actor.role}='buyer','factory','user'),#{targetId},#{input.rating},#{tags},#{input.content},'published',#{now},#{now})
+  </insert>
+</mapper>

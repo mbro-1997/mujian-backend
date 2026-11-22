@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC '-//mybatis.org//DTD Mapper 3.0//EN' 'https://mybatis.org/dtd/mybatis-3-mapper.dtd'>
+<mapper namespace="com.mujian.backend.coupon.mapper.ManualIssueMapper">
+  <select id="selectByKey" resultType="com.mujian.backend.coupon.mapper.ManualIssueMapper$Batch">
+    SELECT id,created_by_admin_user_id AS owner,request_digest AS digest,mode,COALESCE(target_count,0) AS targets,
+      issued_quantity AS quantity,completed_at FROM coupon_distribution WHERE request_id=#{key}
+  </select>
+  <insert id="insertBatch">
+    INSERT INTO coupon_distribution(id,request_id,request_digest,template_id,mode,config_json,target_count,issued_quantity,
+      status,created_by_admin_user_id,created_at,published_at,completed_at)
+    SELECT #{id},#{key},#{digest},id,#{input.mode},#{config},1,1,'completed',#{actor},#{at},#{at},#{at}
+      FROM coupon_template WHERE id=#{input.templateId}
+  </insert>
+  <select id="selectTargetUsers" resultType="string">
+    SELECT u.id FROM sys_user u JOIN sys_user_role r ON r.user_id=u.id AND r.role_code='demander' AND r.enabled=1
+    WHERE u.user_status='active'
+    <if test="ids!=null">AND u.id IN <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach></if>
+    ORDER BY u.id
+  </select>
+  <update id="completeBatch">UPDATE coupon_distribution SET target_count=#{targets},issued_quantity=#{quantity},completed_at=#{at} WHERE id=#{id}</update>
+  <insert id="insertIssueAudit">
+    INSERT INTO admin_operation_audit(id,audit_no,admin_user_id,permission_code,operation_code,operation_name,target_module,target_type,
+      target_id,request_id,idempotency_key,operation_reason,result_status,created_at)
+    VALUES(#{id},#{id},#{actor},'admin:coupon:issue','coupon_distribution_issue','主动发券','12','coupon_distribution',
+      #{batch},#{trace},#{key},#{reason},'success',#{at})
+  </insert>
+</mapper>

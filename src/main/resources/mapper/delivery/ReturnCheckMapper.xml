@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.delivery.mapper.ReturnCheckMapper">
+  <select id="lockCheck" resultMap="com.mujian.backend.delivery.mapper.FulfillmentMapper.OrderReturnCheckDO" useCache="false" flushCache="true">SELECT id,rental_order_id,factory_id,return_shipment_id,check_status,check_start_source,check_start_at,warning_at,auto_close_at,checked_at,operator_user_id,problem_summary,claim_created,close_reason_code,close_reason,closed_by_user_id,closed_at,version,created_at,updated_at FROM order_return_check WHERE rental_order_id=#{orderId} FOR UPDATE</select>
+  <insert id="insertCheck">INSERT INTO order_return_check(id,rental_order_id,factory_id,return_shipment_id,check_status,check_start_source,check_start_at,warning_at,auto_close_at,created_at,updated_at)
+    VALUES(#{row.id},#{row.rentalOrderId},#{row.factoryId},#{row.returnShipmentId},#{row.checkStatus},#{row.checkStartSource},#{row.checkStartAt},#{row.warningAt},#{row.autoCloseAt},#{row.createdAt},#{row.updatedAt})</insert>
+  <insert id="insertItem">INSERT INTO order_return_item_check(id,return_check_id,rental_order_item_id,expected_quantity,created_at,updated_at) VALUES(#{id},#{checkId},#{itemId},#{quantity},#{at},#{at})</insert>
+  <update id="setQuantity">UPDATE order_return_item_check SET checked_quantity=#{quantity},completed_at=IF(#{quantity}=expected_quantity,#{at},NULL),operator_user_id=#{actor},version=version+1,updated_at=#{at}
+    WHERE return_check_id=#{checkId} AND rental_order_item_id=#{itemId} AND #{quantity} BETWEEN 0 AND expected_quantity</update>
+  <update id="advanceReturnCheckVersion">UPDATE order_return_check SET operator_user_id=#{actor},version=version+1,updated_at=#{at} WHERE id=#{id} AND version=#{version} AND check_status IN ('pending','warning') AND claim_created=0</update>
+  <update id="updateReturnCheckStartAndDeadlines">UPDATE order_return_check SET check_start_source=#{source},check_start_at=#{start},warning_at=DATE_ADD(#{start},INTERVAL 12 HOUR),auto_close_at=DATE_ADD(#{start},INTERVAL 72 HOUR),updated_at=#{at}
+    WHERE id=#{id} AND check_start_at&gt;#{start} AND check_status='pending'</update>
+  <update id="markReturnCheckWarned">UPDATE order_return_check SET check_status='warning',version=version+1,updated_at=#{at} WHERE id=#{id} AND check_status='pending' AND claim_created=0 AND warning_at&lt;=#{at}</update>
+  <update id="closeReturnCheck">UPDATE order_return_check SET check_status=#{status},checked_at=IF(#{status}='no_issue',#{at},NULL),closed_at=#{at},closed_by_user_id=#{actor},
+    operator_user_id=IF(#{status}='no_issue',#{actor},operator_user_id),close_reason_code=#{reasonCode},close_reason=#{reason},version=version+1,updated_at=#{at}
+    WHERE id=#{id} AND version=#{version} AND check_status IN ('warning','pending') AND claim_created=0 AND closed_at IS NULL</update>
+  <select id="hasScan" resultType="boolean">SELECT EXISTS(SELECT 1 FROM order_return_scan_record WHERE return_check_id=#{checkId} AND prop_sn_id=#{snId})</select>
+  <select id="selectDispatchedItem" resultType="string">SELECT s.rental_order_item_id FROM order_outbound_scan_record s JOIN order_outbound_record o ON o.id=s.outbound_record_id
+    WHERE s.rental_order_id=#{orderId} AND s.prop_sn_id=#{snId} AND o.outbound_status='completed'</select>
+  <insert id="insertScan">INSERT INTO order_return_scan_record(id,scan_request_id,return_check_id,rental_order_item_id,prop_qr_code_id,prop_sn_id,operator_user_id,scanned_at,created_at)
+    VALUES(#{row.id},#{row.requestId},#{row.rootId},#{row.itemId},#{row.qrId},#{row.snId},#{row.actor},#{row.at},#{row.at})</insert>
+  <select id="selectScans" resultMap="com.mujian.backend.delivery.mapper.FulfillmentMapper.ScanRecord">SELECT s.id,s.rental_order_item_id item_id,s.prop_sn_id sn_id,n.sn_code,s.prop_qr_code_id qr_id,s.scanned_at
+    FROM order_return_scan_record s JOIN order_return_check c ON c.id=s.return_check_id JOIN prop_sn_instance n ON n.id=s.prop_sn_id WHERE c.rental_order_id=#{orderId}
+    ORDER BY s.scanned_at DESC,s.id DESC LIMIT #{query.pageSize} OFFSET #{query.offset}</select>
+  <select id="countScans" resultType="long">SELECT COUNT(*) FROM order_return_scan_record s JOIN order_return_check c ON c.id=s.return_check_id WHERE c.rental_order_id=#{orderId}</select>
+  <select id="selectDueOrders" resultType="string">SELECT order_id FROM (
+    SELECT s.rental_order_id order_id FROM order_return_shipment s WHERE s.shipment_status='sent' AND s.expected_check_start_at&lt;=#{at}
+      AND NOT EXISTS(SELECT 1 FROM order_return_check c WHERE c.rental_order_id=s.rental_order_id)
+    UNION ALL SELECT c.rental_order_id FROM order_return_check c WHERE c.claim_created=0
+      AND ((c.check_status='pending' AND c.warning_at&lt;=#{at}) OR (c.check_status='warning' AND c.auto_close_at&lt;=#{at}))) q
+    WHERE order_id&gt;#{afterId} ORDER BY order_id LIMIT 100</select>
+  <select id="returnLegComplete" resultType="boolean">SELECT EXISTS(SELECT 1 FROM order_transport_leg WHERE rental_order_id=#{orderId} AND leg_type='return' AND leg_status='completed')</select>
+  <update id="finishReturnLeg">UPDATE order_transport_leg SET leg_status='completed',completed_at=#{at},updated_at=#{at},version=version+1
+    WHERE rental_order_id=#{orderId} AND leg_type='return' AND leg_status IN ('ready','dispatched')</update>
+  <select id="releasedIds" resultType="string">SELECT r.id FROM <include refid="com.mujian.backend.prop.mapper.InventoryReservationMapper.all_reservations"/> r WHERE r.rental_order_id=#{orderId} AND r.reservation_status='completed' ORDER BY r.id</select>
+</mapper>

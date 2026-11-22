@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.custom.mapper.CustomRequirementMapper">
+  <select id="selectCustomRequirementById" resultType="com.mujian.backend.custom.mapper.CustomRequirementMapper$Requirement" useCache="false" flushCache="true">
+    SELECT id,buyer_user_id buyer_id,factory_id,requirement_status state,version,requirement_no number,requirement_title title,usage_scene,expected_completion_date,
+    delivery_city,delivery_preference delivery_mode,remark,budget_range_fen budget,response_deadline_at deadline,latest_reason reason,updated_at FROM custom_requirement WHERE id=#{id} <if test="lock">FOR UPDATE</if>
+  </select>
+  <select id="selectCustomRequirementPageByQuery" resultType="com.mujian.backend.custom.mapper.CustomRequirementMapper$ListRow" useCache="false" flushCache="true">
+    SELECT id,version,requirement_no number,requirement_title title,factory_id,requirement_status state,updated_at FROM custom_requirement WHERE <choose><when test="factory!=null">factory_id=#{factory} AND requirement_status!='draft'</when><otherwise>buyer_user_id=#{buyer}</otherwise></choose>
+    <if test="status!=null">AND requirement_status=#{status}</if> ORDER BY updated_at DESC,id LIMIT #{page.pageSize} OFFSET #{page.offset}
+  </select>
+  <select id="selectCustomRequirementCountByQuery" resultType="long" useCache="false" flushCache="true">
+    SELECT COUNT(*) FROM custom_requirement WHERE <choose><when test="factory!=null">factory_id=#{factory} AND requirement_status!='draft'</when><otherwise>buyer_user_id=#{buyer}</otherwise></choose>
+    <if test="status!=null">AND requirement_status=#{status}</if>
+  </select>
+  <select id="selectRequirementItemsByRequirementId" resultType="com.mujian.backend.custom.mapper.CustomRequirementMapper$Item" useCache="false" flushCache="true">
+    SELECT id,source_sku_id,item_title title,quantity,dimension_requirement dimension,material_requirement material,style_requirement style,acceptance_notes FROM custom_requirement_item WHERE requirement_id=#{id} ORDER BY sort_no
+  </select>
+  <select id="selectAttachmentsByRequirement" resultType="com.mujian.backend.custom.mapper.CustomRequirementMapper$Attachment" useCache="false" flushCache="true">
+    SELECT requirement_item_id item_id,material_id,file_name name,attachment_type type FROM custom_requirement_attachment WHERE requirement_id=#{id} ORDER BY sort_no
+  </select>
+  <select id="selectQuotesByRequirement" resultType="com.mujian.backend.custom.mapper.CustomRequirementMapper$Quote" useCache="false" flushCache="true">
+    SELECT id,quote_version,quote_status state,spec_snapshot_json terms,custom_goods_amount_fen goods_fen,total_amount_fen total_fen,valid_until FROM custom_quote
+ WHERE requirement_id=#{id} <if test="!factory">AND published_at IS NOT NULL</if> ORDER BY quote_version DESC
+  </select>
+  <select id="orderId" resultType="String" useCache="false" flushCache="true">
+    SELECT id FROM custom_order WHERE requirement_id=#{id}
+  </select>
+  <select id="activeFactory" resultType="boolean" useCache="false" flushCache="true">
+    SELECT EXISTS(SELECT 1 FROM factory_profile f JOIN sys_user u ON u.id=f.owner_user_id WHERE f.id=#{id} AND f.factory_status='active' AND u.user_status='active')
+  </select>
+  <select id="existsSkuForFactory" resultType="boolean" useCache="false" flushCache="true">
+    SELECT EXISTS(SELECT 1 FROM prop_sku WHERE id=#{id} AND factory_id=#{factory})
+  </select>
+  <insert id="insertCustomRequirement">
+    INSERT INTO custom_requirement(id,requirement_no,buyer_user_id,factory_id,submit_idempotency_key,requirement_status,version,created_at,updated_at)
+ VALUES(#{id},CONCAT('CR',#{id}),#{buyer},#{draft.factoryId},#{key},'draft',0,#{at},#{at})
+  </insert>
+  <update id="updateCustomRequirement">
+    UPDATE custom_requirement SET requirement_title=#{draft.title},usage_scene=#{draft.usageScene},expected_completion_date=#{draft.expectedCompletionDate},
+ delivery_city=#{draft.deliveryCity},delivery_preference=#{draft.deliveryMode},remark=#{draft.remark},budget_range_fen=#{budget},updated_at=#{at} WHERE id=#{id}
+  </update>
+  <delete id="clearItems">
+    DELETE FROM custom_requirement_item WHERE requirement_id=#{id}
+  </delete>
+  <delete id="clearAttachments">
+    DELETE FROM custom_requirement_attachment WHERE requirement_id=#{id}
+  </delete>
+  <insert id="insertItem">
+    INSERT INTO custom_requirement_item(id,requirement_id,source_sku_id,item_title,quantity,dimension_requirement,material_requirement,style_requirement,acceptance_notes,sort_no,created_at,updated_at)
+ VALUES(#{id},#{root},#{item.sourceSkuId},#{item.title},#{item.quantity},#{item.dimension},#{item.material},#{item.style},#{item.acceptanceNotes},#{sort},#{at},#{at})
+  </insert>
+  <insert id="insertCustomRequirementAttachment">
+    INSERT INTO custom_requirement_attachment(id,requirement_id,requirement_item_id,attachment_type,storage_key,file_name,material_id,sort_no,created_at)
+ SELECT #{id},requirement_id,#{item},attachment_type,storage_key,file_name,id,#{sort},#{at} FROM custom_material
+ WHERE id=#{ref.materialId} AND requirement_id=#{root} AND owner_user_id=#{buyer} AND purpose='requirement' AND (#{retained} OR created_at>DATE_SUB(CAST(#{at} AS DATETIME(3)), INTERVAL 24 HOUR)) AND file_name=#{ref.name} AND attachment_type=#{ref.type}
+  </insert>
+  <update id="transitionRequirementState">
+    UPDATE custom_requirement SET requirement_status=#{state},version=version+1,updated_at=#{at},
+ latest_reason=COALESCE(#{reason},latest_reason), submitted_at=IF(#{state}='submitted',#{at},submitted_at),
+ response_deadline_at=IF(#{state}='submitted',DATE_ADD(CAST(#{at} AS DATETIME(3)),INTERVAL 48 HOUR),response_deadline_at) WHERE id=#{id}
+  </update>
+  <insert id="saveQuote">
+    INSERT INTO custom_quote(id,quote_no,requirement_id,factory_id,quote_version,quote_status,custom_goods_amount_fen,delivery_fee_fen,total_amount_fen,
+ production_days,promised_completion_date,spec_snapshot_json,quote_remark,created_at,updated_at)
+ VALUES(#{id},CONCAT('CQ',#{id}),#{root},#{factory},#{sequence},'draft',#{goods},#{quoteTerms.freightFen},#{total},#{quoteTerms.productionDays},#{quoteTerms.promisedDate},#{terms},#{quoteTerms.remark},#{at},#{at})
+ ON DUPLICATE KEY UPDATE custom_goods_amount_fen=#{goods},delivery_fee_fen=#{quoteTerms.freightFen},total_amount_fen=#{total},production_days=#{quoteTerms.productionDays},
+ promised_completion_date=#{quoteTerms.promisedDate},spec_snapshot_json=#{terms},quote_remark=#{quoteTerms.remark},updated_at=#{at}
+  </insert>
+  <update id="publishCustomQuote">
+    UPDATE custom_quote SET quote_status='published',published_at=#{at},valid_until=DATE_ADD(CAST(#{at} AS DATETIME(3)),INTERVAL 72 HOUR),updated_at=#{at} WHERE id=#{id} AND quote_status='draft'
+  </update>
+  <update id="retireCustomQuote">
+    UPDATE custom_quote SET quote_status=#{state},updated_at=#{at} WHERE requirement_id=#{root} AND quote_status='published'
+  </update>
+  <update id="retireDrafts">
+    UPDATE custom_quote SET quote_status='superseded',updated_at=#{at} WHERE requirement_id=#{root} AND quote_status='draft'
+  </update>
+  <update id="acceptCustomQuote">
+    UPDATE custom_quote SET quote_status='accepted',accepted_at=#{at},updated_at=#{at} WHERE id=#{id} AND quote_status='published'
+  </update>
+</mapper>

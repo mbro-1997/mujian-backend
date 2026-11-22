@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.prop.mapper.InventoryReservationMapper">
+<!-- 逾期任务尚未运行时也保护实际在租占用；alias仅由本地静态include指定。 -->
+<sql id="effectiveOccupyEnd">CASE WHEN ${alias}reservation_status IN ('overdue_holding','disputed_holding')
+ OR (${alias}reservation_status='renting' AND ${alias}rental_end_date&lt;#{today})
+ THEN CAST('9999-12-31' AS DATE) ELSE ${alias}occupy_end_date END</sql>
+<sql id="columns_inventory_reservation">id,sku_id,sn_id,quantity,checkout_batch_id,checkout_batch_item_snapshot_id,rental_order_id,rental_order_item_id,source_type,source_id,rental_start_date,rental_end_date,occupy_start_date,occupy_end_date,reservation_status,expires_at,idempotency_key,version,created_at,updated_at</sql>
+<sql id="aliased_inventory_reservation">s.id,s.sku_id,s.sn_id,s.quantity,s.checkout_batch_id,s.checkout_batch_item_snapshot_id,s.rental_order_id,s.rental_order_item_id,s.source_type,s.source_id,s.rental_start_date,s.rental_end_date,s.occupy_start_date,s.occupy_end_date,s.reservation_status,s.expires_at,s.idempotency_key,s.version,s.created_at,s.updated_at</sql>
+  <sql id="all_reservations">
+    (SELECT <include refid="com.mujian.backend.prop.mapper.InventoryReservationMapper.columns_inventory_reservation"/> FROM inventory_reservation
+     UNION ALL
+     SELECT h.origin_reservation_id AS id,h.sku_id,h.sn_id,h.quantity,h.checkout_batch_id,h.checkout_batch_item_snapshot_id,h.rental_order_id,h.rental_order_item_id,h.source_type,h.source_id,h.rental_start_date,h.rental_end_date,h.occupy_start_date,h.occupy_end_date,h.reservation_status,h.expires_at,h.idempotency_key,h.version,h.created_at,h.updated_at
+     FROM inventory_reservation_history h WHERE NOT EXISTS(SELECT 1 FROM inventory_reservation r WHERE r.id=h.origin_reservation_id))
+  </sql>
+<select id="selectInventoryReservationCountByQuery" resultType="long" useCache="false" flushCache="true">
+        SELECT COUNT(*) FROM <include refid="all_reservations"/> r JOIN prop_sku s ON s.id=r.sku_id LEFT JOIN prop_sn_instance sn ON sn.id=r.sn_id WHERE 1=1
+        <if test="reservationQueryDTO.skuId != null"> AND r.sku_id=#{reservationQueryDTO.skuId}</if>
+        <if test="reservationQueryDTO.snId != null"> AND r.sn_id=#{reservationQueryDTO.snId}</if>
+        <if test="reservationQueryDTO.status != null"> AND reservation_status=#{reservationQueryDTO.status}</if>
+        <if test="reservationQueryDTO.start != null"> AND occupy_start_date&lt;=#{reservationQueryDTO.end} AND occupy_end_date&gt;=#{reservationQueryDTO.start}</if>
+        <if test="reservationQueryDTO.keyword != null"> AND (LOCATE(#{reservationQueryDTO.keyword},CONVERT(s.sku_code USING utf8mb4) COLLATE utf8mb4_bin)&gt;0 OR LOCATE(#{reservationQueryDTO.keyword},s.prop_name)&gt;0 OR LOCATE(#{reservationQueryDTO.keyword},CONVERT(sn.sn_code USING utf8mb4) COLLATE utf8mb4_bin)&gt;0)</if>
+      </select>
+<select id="selectInventoryReservationPageByQuery" resultType="com.mujian.backend.prop.projection.PropReservationProjection" useCache="false" flushCache="true">
+        SELECT r.id, r.checkout_batch_id, r.checkout_batch_item_snapshot_id, r.expires_at, r.occupy_end_date, r.occupy_start_date, r.quantity, r.rental_end_date, r.rental_order_id, r.rental_order_item_id, r.rental_start_date, r.reservation_status, r.sku_id, r.sn_id, r.source_id, r.source_type, r.updated_at,s.sku_code,s.prop_name,sn.sn_code FROM <include refid="all_reservations"/> r JOIN prop_sku s ON s.id=r.sku_id LEFT JOIN prop_sn_instance sn ON sn.id=r.sn_id WHERE 1=1
+        <if test="reservationQueryDTO.skuId != null"> AND r.sku_id=#{reservationQueryDTO.skuId}</if>
+        <if test="reservationQueryDTO.snId != null"> AND r.sn_id=#{reservationQueryDTO.snId}</if>
+        <if test="reservationQueryDTO.status != null"> AND reservation_status=#{reservationQueryDTO.status}</if>
+        <if test="reservationQueryDTO.start != null"> AND occupy_start_date&lt;=#{reservationQueryDTO.end} AND occupy_end_date&gt;=#{reservationQueryDTO.start}</if>
+        <if test="reservationQueryDTO.keyword != null"> AND (LOCATE(#{reservationQueryDTO.keyword},CONVERT(s.sku_code USING utf8mb4) COLLATE utf8mb4_bin)&gt;0 OR LOCATE(#{reservationQueryDTO.keyword},s.prop_name)&gt;0 OR LOCATE(#{reservationQueryDTO.keyword},CONVERT(sn.sn_code USING utf8mb4) COLLATE utf8mb4_bin)&gt;0)</if>
+         ORDER BY r.created_at DESC,r.id DESC LIMIT #{reservationQueryDTO.limit} OFFSET #{reservationQueryDTO.offset}
+      </select>
+<select id="selectInventoryReservation" resultType="com.mujian.backend.prop.domain.InventoryReservationDO" useCache="false" flushCache="true">
+    <choose><when test="lock">SELECT <include refid="columns_inventory_reservation"/> FROM inventory_reservation WHERE id=#{id} FOR UPDATE</when><otherwise>SELECT <include refid="columns_inventory_reservation"/> FROM <include refid="all_reservations"/> r WHERE r.id=#{id}</otherwise></choose>
+  </select>
+  <insert id="insertReservation">
+    INSERT INTO inventory_reservation(id,sku_id,sn_id,quantity,checkout_batch_id,checkout_batch_item_snapshot_id,source_type,source_id,rental_start_date,rental_end_date,occupy_start_date,occupy_end_date,reservation_status,expires_at,idempotency_key,version,created_at,updated_at)
+    VALUES(#{row.id},#{row.skuId},#{row.snId},#{row.quantity},#{row.checkoutBatchId},#{row.checkoutBatchItemSnapshotId},'checkout_batch_item_snapshot',#{row.checkoutBatchItemSnapshotId},#{row.rentalStartDate},#{row.rentalEndDate},#{row.occupyStartDate},#{row.occupyEndDate},'held',#{row.expiresAt},#{row.idempotencyKey},0,#{row.createdAt},#{row.updatedAt})
+  </insert>
+  <update id="confirmPaid">
+    UPDATE inventory_reservation SET reservation_status='paid_locked',rental_order_id=#{orderId},rental_order_item_id=#{orderItemId},version=version+1,updated_at=#{now}
+    WHERE checkout_batch_id=#{batchId} AND checkout_batch_item_snapshot_id=#{snapshotId} AND reservation_status='held'
+  </update>
+  <update id="releaseBatch">UPDATE inventory_reservation SET reservation_status=#{status},version=version+1,updated_at=#{now} WHERE checkout_batch_id=#{batchId} AND reservation_status='held'</update>
+  <update id="releaseOrder">UPDATE inventory_reservation SET reservation_status='released',version=version+1,updated_at=#{now} WHERE rental_order_id=#{orderId} AND reservation_status='paid_locked'</update>
+  <select id="archiveCandidates" resultType="com.mujian.backend.prop.domain.InventoryReservationDO" useCache="false" flushCache="true">
+    SELECT <include refid="columns_inventory_reservation"/> FROM inventory_reservation
+    WHERE reservation_status IN ('released','expired','cancelled','completed') AND updated_at&lt;=#{before}
+    ORDER BY id LIMIT 100 FOR UPDATE SKIP LOCKED
+  </select>
+  <insert id="copyHistory">
+    INSERT INTO inventory_reservation_history(id,sku_id,sn_id,quantity,checkout_batch_id,checkout_batch_item_snapshot_id,rental_order_id,rental_order_item_id,source_type,source_id,rental_start_date,rental_end_date,occupy_start_date,occupy_end_date,reservation_status,expires_at,idempotency_key,version,created_at,updated_at,origin_reservation_id,archive_batch_no,archived_at)
+    SELECT #{id},sku_id,sn_id,quantity,checkout_batch_id,checkout_batch_item_snapshot_id,rental_order_id,rental_order_item_id,source_type,source_id,rental_start_date,rental_end_date,occupy_start_date,occupy_end_date,reservation_status,expires_at,idempotency_key,version,created_at,updated_at,id,#{batch},#{now} FROM inventory_reservation WHERE id=#{origin}
+  </insert>
+  <select id="selectInventoryReservationHistoryByOrigin" resultType="com.mujian.backend.prop.domain.InventoryReservationDO" useCache="false" flushCache="true">
+    SELECT origin_reservation_id AS id,sku_id,sn_id,quantity,checkout_batch_id,checkout_batch_item_snapshot_id,rental_order_id,rental_order_item_id,source_type,source_id,rental_start_date,rental_end_date,occupy_start_date,occupy_end_date,reservation_status,expires_at,idempotency_key,version,created_at,updated_at FROM inventory_reservation_history WHERE origin_reservation_id=#{origin}
+  </select>
+  <delete id="deleteArchived">DELETE FROM inventory_reservation WHERE id=#{id} AND version=#{version} AND reservation_status IN ('released','expired','cancelled','completed')</delete>
+ <select id="selectOrderReservationsIncludingHistory" resultType="com.mujian.backend.prop.domain.InventoryReservationDO">SELECT r.id, r.occupy_start_date, r.quantity, r.rental_order_id, r.rental_order_item_id, r.reservation_status, r.sku_id, r.sn_id FROM <include refid="all_reservations"/> r WHERE r.rental_order_id=#{orderId} AND NOT(r.source_type &lt;=&gt; 'extension_request') ORDER BY r.sku_id,r.sn_id,r.id</select>
+ <select id="selectReservationsByBatch" resultType="com.mujian.backend.prop.domain.InventoryReservationDO" useCache="false" flushCache="true">SELECT <include refid="columns_inventory_reservation"/> FROM inventory_reservation WHERE checkout_batch_id=#{id} ORDER BY sku_id,sn_id,id</select>
+  <update id="transitionFulfillment">UPDATE inventory_reservation SET reservation_status=IF(#{outbound},'renting','completed'),
+    occupy_start_date=IF(#{outbound},LEAST(occupy_start_date,DATE(#{at})),occupy_start_date),version=version+1,updated_at=#{at}
+    WHERE id=#{id} AND rental_order_id=#{orderId} AND reservation_status=#{before}</update>
+  <select id="hasOtherSnOccupancy" resultType="boolean">SELECT EXISTS(SELECT 1 FROM inventory_reservation WHERE sn_id=#{snId} AND id&lt;&gt;#{id}
+    AND reservation_status IN ('held','paid_locked','renting','overdue_holding','disputed_holding') AND occupy_start_date&lt;=#{end}
+    AND <include refid="effectiveOccupyEnd"><property name="alias" value=""/></include>&gt;=#{start})</select>
+</mapper>

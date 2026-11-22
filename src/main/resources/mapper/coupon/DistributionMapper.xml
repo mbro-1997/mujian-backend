@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC '-//mybatis.org//DTD Mapper 3.0//EN' 'https://mybatis.org/dtd/mybatis-3-mapper.dtd'>
+<mapper namespace="com.mujian.backend.coupon.mapper.DistributionMapper">
+  <select id="hasStudentBenefit" resultType="boolean">
+    SELECT EXISTS(SELECT 1 FROM user_realname_verification WHERE user_id=#{user} AND verification_status='verified')
+      AND EXISTS(SELECT 1 FROM user_student_verification WHERE user_id=#{user} AND verification_status='approved' AND expire_at&gt;#{at})
+  </select>
+  <sql id="eligible"> FROM coupon_distribution a JOIN coupon_template t ON t.id=a.template_id
+    WHERE a.status='active' AND a.mode='conditional_claim' AND a.starts_at&lt;=#{at} AND a.ends_at&gt;#{at}
+      AND t.template_status='active' AND (t.valid_end_at IS NULL OR t.valid_end_at&gt;#{at})
+      AND (a.config_json-&gt;&gt;'$.condition'='all_active' OR (#{student} AND a.config_json-&gt;&gt;'$.condition'='student_verified'))
+      AND NOT EXISTS (SELECT 1 FROM user_coupon c WHERE c.issue_request_id=CONCAT('claim:',a.id,':user:',#{user}))
+  </sql>
+  <select id="countOffers" resultType="long">SELECT COUNT(*) <include refid="eligible"/></select>
+  <select id="selectOffers" resultType="com.mujian.backend.coupon.projection.DistributionRows$OfferRow"><bind name="pageOffset" value="page.offset()"/>
+    SELECT a.id AS activity_id,t.id AS template_id,t.template_name,t.coupon_type,t.face_amount_fen,t.discount_rate_bps,
+      t.threshold_rent_amount_fen,t.applicable_scope_type,a.config_json-&gt;&gt;'$.condition' AS condition_code,a.ends_at,
+      t.validity_type,t.valid_days,t.valid_start_at,t.valid_end_at <include refid="eligible"/>
+    ORDER BY a.ends_at,a.id LIMIT #{page.pageSize} OFFSET #{pageOffset}
+  </select>
+  <select id="selectScopes" resultType="com.mujian.backend.coupon.projection.DistributionRows$Scope">
+    SELECT s.coupon_template_id AS template_id,f.id AS factory_id,f.factory_name
+    FROM coupon_scope_target s JOIN factory_profile f ON f.id=s.target_id
+    WHERE s.scope_type='factory' AND s.coupon_template_id IN
+      <foreach collection="ids" item="id" open="(" close=")" separator=",">#{id}</foreach>
+    ORDER BY s.coupon_template_id,f.id
+  </select>
+  <select id="lockActivity" resultType="com.mujian.backend.coupon.projection.DistributionRows$Activity">
+    SELECT id,template_id,config_json-&gt;&gt;'$.condition' AS condition_code,status,starts_at,ends_at
+    FROM coupon_distribution WHERE id=#{id} AND mode='conditional_claim' FOR UPDATE
+  </select>
+  <select id="lockTemplate" resultType="com.mujian.backend.coupon.projection.DistributionRows$Template">
+    SELECT id,template_name,coupon_type,face_amount_fen,discount_rate_bps,threshold_rent_amount_fen,cost_bearer,
+      applicable_scope_type,validity_type,valid_days,valid_start_at,valid_end_at,template_status
+    FROM coupon_template WHERE id=#{id} FOR UPDATE
+  </select>
+  <select id="selectClaim" resultType="com.mujian.backend.coupon.vo.ActivityViews$Claim" useCache="false" flushCache="true">
+    SELECT id AS user_coupon_id,IF(coupon_status IN ('available','returned') AND valid_until&lt;=#{at},'expired',coupon_status) AS coupon_status,
+      TRUE AS already_claimed FROM user_coupon WHERE issue_request_id=#{key} AND user_id=#{user}
+  </select>
+  <insert id="insertCoupons">
+    INSERT INTO user_coupon(id,user_coupon_no,template_id,user_id,issue_source_type,issue_source_id,issue_request_id,coupon_status,
+      coupon_type_snapshot,face_amount_fen_snapshot,discount_rate_bps_snapshot,threshold_rent_amount_fen_snapshot,cost_bearer_snapshot,
+      valid_from,valid_until,created_at,updated_at) VALUES
+    <foreach collection="coupons" item="c" separator=",">
+      (#{c.id},#{c.id},#{template.id},#{c.userId},#{source},#{sourceId},#{c.requestId},'available',
+       #{template.couponType},#{template.faceAmountFen},#{template.discountRateBps},#{template.thresholdRentAmountFen},#{template.costBearer},
+       COALESCE(#{template.validStartAt},#{at}),COALESCE(#{template.validEndAt},DATE_ADD(#{at},INTERVAL #{template.validDays} DAY)),#{at},#{at})
+    </foreach>
+  </insert>
+  <insert id="insertIssuedLogs">
+    INSERT INTO coupon_operation_log(id,operation_request_id,user_coupon_id,operation_type,to_status,operator_type,operator_id,
+      biz_type,biz_id,reason,created_at) VALUES <foreach collection="coupons" item="c" separator=",">
+      (#{c.logId},CONCAT('issue:',#{c.id}),#{c.id},'issued','available',#{operatorType},#{operator},#{bizType},#{sourceId},#{reason},#{at})
+    </foreach>
+  </insert>
+  <update id="incrementActivity">UPDATE coupon_distribution SET issued_quantity=issued_quantity+1 WHERE id=#{id}</update>
+  <update id="incrementTemplate">UPDATE coupon_template SET issued_count=issued_count+#{count},updated_at=#{at} WHERE id=#{id}</update>
+</mapper>

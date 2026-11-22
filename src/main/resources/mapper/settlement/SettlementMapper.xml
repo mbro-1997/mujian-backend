@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.settlement.mapper.SettlementMapper">
+  <sql id="terminated">EXISTS(SELECT 1 FROM admin_case_action ac WHERE ac.target_type='rental_order' AND ac.target_id=o.id AND ac.action_type='resolve_order_issue'
+    AND ac.action_status='succeeded' AND ac.operator_confirmed_at IS NOT NULL AND ac.request_payload_json->>'$.fulfillment_decision'='terminate')</sql>
+  <sql id="alreadyFrozen">EXISTS(SELECT 1 FROM factory_settlement_detail d WHERE d.rental_order_id=o.id AND d.detail_status!='cancelled' AND
+    JSON_CONTAINS(d.source_allocation_snapshot_json,JSON_OBJECT('allocationId',a.id,'suborderId',a.payment_channel_suborder_id),'$.sources'))</sql>
+  <sql id="eligible"> (o.order_status='completed' OR (o.order_status IN ('user_cancelled','cancelled') AND o.accept_status='accepted' AND o.cancel_type='user_cancel_rule') OR (o.order_status='cancelled' AND <include refid="terminated"/>))
+    AND o.updated_at&lt;#{cutoff} AND f.updated_at&lt;#{cutoff} AND f.freight_status IN ('settled','cancelled')
+    AND o.deposit_paid_amount_fen=o.deposit_refunded_amount_fen+o.deposit_deducted_amount_fen
+    AND o.service_fee_fen=0 AND o.total_paid_amount_fen&gt;o.total_refunded_amount_fen
+    AND EXISTS(SELECT 1 FROM payment_allocation a WHERE a.rental_order_id=o.id AND NOT <include refid="alreadyFrozen"/>)
+    AND NOT EXISTS(SELECT 1 FROM rental_overdue_fee fee WHERE fee.rental_order_id=o.id AND fee.fee_status!='effective')
+    AND NOT EXISTS(SELECT 1 FROM inventory_reservation r WHERE r.rental_order_id=o.id AND r.reservation_status IN ('held','paid_locked','renting','overdue_holding','disputed_holding'))
+    AND NOT EXISTS(SELECT 1 FROM refund_order r JOIN payment_channel_suborder s ON s.id=r.payment_channel_suborder_id WHERE s.rental_order_id=o.id
+      AND (r.refund_status NOT IN ('cancelled','success') OR r.updated_at&gt;=#{cutoff}))
+    AND NOT EXISTS(SELECT 1 FROM order_deduction d WHERE d.rental_order_id=o.id AND (d.deduction_status='pending' OR d.updated_at&gt;=#{cutoff}))
+    AND NOT EXISTS(SELECT 1 FROM order_price_adjustment a WHERE a.rental_order_id=o.id AND a.updated_at&gt;=#{cutoff})
+  </sql>
+  <sql id="customEligible">o.order_status='completed' AND o.acceptance_status='accepted' AND o.completed_at&lt;#{cutoff}
+    AND NOT EXISTS(SELECT 1 FROM custom_order_settlement d WHERE d.custom_order_id=o.id)
+    AND NOT EXISTS(SELECT 1 FROM custom_after_sale_request a WHERE a.active_order_guard=o.id)
+    AND NOT EXISTS(SELECT 1 FROM refund_order r WHERE r.biz_order_type='custom_order' AND r.biz_order_id=o.id AND (r.refund_status NOT IN ('success','cancelled') OR r.updated_at&gt;=#{cutoff}))
+    AND NOT EXISTS(SELECT 1 FROM admin_case_relation r JOIN admin_case c ON c.id=r.admin_case_id WHERE r.relation_type='custom_order' AND r.relation_id=o.id AND c.case_status NOT IN ('closed','cancelled'))</sql>
+  <select id="selectRentalOrderFactories" resultType="string">SELECT DISTINCT o.factory_id FROM rental_order o JOIN rental_order_freight_account f ON f.rental_order_id=o.id
+    WHERE o.factory_id&gt;#{after} AND <include refid="eligible"/> AND NOT EXISTS(SELECT 1 FROM factory_settlement_batch b WHERE b.factory_id=o.factory_id AND b.settlement_period_end=#{cutoff})
+    UNION SELECT o.factory_id FROM custom_order o WHERE o.factory_id&gt;#{after} AND <include refid="customEligible"/>
+      AND NOT EXISTS(SELECT 1 FROM factory_settlement_batch b WHERE b.factory_id=o.factory_id AND b.settlement_period_end=#{cutoff})
+    ORDER BY factory_id LIMIT 100</select>
+  <select id="selectRentalOrderCandidates" resultType="com.mujian.backend.settlement.mapper.SettlementMapper$Candidate">SELECT o.id,o.buyer_user_id buyer,p.owner_user_id owner,o.factory_id factory,o.order_status status,o.rent_paid_amount_fen rent,o.rent_refunded_amount_fen rentReturned,
+    o.deposit_paid_amount_fen deposit,o.deposit_refunded_amount_fen depositReturned,f.initial_prepaid_amount_fen freight,f.refunded_amount_fen freightReturned,
+    f.approved_total_amount_fen approved,f.online_settle_amount_fen reimbursement,o.rent_deducted_amount_fen cancellation,o.deposit_deducted_amount_fen depositDeducted,
+    EXISTS(SELECT 1 FROM factory_settlement_detail d WHERE d.rental_order_id=o.id AND d.detail_status!='cancelled') incremental,
+    <include refid="terminated"/> AS `terminated` FROM rental_order o
+    JOIN factory_profile p ON p.id=o.factory_id JOIN rental_order_freight_account f ON f.rental_order_id=o.id WHERE o.factory_id=#{factory} AND <include refid="eligible"/> ORDER BY o.id</select>
+  <select id="lockOrder" resultType="string">SELECT id FROM rental_order WHERE id=#{id} FOR UPDATE</select>
+  <select id="lockFactory" resultType="string">SELECT id FROM factory_profile WHERE id=#{factory} FOR UPDATE</select>
+  <select id="selectSettlementFrozen" resultType="boolean">SELECT EXISTS(SELECT 1 FROM factory_settlement_batch WHERE factory_id=#{factory} AND settlement_period_end=#{end})</select>
+  <select id="selectSettlementSourcesByOrder" resultType="com.mujian.backend.settlement.mapper.SettlementMapper$Source">SELECT a.id allocationId,a.payment_order_id paymentOrderId,s.id suborderId,p.payment_scene scene,s.factory_wechat_account_id accountId,s.sub_mchid_snapshot merchant,s.channel_sub_transaction_id transactionId,
+    m.subject_name_snapshot accountName,COALESCE(m.settlement_account_masked,CONCAT('****',RIGHT(s.sub_mchid_snapshot,4))) masked,CASE WHEN s.profit_sharing_flag=1 AND s.payment_status='success' AND m.factory_id=o.factory_id THEN s.channel_suborder_status ELSE 'unsupported' END state,s.paid_amount_fen paid,s.refunded_amount_fen refunded,
+    a.rent_allocated_amount_fen cashRentFen,a.deposit_allocated_amount_fen cashDepositFen,a.freight_prepaid_allocated_fen cashFreightFen,a.coupon_discount_allocated_fen coupon,
+    a.compensation_allocated_amount_fen compensation,a.service_fee_allocated_fen+a.custom_goods_allocated_amount_fen other,a.total_allocated_amount_fen total
+    FROM payment_allocation a JOIN rental_order o ON o.id=a.rental_order_id LEFT JOIN payment_channel_suborder s ON s.id=a.payment_channel_suborder_id AND s.rental_order_id=a.rental_order_id AND s.payment_order_id=a.payment_order_id
+    LEFT JOIN payment_order p ON p.id=s.payment_order_id LEFT JOIN factory_wechat_merchant_account m ON m.id=s.factory_wechat_account_id AND m.factory_id=s.factory_id
+    WHERE a.rental_order_id=#{id} AND NOT <include refid="alreadyFrozen"/> ORDER BY s.id FOR UPDATE</select>
+  <select id="selectRefundsForSettlement" resultType="com.mujian.backend.settlement.mapper.SettlementMapper$Refund">SELECT r.id,r.payment_channel_suborder_id suborderId,r.rent_refund_amount_fen rent,r.deposit_refund_amount_fen deposit,r.freight_refund_amount_fen freight,
+    r.custom_goods_refund_amount_fen+r.compensation_refund_amount_fen+r.service_fee_refund_fen other,r.refund_amount_fen amount FROM refund_order r JOIN payment_channel_suborder s ON s.id=r.payment_channel_suborder_id
+    WHERE s.rental_order_id=#{id} AND r.refund_status='success' ORDER BY r.id</select>
+  <select id="frozenOverdue" resultType="int">SELECT COALESCE(SUM(overdue_rent_amount_fen),0) FROM factory_settlement_detail
+    WHERE rental_order_id=#{id} AND detail_status!='cancelled'</select>
+  <select id="selectOrderPriceAdjustmentBasis" resultType="com.mujian.backend.settlement.mapper.SettlementMapper$Basis">SELECT id,adjustment_type kind,fund_component component,source_id sourceId,amount_fen amount FROM order_price_adjustment WHERE rental_order_id=#{id} AND adjustment_status='applied'
+    UNION ALL SELECT id,IF(deduction_type='overdue',source_type,deduction_type),fund_component,source_id,amount_fen FROM order_deduction WHERE rental_order_id=#{id} AND deduction_status='confirmed' ORDER BY id</select>
+  <insert id="insertBatch">INSERT INTO factory_settlement_batch(id,settlement_batch_no,factory_id,settlement_status,settlement_channel,order_count,deposit_compensation_amount_fen,custom_goods_settle_base_amount_fen,rent_settle_base_amount_fen,platform_commission_amount_fen,freight_reimbursement_amount_fen,factory_settle_amount_fen,settlement_period_start,settlement_period_end,generated_at,created_at,updated_at)
+    VALUES(#{batch.id},#{batch.id},#{batch.factory},'processing','wechat_platform_collection',#{batch.count},#{batch.depositCompensation},#{batch.goodsBase},#{batch.base},#{batch.commission},#{batch.freight},#{batch.payable},#{batch.start},#{batch.end},#{batch.at},#{batch.at},#{batch.at})</insert>
+  <insert id="insertDetail">INSERT INTO factory_settlement_detail(id,settlement_batch_id,source_settlement_key,rental_order_id,factory_id,payment_order_id,source_allocation_snapshot_json,overdue_rent_amount_fen,overdue_commission_amount_fen,initial_rent_paid_amount_fen,extension_rent_paid_amount_fen,deposit_deducted_amount_fen,deposit_compensation_amount_fen,excess_compensation_paid_amount_fen,shared_coupon_discount_amount_fen,rent_paid_amount_fen,rent_refunded_amount_fen,rent_deducted_amount_fen,rent_settle_base_amount_fen,commission_rate_bps,platform_commission_amount_fen,factory_rent_income_amount_fen,freight_approved_amount_fen,freight_refunded_amount_fen,freight_reimbursement_amount_fen,factory_settle_amount_fen,detail_status,created_at,updated_at)
+    VALUES(#{detail.id},#{batch.id},#{detail.key},#{detail.orderId},#{batch.factory},#{detail.paymentId},#{detail.snapshot},#{detail.overdue},#{detail.overdueCommission},#{detail.rent}-#{detail.extension}-#{detail.overdue},#{detail.extension},#{detail.depositCompensation}+#{detail.rentOffset},#{detail.depositCompensation},#{detail.supplement},#{detail.coupon},#{detail.rent},#{detail.rentReturned},#{detail.cancellation},#{detail.base},2000,#{detail.commission},#{detail.base}-#{detail.commission},#{detail.approved},#{detail.freightReturned},#{detail.reimbursement},#{detail.unlock},'included',#{batch.at},#{batch.at})</insert>
+  <insert id="insertCommission">INSERT INTO platform_commission_record(id,rental_order_id,settlement_detail_id,factory_id,commission_base_amount_fen,commission_rate_bps,commission_amount_fen,commission_status,created_at,updated_at)
+    VALUES(#{id},#{detail.orderId},#{detail.id},#{batch.factory},#{detail.base},2000,#{detail.commission},'pending',#{batch.at},#{batch.at})</insert>
+  <update id="updatePaymentChannelSuborderReserve">UPDATE payment_channel_suborder SET channel_suborder_status='sharing',version=version+1,updated_at=#{batch.at} WHERE id=#{chain.source.suborderId} AND channel_suborder_status IN ('paid_frozen','partially_refunded')</update>
+  <insert id="insertChain">INSERT INTO wechat_profit_sharing_order(id,settlement_batch_id,<choose><when test="chain.source.scene == 'custom_order_full_payment'">custom_settlement_id,custom_order_id</when><otherwise>settlement_detail_id,rental_order_id</otherwise></choose>,payment_order_id,payment_channel_suborder_id,factory_wechat_account_id,execution_type,business_idempotency_key,channel_out_order_no,finish_out_order_no,commission_status,unfreeze_status,alert_status,platform_commission_amount_fen,factory_unlock_amount_fen,sharing_status,next_attempt_at,created_at,updated_at)
+    VALUES(#{chain.id},#{batch.id},#{chain.detailId},#{chain.orderId},#{chain.source.paymentOrderId},#{chain.source.suborderId},#{chain.source.accountId},IF(#{chain.commission}=0,'finish_only','share_then_finish'),CONCAT(IF(#{chain.source.scene}='custom_order_full_payment','custom:','rental:'),#{chain.orderId},':',#{chain.source.suborderId}),#{chain.commissionNo},#{chain.finishNo},IF(#{chain.commission}=0,'not_required','pending'),IF(#{chain.commission}=0,'pending','blocked'),'none',#{chain.commission},#{chain.unlock},'pending',#{batch.at},#{batch.at},#{batch.at})</insert>
+  <insert id="insertAttempt">INSERT INTO factory_settlement_payment(id,settlement_payment_no,settlement_batch_id,factory_id,payment_attempt_no,payment_method,payable_amount_fen,actual_paid_amount_fen,payment_status,receiver_name_snapshot,receiver_account_masked_snapshot,factory_wechat_account_id,idempotency_key,requested_at,created_at,updated_at)
+    VALUES(#{id},#{id},#{batch.id},#{batch.factory},1,'wechat_platform_collection',#{batch.payable},0,'processing',#{source.accountName},#{source.masked},#{source.accountId},CONCAT('batch:',#{batch.id},':1'),#{batch.at},#{batch.at},#{batch.at})</insert>
+  <select id="customCandidates" resultType="com.mujian.backend.settlement.mapper.SettlementMapper$CustomCandidate">SELECT o.id,o.buyer_user_id buyer,f.owner_user_id owner,
+      o.factory_id factory,o.commission_rate_bps_snapshot rate,o.custom_goods_paid_amount_fen goods,o.delivery_fee_paid_fen freight,o.refunded_amount_fen refunded
+      FROM custom_order o JOIN factory_profile f ON f.id=o.factory_id WHERE o.factory_id=#{factory} AND <include refid="customEligible"/> ORDER BY o.id</select>
+  <select id="lockCustomOrder" resultType="string" flushCache="true" useCache="false">SELECT id FROM custom_order WHERE id=#{id} FOR UPDATE</select>
+  <select id="customSource" resultType="com.mujian.backend.settlement.mapper.SettlementMapper$Source">SELECT a.id allocationId,p.id paymentOrderId,s.id suborderId,p.payment_scene scene,
+    m.id accountId,s.sub_mchid_snapshot merchant,s.channel_sub_transaction_id transactionId,m.subject_name_snapshot accountName,COALESCE(m.settlement_account_masked,CONCAT('****',RIGHT(s.sub_mchid_snapshot,4))) masked,
+    s.channel_suborder_status state,s.paid_amount_fen paid,s.refunded_amount_fen refunded,a.rent_allocated_amount_fen cashRentFen,a.deposit_allocated_amount_fen cashDepositFen,
+    a.freight_prepaid_allocated_fen cashFreightFen,a.coupon_discount_allocated_fen coupon,a.compensation_allocated_amount_fen compensation,a.custom_goods_allocated_amount_fen other,a.total_allocated_amount_fen total
+    FROM custom_order o JOIN payment_order p ON p.id=o.payment_order_id AND p.buyer_user_id=o.buyer_user_id AND p.payment_scene='custom_order_full_payment'
+    JOIN payment_channel_suborder s ON s.payment_order_id=p.id AND s.custom_order_id=o.id AND s.factory_id=o.factory_id AND s.payment_status='success' AND s.profit_sharing_flag=1
+    JOIN payment_allocation a ON a.payment_channel_suborder_id=s.id AND a.custom_order_id=o.id AND a.payment_order_id=p.id
+    JOIN factory_wechat_merchant_account m ON m.id=s.factory_wechat_account_id AND m.factory_id=o.factory_id WHERE o.id=#{id} FOR UPDATE</select>
+  <select id="customRefunds" resultType="com.mujian.backend.settlement.mapper.SettlementMapper$Returns">SELECT COALESCE(SUM(custom_goods_refund_amount_fen),0) goods,
+    COALESCE(SUM(freight_refund_amount_fen),0) freight FROM refund_order WHERE payment_channel_suborder_id=#{sub} AND refund_status='success'</select>
+  <insert id="insertCustomDetail">INSERT INTO custom_order_settlement(id,custom_order_id,factory_id,settlement_batch_id,goods_paid_amount_fen,goods_refunded_amount_fen,
+    goods_settlement_adjustment_fen,goods_settle_base_amount_fen,commission_rate_bps,platform_commission_amount_fen,factory_goods_income_fen,delivery_fee_settle_fen,factory_settle_amount_fen,settlement_status,created_at,updated_at)
+    VALUES(#{customDetail.chain.detailId},#{customDetail.order.id},#{batch.factory},#{batch.id},#{customDetail.order.goods},#{customDetail.refund.goods},0,#{customDetail.base},#{customDetail.order.rate},#{customDetail.chain.commission},#{customDetail.base}-#{customDetail.chain.commission},#{customDetail.netFreight},#{customDetail.chain.unlock},'included',#{batch.at},#{batch.at})</insert>
+  <insert id="insertCustomCommission">INSERT INTO platform_commission_record(id,custom_order_id,custom_settlement_id,factory_id,commission_base_amount_fen,commission_rate_bps,commission_amount_fen,commission_status,created_at,updated_at)
+    VALUES(#{id},#{customDetail.order.id},#{customDetail.chain.detailId},#{batch.factory},#{customDetail.base},#{customDetail.order.rate},#{customDetail.chain.commission},'pending',#{batch.at},#{batch.at})</insert>
+</mapper>

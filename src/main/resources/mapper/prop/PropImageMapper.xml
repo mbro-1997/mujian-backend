@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.prop.mapper.PropImageMapper">
+<sql id="columns_prop_image">id,sku_id,image_url,sort_order,created_at</sql>
+<sql id="aliased_prop_image">s.id,s.sku_id,s.image_url,s.sort_order,s.created_at</sql>
+<select id="selectSnapshotPropImageListBySkuId" resultType="com.mujian.backend.prop.domain.PropImageDO" useCache="false" flushCache="true">
+    SELECT id,sku_id,image_url,sort_order,created_at FROM prop_image WHERE sku_id=#{skuId} ORDER BY sort_order
+  </select>
+<delete id="deletePropImagesBySkuId">
+    DELETE FROM prop_image WHERE sku_id=#{skuId}
+  </delete>
+<select id="selectPropImageListBySkuId" resultType="com.mujian.backend.prop.domain.PropImageDO" useCache="false" flushCache="true">
+    SELECT 
+    <include refid="columns_prop_image"/>
+     FROM prop_image WHERE sku_id=#{sku} ORDER BY sort_order
+  </select>
+<select id="selectPropImage" resultType="com.mujian.backend.prop.domain.PropImageDO" useCache="false" flushCache="true">
+    SELECT id,sku_id,image_url,sort_order,created_at FROM prop_image WHERE id=#{id} <if test="lock">FOR UPDATE</if>
+  </select>
+<insert id="insertPropImage">INSERT INTO prop_image
+<trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="row.id != null">id,</if>
+<if test="row.skuId != null">sku_id,</if>
+<if test="row.imageUrl != null">image_url,</if>
+<if test="row.sortOrder != null">sort_order,</if>
+<if test="row.createdAt != null">created_at,</if>
+</trim> VALUES
+<trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="row.id != null">#{row.id},</if>
+<if test="row.skuId != null">#{row.skuId},</if>
+<if test="row.imageUrl != null">#{row.imageUrl},</if>
+<if test="row.sortOrder != null">#{row.sortOrder},</if>
+<if test="row.createdAt != null">#{row.createdAt},</if>
+</trim></insert>
+<select id="selectPropImageListBySkuIds" resultType="com.mujian.backend.prop.domain.PropImageDO" useCache="false" flushCache="true">
+ SELECT id,sku_id,image_url,sort_order,created_at FROM prop_image WHERE sku_id IN
+ <foreach collection="skuIds" item="skuId" open="(" separator="," close=")">#{skuId}</foreach>
+ ORDER BY sku_id,sort_order
+</select>
+</mapper>

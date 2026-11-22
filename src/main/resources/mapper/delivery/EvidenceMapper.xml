@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.delivery.mapper.EvidenceMapper">
+  <resultMap id="Evidence" type="com.mujian.backend.delivery.domain.OrderEvidenceDO"><constructor>
+    <arg column="id" javaType="java.lang.String"/>
+    <arg column="rental_order_id" javaType="java.lang.String"/>
+    <arg column="rental_order_item_id" javaType="java.lang.String"/>
+    <arg column="transport_leg_id" javaType="java.lang.String"/>
+    <arg column="transport_expense_statement_id" javaType="java.lang.String"/>
+    <arg column="return_check_id" javaType="java.lang.String"/>
+    <arg column="evidence_node" javaType="java.lang.String"/>
+    <arg column="evidence_scene" javaType="java.lang.String"/>
+    <arg column="file_storage_key" javaType="java.lang.String"/>
+    <arg column="upload_receipt_id" javaType="java.lang.String"/>
+    <arg column="file_version_id" javaType="java.lang.String"/>
+    <arg column="text_content" javaType="java.lang.String"/>
+    <arg column="uploaded_by_user_id" javaType="java.lang.String"/>
+    <arg column="uploaded_role" javaType="java.lang.String"/>
+    <arg column="captured_at" javaType="java.time.LocalDateTime"/>
+    <arg column="created_at" javaType="java.time.LocalDateTime"/>
+    <arg column="draft_removed_at" javaType="java.time.LocalDateTime"/>
+    <arg column="visible_issue_id" javaType="java.lang.String"/>
+    <arg column="visible_claim_id" javaType="java.lang.String"/>
+    <arg column="visible_arbitration_id" javaType="java.lang.String"/>
+  </constructor></resultMap>
+  <sql id="columns">e.id,e.rental_order_id,e.rental_order_item_id,e.transport_leg_id,e.transport_expense_statement_id,e.return_check_id,e.evidence_node,e.evidence_scene,e.file_storage_key,e.upload_receipt_id,e.file_version_id,e.text_content,e.uploaded_by_user_id,e.uploaded_role,e.captured_at,e.created_at,e.draft_removed_at,
+    IF(e.uploaded_by_user_id=#{query.actor} OR #{query.issues},e.issue_report_id,NULL) visible_issue_id,
+    IF(e.uploaded_by_user_id=#{query.actor} OR EXISTS(SELECT 1 FROM order_claim c WHERE c.id=e.claim_id AND c.rental_order_id=e.rental_order_id
+      AND ((#{query.claims} AND c.claim_status!='draft') OR (#{query.role}='buyer' AND c.user_response_deadline_at IS NOT NULL))),e.claim_id,NULL) visible_claim_id,
+    (SELECT IF(COUNT(*)=1,MIN(a.id),NULL) FROM arbitration_evidence_link l JOIN arbitration_case a ON a.id=l.arbitration_case_id
+      WHERE l.evidence_record_id=e.id AND a.rental_order_id=e.rental_order_id
+      AND (#{query.arbitrations} OR (l.evidence_role=#{query.role} AND e.uploaded_by_user_id=#{query.actor}))) visible_arbitration_id</sql>
+  <sql id="visible">WHERE e.rental_order_id=#{query.orderId} AND e.draft_removed_at IS NULL AND e.evidence_type='photo'
+    AND ((e.issue_report_id IS NULL AND e.evidence_node IN ('outbound','handover','receipt_check','return_sent','return_check'<if test="query.expenses">,'transport_expense'</if>))
+      OR ((e.issue_report_id IS NOT NULL OR e.evidence_node='in_use_report') AND (e.uploaded_by_user_id=#{query.actor} OR #{query.issues}))
+      OR (e.evidence_node='claim' AND (e.uploaded_by_user_id=#{query.actor} OR EXISTS(SELECT 1 FROM order_claim c WHERE c.id=e.claim_id
+        AND c.rental_order_id=e.rental_order_id AND ((#{query.claims} AND c.claim_status!='draft') OR (#{query.role}='buyer' AND c.user_response_deadline_at IS NOT NULL)))))
+      OR (EXISTS(SELECT 1 FROM arbitration_evidence_link l JOIN arbitration_case a ON a.id=l.arbitration_case_id WHERE l.evidence_record_id=e.id AND a.rental_order_id=e.rental_order_id
+        AND (#{query.arbitrations} OR (l.evidence_role=#{query.role} AND e.uploaded_by_user_id=#{query.actor})))))
+    <if test="query.node!=null">AND e.evidence_node=#{query.node}</if>
+    <if test="query.statementId!=null">AND e.evidence_node='transport_expense' AND (e.transport_expense_statement_id=#{query.statementId}
+      OR EXISTS(SELECT 1 FROM order_transport_expense_statement s WHERE s.id=#{query.statementId} AND s.rental_order_id=e.rental_order_id
+        AND JSON_CONTAINS(s.extra_fee_detail_json,JSON_QUOTE(e.id),'$.reusedEvidenceIds')))</if>
+  </sql>
+  <insert id="insertEvidence">INSERT INTO order_evidence_record(id,rental_order_id,rental_order_item_id,transport_leg_id,transport_expense_statement_id,return_check_id,evidence_node,evidence_scene,file_storage_key,upload_receipt_id,file_version_id,text_content,uploaded_by_user_id,uploaded_role,captured_at,created_at,draft_removed_at,evidence_type)
+    VALUES(#{row.id},#{row.orderId},#{row.itemId},#{row.legId},#{row.statementId},#{row.checkId},#{row.node},#{row.scene},#{row.storageKey},#{row.receiptId},#{row.objectVersion},#{row.text},#{row.owner},#{row.role},#{row.capturedAt},#{row.createdAt},#{row.removedAt},'photo')</insert>
+  <select id="selectPage" resultMap="Evidence">SELECT <include refid="columns"/> FROM order_evidence_record e <include refid="visible"/>
+    ORDER BY e.created_at DESC,e.id DESC LIMIT #{query.page.pageSize} OFFSET #{query.page.offset}</select>
+  <select id="countPage" resultType="long">SELECT COUNT(*) FROM order_evidence_record e <include refid="visible"/></select>
+  <select id="selectById" resultMap="Evidence">SELECT <include refid="columns"/> FROM order_evidence_record e <include refid="visible"/> AND e.id=#{id}</select>
+  <select id="receiptUsed" resultType="boolean">SELECT EXISTS(SELECT 1 FROM order_evidence_record WHERE upload_receipt_id=#{receiptId})</select>
+  <select id="ownsItem" resultType="boolean">SELECT EXISTS(SELECT 1 FROM rental_order_item WHERE id=#{itemId} AND rental_order_id=#{orderId})</select>
+  <update id="markOrderEvidenceRemoved">UPDATE order_evidence_record SET draft_removed_at=#{at} WHERE id=#{id} AND rental_order_id=#{orderId} AND draft_removed_at IS NULL</update>
+  <resultMap id="Statement" type="com.mujian.backend.delivery.mapper.EvidenceMapper$Statement"><constructor>
+    <arg column="id" javaType="java.lang.String"/><arg column="review_status" javaType="java.lang.String"/><arg column="version" javaType="_int"/>
+  </constructor></resultMap>
+  <select id="selectStatement" resultMap="Statement">SELECT id,review_status,version FROM order_transport_expense_statement WHERE id=#{statementId} AND rental_order_id=#{orderId}</select>
+  <update id="advanceRoot"><choose>
+    <when test="node == 'outbound' or node == 'handover'">UPDATE order_outbound_record SET outbound_photo_count=(SELECT COUNT(*) FROM order_evidence_record WHERE rental_order_id=#{orderId} AND evidence_node='outbound' AND evidence_type='photo' AND draft_removed_at IS NULL),</when>
+    <when test="node == 'receipt_check'">UPDATE order_receipt_check SET</when>
+    <when test="node == 'return_sent'">UPDATE order_return_shipment SET packaging_photo_count=(SELECT COUNT(*) FROM order_evidence_record WHERE rental_order_id=#{orderId} AND evidence_node='return_sent' AND evidence_type='photo' AND draft_removed_at IS NULL),</when>
+    <when test="node == 'return_check'">UPDATE order_return_check SET</when>
+    <otherwise>UPDATE order_transport_expense_statement SET evidence_count=COALESCE(JSON_LENGTH(extra_fee_detail_json,'$.reusedEvidenceIds'),0)+(SELECT COUNT(*) FROM order_evidence_record WHERE transport_expense_statement_id=#{id} AND evidence_node='transport_expense' AND draft_removed_at IS NULL),</otherwise>
+  </choose>version=version+1,updated_at=#{at} WHERE id=#{id} AND rental_order_id=#{orderId} AND version=#{version}</update>
+</mapper>

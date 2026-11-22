@@ -1,0 +1,2684 @@
+{
+  "status": "SPECIFIED_NOT_EXECUTED",
+  "tables": [
+    {
+      "table": "user_login_identity",
+      "source": "v2.0数据库设计/01-登录账号角色权限模型-数据库设计.md",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "主键",
+          "writer": "登录领域服务：可信微信交换后同事务新增/绑定，登录更新时间；身份标识不可通过通用编辑接口修改，换绑后继专用事务。"
+        },
+        {
+          "name": "user_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "对应 sys_user.id",
+          "writer": "登录领域服务：可信微信交换后同事务新增/绑定，登录更新时间；身份标识不可通过通用编辑接口修改，换绑后继专用事务。"
+        },
+        {
+          "name": "identity_type",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "见身份类型字典",
+          "writer": "登录领域服务：可信微信交换后同事务新增/绑定，登录更新时间；身份标识不可通过通用编辑接口修改，换绑后继专用事务。"
+        },
+        {
+          "name": "provider",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "见提供方字典",
+          "writer": "登录领域服务：可信微信交换后同事务新增/绑定，登录更新时间；身份标识不可通过通用编辑接口修改，换绑后继专用事务。"
+        },
+        {
+          "name": "app_id",
+          "type": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "微信小程序 appid、微信开放平台 appid 等",
+          "writer": "登录领域服务：可信微信交换后同事务新增/绑定，登录更新时间；身份标识不可通过通用编辑接口修改，换绑后继专用事务。"
+        },
+        {
+          "name": "identifier",
+          "type": "VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "openid、手机号等外部登录标识",
+          "writer": "登录领域服务：可信微信交换后同事务新增/绑定，登录更新时间；身份标识不可通过通用编辑接口修改，换绑后继专用事务。"
+        },
+        {
+          "name": "openid",
+          "type": "VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "微信类身份使用",
+          "writer": "登录领域服务：可信微信交换后同事务新增/绑定，登录更新时间；身份标识不可通过通用编辑接口修改，换绑后继专用事务。"
+        },
+        {
+          "name": "unionid",
+          "type": "VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "微信开放平台打通时使用，不能强制必填",
+          "writer": "登录领域服务：可信微信交换后同事务新增/绑定，登录更新时间；身份标识不可通过通用编辑接口修改，换绑后继专用事务。"
+        },
+        {
+          "name": "phone",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "手机号身份使用",
+          "writer": "登录领域服务：可信微信交换后同事务新增/绑定，登录更新时间；身份标识不可通过通用编辑接口修改，换绑后继专用事务。"
+        },
+        {
+          "name": "country_code",
+          "type": "VARCHAR(8) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "默认 +86",
+          "writer": "登录领域服务：可信微信交换后同事务新增/绑定，登录更新时间；身份标识不可通过通用编辑接口修改，换绑后继专用事务。"
+        },
+        {
+          "name": "verified_status",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "pending、verified、revoked、disabled",
+          "writer": "登录领域服务：可信微信交换后同事务新增/绑定，登录更新时间；身份标识不可通过通用编辑接口修改，换绑后继专用事务。"
+        },
+        {
+          "name": "active_phone_guard",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "生成，不可赋值",
+          "generated": "CASE WHEN identity_type='phone' AND verified_status='verified' THEN phone ELSE NULL END",
+          "sourceNote": "生成列；仅有效手机号身份取标准化手机号",
+          "writer": "登录领域服务：可信微信交换后同事务新增/绑定，登录更新时间；身份标识不可通过通用编辑接口修改，换绑后继专用事务。"
+        },
+        {
+          "name": "active_phone_user_guard",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "生成，不可赋值",
+          "generated": "CASE WHEN identity_type='phone' AND verified_status='verified' THEN user_id ELSE NULL END",
+          "sourceNote": "STORED生成列，verified的phone身份取user_id，UNIQUE；历史revoked行为空",
+          "writer": "登录领域服务：可信微信交换后同事务新增/绑定，登录更新时间；身份标识不可通过通用编辑接口修改，换绑后继专用事务。"
+        },
+        {
+          "name": "verified_at",
+          "type": "DATETIME(3)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "",
+          "writer": "登录领域服务：可信微信交换后同事务新增/绑定，登录更新时间；身份标识不可通过通用编辑接口修改，换绑后继专用事务。"
+        },
+        {
+          "name": "source",
+          "type": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "见来源字典",
+          "writer": "登录领域服务：可信微信交换后同事务新增/绑定，登录更新时间；身份标识不可通过通用编辑接口修改，换绑后继专用事务。"
+        },
+        {
+          "name": "is_primary",
+          "type": "TINYINT",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "1 是；0 否",
+          "writer": "登录领域服务：可信微信交换后同事务新增/绑定，登录更新时间；身份标识不可通过通用编辑接口修改，换绑后继专用事务。"
+        },
+        {
+          "name": "last_login_at",
+          "type": "DATETIME(3)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "当前登录身份最近成功登录时间",
+          "writer": "登录领域服务：可信微信交换后同事务新增/绑定，登录更新时间；身份标识不可通过通用编辑接口修改，换绑后继专用事务。"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "",
+          "writer": "登录领域服务：可信微信交换后同事务新增/绑定，登录更新时间；身份标识不可通过通用编辑接口修改，换绑后继专用事务。"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "",
+          "writer": "登录领域服务：可信微信交换后同事务新增/绑定，登录更新时间；身份标识不可通过通用编辑接口修改，换绑后继专用事务。"
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "phone",
+          [
+            "active_phone_guard"
+          ]
+        ],
+        [
+          "U",
+          "user_phone",
+          [
+            "active_phone_user_guard"
+          ]
+        ],
+        [
+          "U",
+          "wechat",
+          [
+            "app_id",
+            "openid"
+          ]
+        ],
+        [
+          "K",
+          "user",
+          [
+            "user_id"
+          ]
+        ],
+        [
+          "K",
+          "union",
+          [
+            "unionid"
+          ]
+        ],
+        [
+          "K",
+          "phone_status",
+          [
+            "phone",
+            "verified_status"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "user_id": "sys_user"
+      },
+      "checks": [
+        "identity_type IN ('wechat_miniapp','wechat_app','phone')",
+        "provider IN ('wechat','phone')",
+        "verified_status IN ('pending','verified','revoked','disabled')",
+        "(identity_type IN ('wechat_miniapp','wechat_app') AND provider='wechat' AND app_id IS NOT NULL AND openid IS NOT NULL AND identifier=openid AND phone IS NULL AND country_code IS NULL) OR (identity_type='phone' AND provider='phone' AND app_id IS NULL AND openid IS NULL AND unionid IS NULL AND phone IS NOT NULL AND country_code IS NOT NULL AND identifier=phone)",
+        "verified_status<>'verified' OR verified_at IS NOT NULL",
+        "phone IS NULL OR REGEXP_LIKE(phone,'^[+][1-9][0-9]{1,14}$','c')",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`id`))>0",
+        "`user_id` IS NULL OR REGEXP_LIKE(`user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`user_id`))>0",
+        "CHAR_LENGTH(TRIM(`identity_type`))>0",
+        "CHAR_LENGTH(TRIM(`provider`))>0",
+        "CHAR_LENGTH(TRIM(`identifier`))>0",
+        "CHAR_LENGTH(TRIM(`verified_status`))>0",
+        "`is_primary` IN (0,1)"
+      ]
+    },
+    {
+      "table": "platform_rule_document",
+      "source": "v2.0数据库设计/01-登录账号角色权限模型-数据库设计.md",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "主键",
+          "writer": "本批五规则版本种子；正文/哈希发布后不可改；后继规则服务发布新行并归档旧版。"
+        },
+        {
+          "name": "rule_code",
+          "type": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "如 user_service_agreement、privacy_policy、rental_order_cancellation_refund_rule",
+          "writer": "本批五规则版本种子；正文/哈希发布后不可改；后继规则服务发布新行并归档旧版。"
+        },
+        {
+          "name": "rule_title",
+          "type": "VARCHAR(128)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "前端展示标题",
+          "writer": "本批五规则版本种子；正文/哈希发布后不可改；后继规则服务发布新行并归档旧版。"
+        },
+        {
+          "name": "rule_version",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "如 v1.0、2026-06-17",
+          "writer": "本批五规则版本种子；正文/哈希发布后不可改；后继规则服务发布新行并归档旧版。"
+        },
+        {
+          "name": "rule_scope",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "all_user、demander、supplier、admin",
+          "writer": "本批五规则版本种子；正文/哈希发布后不可改；后继规则服务发布新行并归档旧版。"
+        },
+        {
+          "name": "content_type",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "markdown、html、url",
+          "writer": "本批五规则版本种子；正文/哈希发布后不可改；后继规则服务发布新行并归档旧版。"
+        },
+        {
+          "name": "content_text",
+          "type": "TEXT",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "文本型规则内容",
+          "writer": "本批五规则版本种子；正文/哈希发布后不可改；后继规则服务发布新行并归档旧版。"
+        },
+        {
+          "name": "content_url",
+          "type": "VARCHAR(512)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "链接型规则内容",
+          "writer": "本批五规则版本种子；正文/哈希发布后不可改；后继规则服务发布新行并归档旧版。"
+        },
+        {
+          "name": "content_hash",
+          "type": "VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "用于证明确认时内容未变",
+          "writer": "本批五规则版本种子；正文/哈希发布后不可改；后继规则服务发布新行并归档旧版。"
+        },
+        {
+          "name": "is_required",
+          "type": "TINYINT",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "1 必选；0 可选",
+          "writer": "本批五规则版本种子；正文/哈希发布后不可改；后继规则服务发布新行并归档旧版。"
+        },
+        {
+          "name": "force_reaccept",
+          "type": "TINYINT",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "重大更新时置为 1",
+          "writer": "本批五规则版本种子；正文/哈希发布后不可改；后继规则服务发布新行并归档旧版。"
+        },
+        {
+          "name": "rule_status",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "draft、active、archived",
+          "writer": "本批五规则版本种子；正文/哈希发布后不可改；后继规则服务发布新行并归档旧版。"
+        },
+        {
+          "name": "active_rule_guard",
+          "type": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "生成，不可赋值",
+          "generated": "CASE WHEN rule_status='active' THEN rule_code ELSE NULL END",
+          "sourceNote": "STORED生成列，active时取rule_code，UNIQUE；发布即生效，旧版本同事务archived",
+          "writer": "本批五规则版本种子；正文/哈希发布后不可改；后继规则服务发布新行并归档旧版。"
+        },
+        {
+          "name": "effective_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "",
+          "writer": "本批五规则版本种子；正文/哈希发布后不可改；后继规则服务发布新行并归档旧版。"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "",
+          "writer": "本批五规则版本种子；正文/哈希发布后不可改；后继规则服务发布新行并归档旧版。"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "",
+          "writer": "本批五规则版本种子；正文/哈希发布后不可改；后继规则服务发布新行并归档旧版。"
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "version",
+          [
+            "rule_code",
+            "rule_version"
+          ]
+        ],
+        [
+          "U",
+          "active",
+          [
+            "active_rule_guard"
+          ]
+        ],
+        [
+          "K",
+          "scope",
+          [
+            "rule_scope",
+            "rule_status",
+            "effective_at"
+          ]
+        ]
+      ],
+      "foreignKeys": {},
+      "checks": [
+        "rule_scope IN ('all_user','demander','supplier','admin')",
+        "content_type IN ('markdown','html','url')",
+        "rule_status IN ('draft','active','archived')",
+        "(content_type IN ('markdown','html') AND content_text IS NOT NULL AND content_url IS NULL) OR (content_type='url' AND content_text IS NULL AND content_url IS NOT NULL)",
+        "REGEXP_LIKE(content_hash,'^[0-9a-f]{64}$','c')",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`id`))>0",
+        "CHAR_LENGTH(TRIM(`rule_code`))>0",
+        "CHAR_LENGTH(TRIM(`rule_title`))>0",
+        "CHAR_LENGTH(TRIM(`rule_version`))>0",
+        "CHAR_LENGTH(TRIM(`rule_scope`))>0",
+        "CHAR_LENGTH(TRIM(`content_type`))>0",
+        "CHAR_LENGTH(TRIM(`content_hash`))>0",
+        "`is_required` IN (0,1)",
+        "`force_reaccept` IN (0,1)",
+        "CHAR_LENGTH(TRIM(`rule_status`))>0"
+      ]
+    },
+    {
+      "table": "user_rule_acceptance",
+      "source": "v2.0数据库设计/01-登录账号角色权限模型-数据库设计.md",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "主键",
+          "writer": "登录规则确认事务追加；关联版本、code/version/hash快照由服务器复制，历史不可改。"
+        },
+        {
+          "name": "user_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "对应 sys_user.id",
+          "writer": "登录规则确认事务追加；关联版本、code/version/hash快照由服务器复制，历史不可改。"
+        },
+        {
+          "name": "rule_document_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "对应 platform_rule_document.id",
+          "writer": "登录规则确认事务追加；关联版本、code/version/hash快照由服务器复制，历史不可改。"
+        },
+        {
+          "name": "rule_code",
+          "type": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "冗余，便于查询",
+          "writer": "登录规则确认事务追加；关联版本、code/version/hash快照由服务器复制，历史不可改。"
+        },
+        {
+          "name": "rule_version",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "用户确认的版本",
+          "writer": "登录规则确认事务追加；关联版本、code/version/hash快照由服务器复制，历史不可改。"
+        },
+        {
+          "name": "content_hash",
+          "type": "VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "用户确认时的内容哈希",
+          "writer": "登录规则确认事务追加；关联版本、code/version/hash快照由服务器复制，历史不可改。"
+        },
+        {
+          "name": "acceptance_scene",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "register、demander_bind、supplier_apply、rule_update",
+          "writer": "登录规则确认事务追加；关联版本、code/version/hash快照由服务器复制，历史不可改。"
+        },
+        {
+          "name": "accepted_role_code",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "demander、supplier、admin 等",
+          "writer": "登录规则确认事务追加；关联版本、code/version/hash快照由服务器复制，历史不可改。"
+        },
+        {
+          "name": "accepted_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "",
+          "writer": "登录规则确认事务追加；关联版本、code/version/hash快照由服务器复制，历史不可改。"
+        },
+        {
+          "name": "client_ip",
+          "type": "VARCHAR(64)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "审计预留",
+          "writer": "登录规则确认事务追加；关联版本、code/version/hash快照由服务器复制，历史不可改。"
+        },
+        {
+          "name": "user_agent",
+          "type": "VARCHAR(512)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "审计预留",
+          "writer": "登录规则确认事务追加；关联版本、code/version/hash快照由服务器复制，历史不可改。"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "",
+          "writer": "登录规则确认事务追加；关联版本、code/version/hash快照由服务器复制，历史不可改。"
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "consent",
+          [
+            "user_id",
+            "rule_code",
+            "rule_version",
+            "acceptance_scene"
+          ]
+        ],
+        [
+          "K",
+          "scene",
+          [
+            "user_id",
+            "acceptance_scene",
+            "accepted_at"
+          ]
+        ],
+        [
+          "K",
+          "document",
+          [
+            "rule_document_id"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "user_id": "sys_user",
+        "rule_document_id": "platform_rule_document"
+      },
+      "checks": [
+        "acceptance_scene IN ('register','demander_bind','supplier_apply','rule_update')",
+        "accepted_role_code IS NULL OR accepted_role_code IN ('demander','supplier','admin')",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`id`))>0",
+        "`user_id` IS NULL OR REGEXP_LIKE(`user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`user_id`))>0",
+        "`rule_document_id` IS NULL OR REGEXP_LIKE(`rule_document_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`rule_document_id`))>0",
+        "CHAR_LENGTH(TRIM(`rule_code`))>0",
+        "CHAR_LENGTH(TRIM(`rule_version`))>0",
+        "CHAR_LENGTH(TRIM(`content_hash`))>0",
+        "CHAR_LENGTH(TRIM(`acceptance_scene`))>0"
+      ]
+    },
+    {
+      "table": "user_realname_verification",
+      "source": "v2.0数据库设计/01-登录账号角色权限模型-数据库设计.md",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "主键",
+          "writer": "提交写材料/同意；审核只改状态/审核字段/版本；历史材料不可覆盖。"
+        },
+        {
+          "name": "user_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "对应 sys_user.id",
+          "writer": "提交写材料/同意；审核只改状态/审核字段/版本；历史材料不可覆盖。"
+        },
+        {
+          "name": "real_name_ciphertext",
+          "type": "VARBINARY(512)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "加密保存完整值，不保存带星号的替代原文",
+          "writer": "提交写材料/同意；审核只改状态/审核字段/版本；历史材料不可覆盖。"
+        },
+        {
+          "name": "id_card_ciphertext",
+          "type": "VARBINARY(512)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "完整可授权解密，日志不得记录原文",
+          "writer": "提交写材料/同意；审核只改状态/审核字段/版本；历史材料不可覆盖。"
+        },
+        {
+          "name": "encryption_key_version",
+          "type": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "密钥独立管理，支持轮换，不将密钥存同表",
+          "writer": "提交写材料/同意；审核只改状态/审核字段/版本；历史材料不可覆盖。"
+        },
+        {
+          "name": "id_card_front_object_key",
+          "type": "VARCHAR(512) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "私有存储对象键，非公开URL",
+          "writer": "提交写材料/同意；审核只改状态/审核字段/版本；历史材料不可覆盖。"
+        },
+        {
+          "name": "id_card_back_object_key",
+          "type": "VARCHAR(512) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "管理员鉴权后短时授权查看",
+          "writer": "提交写材料/同意；审核只改状态/审核字段/版本；历史材料不可覆盖。"
+        },
+        {
+          "name": "submit_request_id",
+          "type": "VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "同次提交重试不变",
+          "writer": "提交写材料/同意；审核只改状态/审核字段/版本；历史材料不可覆盖。"
+        },
+        {
+          "name": "submitted_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "提交后申请资料不可覆盖，驳回后重提新记录",
+          "writer": "提交写材料/同意；审核只改状态/审核字段/版本；历史材料不可覆盖。"
+        },
+        {
+          "name": "material_consent_version",
+          "type": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "不可变文案版本，提交后不可覆盖",
+          "writer": "提交写材料/同意；审核只改状态/审核字段/版本；历史材料不可覆盖。"
+        },
+        {
+          "name": "material_consent_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "取本次同版本上传材料中最早服务端接受同意时刻，非客户端时间",
+          "writer": "提交写材料/同意；审核只改状态/审核字段/版本；历史材料不可覆盖。"
+        },
+        {
+          "name": "reviewed_by_admin_user_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "审核时必填",
+          "writer": "提交写材料/同意；审核只改状态/审核字段/版本；历史材料不可覆盖。"
+        },
+        {
+          "name": "reviewed_at",
+          "type": "DATETIME(3)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "审核时必填",
+          "writer": "提交写材料/同意；审核只改状态/审核字段/版本；历史材料不可覆盖。"
+        },
+        {
+          "name": "audit_remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "驳回必填并同步reject_reason",
+          "writer": "提交写材料/同意；审核只改状态/审核字段/版本；历史材料不可覆盖。"
+        },
+        {
+          "name": "version",
+          "type": "INT",
+          "nullable": false,
+          "default": "0",
+          "generated": null,
+          "sourceNote": "默认0，通过和驳回只能一个成功",
+          "writer": "提交写材料/同意；审核只改状态/审核字段/版本；历史材料不可覆盖。"
+        },
+        {
+          "name": "active_user_guard",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "生成，不可赋值",
+          "generated": "CASE WHEN verification_status IN ('pending','verified') THEN user_id ELSE NULL END",
+          "sourceNote": "生成列，pending/verified时取user_id，否则NULL",
+          "writer": "提交写材料/同意；审核只改状态/审核字段/版本；历史材料不可覆盖。"
+        },
+        {
+          "name": "verification_status",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "见状态字典",
+          "writer": "提交写材料/同意；审核只改状态/审核字段/版本；历史材料不可覆盖。"
+        },
+        {
+          "name": "provider",
+          "type": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "首期固定manual_admin，不接第三方核验",
+          "writer": "提交写材料/同意；审核只改状态/审核字段/版本；历史材料不可覆盖。"
+        },
+        {
+          "name": "provider_request_id",
+          "type": "VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "后续预留，首期为空",
+          "writer": "提交写材料/同意；审核只改状态/审核字段/版本；历史材料不可覆盖。"
+        },
+        {
+          "name": "reject_reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "失败展示",
+          "writer": "提交写材料/同意；审核只改状态/审核字段/版本；历史材料不可覆盖。"
+        },
+        {
+          "name": "verified_at",
+          "type": "DATETIME(3)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "",
+          "writer": "提交写材料/同意；审核只改状态/审核字段/版本；历史材料不可覆盖。"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "",
+          "writer": "提交写材料/同意；审核只改状态/审核字段/版本；历史材料不可覆盖。"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "",
+          "writer": "提交写材料/同意；审核只改状态/审核字段/版本；历史材料不可覆盖。"
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "request",
+          [
+            "submit_request_id"
+          ]
+        ],
+        [
+          "U",
+          "active",
+          [
+            "active_user_guard"
+          ]
+        ],
+        [
+          "K",
+          "user",
+          [
+            "user_id",
+            "submitted_at",
+            "id"
+          ]
+        ],
+        [
+          "K",
+          "queue",
+          [
+            "verification_status",
+            "submitted_at",
+            "id"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "user_id": "sys_user",
+        "reviewed_by_admin_user_id": "sys_user"
+      },
+      "checks": [
+        "verification_status IN ('pending','verified','rejected','expired')",
+        "material_consent_at<=submitted_at AND submitted_at=created_at AND updated_at>=created_at",
+        "(verification_status='pending' AND reviewed_by_admin_user_id IS NULL AND reviewed_at IS NULL AND reject_reason IS NULL AND version=0) OR (verification_status<>'pending' AND reviewed_by_admin_user_id IS NOT NULL AND reviewed_at IS NOT NULL AND reviewed_at>=submitted_at AND version>=1)",
+        "(verification_status='rejected' AND reject_reason IS NOT NULL AND CHAR_LENGTH(TRIM(reject_reason))>0) OR (verification_status<>'rejected' AND reject_reason IS NULL)",
+        "provider='manual_admin' AND provider_request_id IS NULL",
+        "(verification_status IN ('verified','expired') AND verified_at IS NOT NULL AND verified_at=reviewed_at) OR (verification_status IN ('pending','rejected') AND verified_at IS NULL)",
+        "verification_status<>'rejected' OR (audit_remark IS NOT NULL AND audit_remark=reject_reason)",
+        "id_card_front_object_key<>id_card_back_object_key",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`id`))>0",
+        "`user_id` IS NULL OR REGEXP_LIKE(`user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`user_id`))>0",
+        "CHAR_LENGTH(TRIM(`encryption_key_version`))>0",
+        "CHAR_LENGTH(TRIM(`id_card_front_object_key`))>0",
+        "CHAR_LENGTH(TRIM(`id_card_back_object_key`))>0",
+        "CHAR_LENGTH(TRIM(`submit_request_id`))>0",
+        "CHAR_LENGTH(TRIM(`material_consent_version`))>0",
+        "`reviewed_by_admin_user_id` IS NULL OR REGEXP_LIKE(`reviewed_by_admin_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`version` IS NULL OR `version`>=0",
+        "CHAR_LENGTH(TRIM(`verification_status`))>0",
+        "CHAR_LENGTH(TRIM(`provider`))>0"
+      ]
+    },
+    {
+      "table": "user_student_verification",
+      "source": "v2.0数据库设计/01-登录账号角色权限模型-数据库设计.md",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "主键",
+          "writer": "提交写学校/材料/同意；通过写expire_at；驳回写原因；过期只改状态/version，reviewed_at不改。"
+        },
+        {
+          "name": "application_no",
+          "type": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "每次提交唯一，供管理端检索",
+          "writer": "提交写学校/材料/同意；通过写expire_at；驳回写原因；过期只改状态/version，reviewed_at不改。"
+        },
+        {
+          "name": "submit_request_id",
+          "type": "VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "UNIQUE；A接口仅接受32位小写UUIDv4，同次提交重试不变",
+          "writer": "提交写学校/材料/同意；通过写expire_at；驳回写原因；过期只改状态/version，reviewed_at不改。"
+        },
+        {
+          "name": "user_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "对应 sys_user.id",
+          "writer": "提交写学校/材料/同意；通过写expire_at；驳回写原因；过期只改状态/version，reviewed_at不改。"
+        },
+        {
+          "name": "school_name",
+          "type": "VARCHAR(128)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "学生认证必填",
+          "writer": "提交写学校/材料/同意；通过写expire_at；驳回写原因；过期只改状态/version，reviewed_at不改。"
+        },
+        {
+          "name": "student_card_urls",
+          "type": "JSON",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "JSON有序字符串数组，2-3个不可变私有对象键，不是公开URL或签名URL；服务校验归属、用途、顺序和去重",
+          "writer": "提交写学校/材料/同意；通过写expire_at；驳回写原因；过期只改状态/version，reviewed_at不改。"
+        },
+        {
+          "name": "id_card_last4",
+          "type": "VARCHAR(8)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "如需和实名关联",
+          "writer": "提交写学校/材料/同意；通过写expire_at；驳回写原因；过期只改状态/version，reviewed_at不改。"
+        },
+        {
+          "name": "verification_status",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "见状态字典",
+          "writer": "提交写学校/材料/同意；通过写expire_at；驳回写原因；过期只改状态/version，reviewed_at不改。"
+        },
+        {
+          "name": "pending_user_guard",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "生成，不可赋值",
+          "generated": "CASE WHEN verification_status='pending' THEN user_id ELSE NULL END",
+          "sourceNote": "生成列；仅待审核时取 user_id",
+          "writer": "提交写学校/材料/同意；通过写expire_at；驳回写原因；过期只改状态/version，reviewed_at不改。"
+        },
+        {
+          "name": "reject_reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "失败展示",
+          "writer": "提交写学校/材料/同意；通过写expire_at；驳回写原因；过期只改状态/version，reviewed_at不改。"
+        },
+        {
+          "name": "reviewed_by_admin_user_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "",
+          "writer": "提交写学校/材料/同意；通过写expire_at；驳回写原因；过期只改状态/version，reviewed_at不改。"
+        },
+        {
+          "name": "submitted_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "",
+          "writer": "提交写学校/材料/同意；通过写expire_at；驳回写原因；过期只改状态/version，reviewed_at不改。"
+        },
+        {
+          "name": "material_consent_version",
+          "type": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "不可变文案版本，提交后不可覆盖",
+          "writer": "提交写学校/材料/同意；通过写expire_at；驳回写原因；过期只改状态/version，reviewed_at不改。"
+        },
+        {
+          "name": "material_consent_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "取本次同版本上传材料中最早服务端接受同意时刻，非客户端时间",
+          "writer": "提交写学校/材料/同意；通过写expire_at；驳回写原因；过期只改状态/version，reviewed_at不改。"
+        },
+        {
+          "name": "reviewed_at",
+          "type": "DATETIME(3)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "",
+          "writer": "提交写学校/材料/同意；通过写expire_at；驳回写原因；过期只改状态/version，reviewed_at不改。"
+        },
+        {
+          "name": "expire_at",
+          "type": "DATETIME(3)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "认证排他截止；approved/expired必填，pending/rejected为空；审核通过时刻加validYears个日历年",
+          "writer": "提交写学校/材料/同意；通过写expire_at；驳回写原因；过期只改状态/version，reviewed_at不改。"
+        },
+        {
+          "name": "version",
+          "type": "INT",
+          "nullable": false,
+          "default": "0",
+          "generated": null,
+          "sourceNote": "默认 0，审核并发条件更新",
+          "writer": "提交写学校/材料/同意；通过写expire_at；驳回写原因；过期只改状态/version，reviewed_at不改。"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "",
+          "writer": "提交写学校/材料/同意；通过写expire_at；驳回写原因；过期只改状态/version，reviewed_at不改。"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "",
+          "writer": "提交写学校/材料/同意；通过写expire_at；驳回写原因；过期只改状态/version，reviewed_at不改。"
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "number",
+          [
+            "application_no"
+          ]
+        ],
+        [
+          "U",
+          "request",
+          [
+            "submit_request_id"
+          ]
+        ],
+        [
+          "U",
+          "pending",
+          [
+            "pending_user_guard"
+          ]
+        ],
+        [
+          "K",
+          "user",
+          [
+            "user_id",
+            "verification_status",
+            "submitted_at"
+          ]
+        ],
+        [
+          "K",
+          "queue",
+          [
+            "verification_status",
+            "submitted_at",
+            "id"
+          ]
+        ],
+        [
+          "K",
+          "expiry",
+          [
+            "verification_status",
+            "expire_at",
+            "id"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "user_id": "sys_user",
+        "reviewed_by_admin_user_id": "sys_user"
+      },
+      "checks": [
+        "verification_status IN ('pending','approved','rejected','expired')",
+        "material_consent_at<=submitted_at AND submitted_at=created_at AND updated_at>=created_at",
+        "(verification_status='pending' AND reviewed_by_admin_user_id IS NULL AND reviewed_at IS NULL AND reject_reason IS NULL AND version=0) OR (verification_status<>'pending' AND reviewed_by_admin_user_id IS NOT NULL AND reviewed_at IS NOT NULL AND reviewed_at>=submitted_at AND version>=1)",
+        "(verification_status='rejected' AND reject_reason IS NOT NULL AND CHAR_LENGTH(TRIM(reject_reason))>0) OR (verification_status<>'rejected' AND reject_reason IS NULL)",
+        "JSON_TYPE(student_card_urls)='ARRAY' AND JSON_LENGTH(student_card_urls) BETWEEN 2 AND 3",
+        "(verification_status IN ('approved','expired') AND expire_at IS NOT NULL AND expire_at>reviewed_at) OR (verification_status IN ('pending','rejected') AND expire_at IS NULL)",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`id`))>0",
+        "CHAR_LENGTH(TRIM(`application_no`))>0",
+        "CHAR_LENGTH(TRIM(`submit_request_id`))>0",
+        "`user_id` IS NULL OR REGEXP_LIKE(`user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`user_id`))>0",
+        "CHAR_LENGTH(TRIM(`school_name`))>0",
+        "CHAR_LENGTH(TRIM(`verification_status`))>0",
+        "`reviewed_by_admin_user_id` IS NULL OR REGEXP_LIKE(`reviewed_by_admin_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`material_consent_version`))>0",
+        "`version` IS NULL OR `version`>=0"
+      ]
+    },
+    {
+      "table": "admin_case",
+      "source": "v2.0数据库设计/08-Web管理模型-数据库设计.md",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "主键",
+          "writer": "申请事务自动建；审核事务关闭；版本条件更新；不复制原材料。"
+        },
+        {
+          "name": "case_no",
+          "type": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "平台唯一编号",
+          "writer": "申请事务自动建；审核事务关闭；版本条件更新；不复制原材料。"
+        },
+        {
+          "name": "active_case_key",
+          "type": "VARCHAR(160) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "未关闭案件业务唯一键；关闭/取消后清空",
+          "writer": "申请事务自动建；审核事务关闭；版本条件更新；不复制原材料。"
+        },
+        {
+          "name": "case_type",
+          "type": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "见需求文档",
+          "writer": "申请事务自动建；审核事务关闭；版本条件更新；不复制原材料。"
+        },
+        {
+          "name": "case_status",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "pending、waiting_user、waiting_factory、closed、cancelled",
+          "writer": "申请事务自动建；审核事务关闭；版本条件更新；不复制原材料。"
+        },
+        {
+          "name": "priority",
+          "type": "VARCHAR(8) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "P0、P1、P2、P3",
+          "writer": "申请事务自动建；审核事务关闭；版本条件更新；不复制原材料。"
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(255)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "检索摘要",
+          "writer": "申请事务自动建；审核事务关闭；版本条件更新；不复制原材料。"
+        },
+        {
+          "name": "summary",
+          "type": "VARCHAR(1000)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "不替代来源事实",
+          "writer": "申请事务自动建；审核事务关闭；版本条件更新；不复制原材料。"
+        },
+        {
+          "name": "rental_order_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "订单相关案件冗余索引",
+          "writer": "申请事务自动建；审核事务关闭；版本条件更新；不复制原材料。"
+        },
+        {
+          "name": "buyer_user_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "用户索引",
+          "writer": "申请事务自动建；审核事务关闭；版本条件更新；不复制原材料。"
+        },
+        {
+          "name": "factory_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "工厂索引",
+          "writer": "申请事务自动建；审核事务关闭；版本条件更新；不复制原材料。"
+        },
+        {
+          "name": "deadline_at",
+          "type": "DATETIME(3)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "唯一截止日期；剩余/逾期实时派生",
+          "writer": "申请事务自动建；审核事务关闭；版本条件更新；不复制原材料。"
+        },
+        {
+          "name": "resolution_code",
+          "type": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "结案结果编码",
+          "writer": "申请事务自动建；审核事务关闭；版本条件更新；不复制原材料。"
+        },
+        {
+          "name": "resolution_summary",
+          "type": "VARCHAR(1000)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "结案结果说明",
+          "writer": "申请事务自动建；审核事务关闭；版本条件更新；不复制原材料。"
+        },
+        {
+          "name": "closure_checklist_json",
+          "type": "JSON",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "问题、诉求、动作、结果、必要证据引用和后续说明",
+          "writer": "申请事务自动建；审核事务关闭；版本条件更新；不复制原材料。"
+        },
+        {
+          "name": "closed_at",
+          "type": "DATETIME(3)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "关闭时间",
+          "writer": "申请事务自动建；审核事务关闭；版本条件更新；不复制原材料。"
+        },
+        {
+          "name": "closed_by_admin_user_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "实际关闭管理员",
+          "writer": "申请事务自动建；审核事务关闭；版本条件更新；不复制原材料。"
+        },
+        {
+          "name": "version",
+          "type": "INT",
+          "nullable": false,
+          "default": "0",
+          "generated": null,
+          "sourceNote": "乐观锁",
+          "writer": "申请事务自动建；审核事务关闭；版本条件更新；不复制原材料。"
+        },
+        {
+          "name": "created_by_type",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "system、admin",
+          "writer": "申请事务自动建；审核事务关闭；版本条件更新；不复制原材料。"
+        },
+        {
+          "name": "created_by_admin_user_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "系统创建写固定SystemIdentity用户ID，人工创建写实际管理员用户ID；本批均非空",
+          "writer": "申请事务自动建；审核事务关闭；版本条件更新；不复制原材料。"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "创建时间",
+          "writer": "申请事务自动建；审核事务关闭；版本条件更新；不复制原材料。"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "最近案件或业务摘要更新时间",
+          "writer": "申请事务自动建；审核事务关闭；版本条件更新；不复制原材料。"
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "number",
+          [
+            "case_no"
+          ]
+        ],
+        [
+          "U",
+          "active",
+          [
+            "active_case_key"
+          ]
+        ],
+        [
+          "K",
+          "queue",
+          [
+            "case_status",
+            "priority",
+            "deadline_at"
+          ]
+        ],
+        [
+          "K",
+          "type",
+          [
+            "case_type",
+            "case_status",
+            "updated_at"
+          ]
+        ],
+        [
+          "K",
+          "order",
+          [
+            "rental_order_id",
+            "case_status"
+          ]
+        ],
+        [
+          "K",
+          "buyer",
+          [
+            "buyer_user_id",
+            "case_status"
+          ]
+        ],
+        [
+          "K",
+          "factory",
+          [
+            "factory_id",
+            "case_status"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "buyer_user_id": "sys_user",
+        "closed_by_admin_user_id": "sys_user",
+        "created_by_admin_user_id": "sys_user"
+      },
+      "checks": [
+        "case_status IN ('pending','waiting_user','waiting_factory','closed','cancelled')",
+        "priority IN ('P0','P1','P2','P3')",
+        "created_by_type IN ('system','admin')",
+        "created_by_type<>'system' OR created_by_admin_user_id='3e8c4a5e468449709003045cd6dfca76'",
+        "(case_status IN ('closed','cancelled') AND active_case_key IS NULL AND closed_at IS NOT NULL AND closed_by_admin_user_id IS NOT NULL) OR (case_status NOT IN ('closed','cancelled') AND active_case_key IS NOT NULL AND closed_at IS NULL AND closed_by_admin_user_id IS NULL)",
+        "case_type NOT IN ('realname_review','student_verification_review') OR (rental_order_id IS NULL AND factory_id IS NULL AND buyer_user_id IS NOT NULL AND case_status IN ('pending','closed'))",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`id`))>0",
+        "CHAR_LENGTH(TRIM(`case_no`))>0",
+        "CHAR_LENGTH(TRIM(`case_type`))>0",
+        "CHAR_LENGTH(TRIM(`case_status`))>0",
+        "CHAR_LENGTH(TRIM(`priority`))>0",
+        "CHAR_LENGTH(TRIM(`title`))>0",
+        "`rental_order_id` IS NULL OR REGEXP_LIKE(`rental_order_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`buyer_user_id` IS NULL OR REGEXP_LIKE(`buyer_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`factory_id` IS NULL OR REGEXP_LIKE(`factory_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`closed_by_admin_user_id` IS NULL OR REGEXP_LIKE(`closed_by_admin_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`version` IS NULL OR `version`>=0",
+        "CHAR_LENGTH(TRIM(`created_by_type`))>0",
+        "`created_by_admin_user_id` IS NULL OR REGEXP_LIKE(`created_by_admin_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`created_by_admin_user_id`))>0"
+      ]
+    },
+    {
+      "table": "admin_case_relation",
+      "source": "v2.0数据库设计/08-Web管理模型-数据库设计.md",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "主键",
+          "writer": "提交事务一次写主source；本批不后改归属；至少一个主关系靠事务，至多一个靠UNIQUE。"
+        },
+        {
+          "name": "admin_case_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "案件",
+          "writer": "提交事务一次写主source；本批不后改归属；至少一个主关系靠事务，至多一个靠UNIQUE。"
+        },
+        {
+          "name": "relation_type",
+          "type": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "来源对象类型",
+          "writer": "提交事务一次写主source；本批不后改归属；至少一个主关系靠事务，至多一个靠UNIQUE。"
+        },
+        {
+          "name": "relation_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "来源对象主键",
+          "writer": "提交事务一次写主source；本批不后改归属；至少一个主关系靠事务，至多一个靠UNIQUE。"
+        },
+        {
+          "name": "relation_role",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "source、affected、result、evidence_context",
+          "writer": "提交事务一次写主source；本批不后改归属；至少一个主关系靠事务，至多一个靠UNIQUE。"
+        },
+        {
+          "name": "is_primary",
+          "type": "TINYINT",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "是否主关联",
+          "writer": "提交事务一次写主source；本批不后改归属；至少一个主关系靠事务，至多一个靠UNIQUE。"
+        },
+        {
+          "name": "primary_case_guard",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "生成，不可赋值",
+          "generated": "CASE WHEN is_primary=1 THEN admin_case_id ELSE NULL END",
+          "sourceNote": "STORED生成列，is_primary=1时取admin_case_id，UNIQUE确保每案至多一个主关联；事务保证恰好一个",
+          "writer": "提交事务一次写主source；本批不后改归属；至少一个主关系靠事务，至多一个靠UNIQUE。"
+        },
+        {
+          "name": "snapshot_json",
+          "type": "JSON",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "关联时脱敏快照，只用于历史解释",
+          "writer": "提交事务一次写主source；本批不后改归属；至少一个主关系靠事务，至多一个靠UNIQUE。"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "创建时间",
+          "writer": "提交事务一次写主source；本批不后改归属；至少一个主关系靠事务，至多一个靠UNIQUE。"
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "relation",
+          [
+            "admin_case_id",
+            "relation_type",
+            "relation_id",
+            "relation_role"
+          ]
+        ],
+        [
+          "U",
+          "primary",
+          [
+            "primary_case_guard"
+          ]
+        ],
+        [
+          "K",
+          "target",
+          [
+            "relation_type",
+            "relation_id"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "admin_case_id": "admin_case"
+      },
+      "checks": [
+        "relation_role IN ('source','affected','result','evidence_context')",
+        "is_primary=0 OR relation_role='source'",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`id`))>0",
+        "`admin_case_id` IS NULL OR REGEXP_LIKE(`admin_case_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`admin_case_id`))>0",
+        "CHAR_LENGTH(TRIM(`relation_type`))>0",
+        "`relation_id` IS NULL OR REGEXP_LIKE(`relation_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`relation_id`))>0",
+        "CHAR_LENGTH(TRIM(`relation_role`))>0",
+        "`is_primary` IN (0,1)"
+      ]
+    },
+    {
+      "table": "admin_case_action",
+      "source": "v2.0数据库设计/08-Web管理模型-数据库设计.md",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "主键",
+          "writer": "审核事务写成功动作及不可变回执；本批无draft/executing写路径。"
+        },
+        {
+          "name": "action_no",
+          "type": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "平台唯一",
+          "writer": "审核事务写成功动作及不可变回执；本批无draft/executing写路径。"
+        },
+        {
+          "name": "admin_case_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "所属案件",
+          "writer": "审核事务写成功动作及不可变回执；本批无draft/executing写路径。"
+        },
+        {
+          "name": "parent_action_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "跨模块子步骤的父动作",
+          "writer": "审核事务写成功动作及不可变回执；本批无draft/executing写路径。"
+        },
+        {
+          "name": "step_no",
+          "type": "INT",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "父动作内固定顺序",
+          "writer": "审核事务写成功动作及不可变回执；本批无draft/executing写路径。"
+        },
+        {
+          "name": "action_type",
+          "type": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "明确领域动作",
+          "writer": "审核事务写成功动作及不可变回执；本批无draft/executing写路径。"
+        },
+        {
+          "name": "action_status",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "draft、executing、succeeded、failed、cancelled",
+          "writer": "审核事务写成功动作及不可变回执；本批无draft/executing写路径。"
+        },
+        {
+          "name": "target_module",
+          "type": "VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "01、02、04 等",
+          "writer": "审核事务写成功动作及不可变回执；本批无draft/executing写路径。"
+        },
+        {
+          "name": "target_type",
+          "type": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "目标对象类型",
+          "writer": "审核事务写成功动作及不可变回执；本批无draft/executing写路径。"
+        },
+        {
+          "name": "target_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "创建前可空",
+          "writer": "审核事务写成功动作及不可变回执；本批无draft/executing写路径。"
+        },
+        {
+          "name": "request_payload_json",
+          "type": "JSON",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "脱敏请求快照",
+          "writer": "审核事务写成功动作及不可变回执；本批无draft/executing写路径。"
+        },
+        {
+          "name": "planned_rent_refund_amount_fen",
+          "type": "BIGINT",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "本次终止方案拟退租金，单位分，允许0；不是累计已退金额",
+          "writer": "审核事务写成功动作及不可变回执；本批无draft/executing写路径。"
+        },
+        {
+          "name": "planned_deposit_refund_amount_fen",
+          "type": "BIGINT",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "本次终止方案拟退押金，单位分，允许0",
+          "writer": "审核事务写成功动作及不可变回执；本批无draft/executing写路径。"
+        },
+        {
+          "name": "planned_freight_refund_amount_fen",
+          "type": "BIGINT",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "本次终止方案拟退运费，单位分，允许0",
+          "writer": "审核事务写成功动作及不可变回执；本批无draft/executing写路径。"
+        },
+        {
+          "name": "result_payload_json",
+          "type": "JSON",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "结果 ID 与摘要",
+          "writer": "审核事务写成功动作及不可变回执；本批无draft/executing写路径。"
+        },
+        {
+          "name": "failure_code",
+          "type": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "失败编码",
+          "writer": "审核事务写成功动作及不可变回执；本批无draft/executing写路径。"
+        },
+        {
+          "name": "failure_message",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "可读失败原因",
+          "writer": "审核事务写成功动作及不可变回执；本批无draft/executing写路径。"
+        },
+        {
+          "name": "idempotency_key",
+          "type": "VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "业务动作唯一",
+          "writer": "审核事务写成功动作及不可变回执；本批无draft/executing写路径。"
+        },
+        {
+          "name": "operator_admin_user_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "实际操作管理员",
+          "writer": "审核事务写成功动作及不可变回执；本批无draft/executing写路径。"
+        },
+        {
+          "name": "operation_reason",
+          "type": "VARCHAR(1000)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "高风险动作必填",
+          "writer": "审核事务写成功动作及不可变回执；本批无draft/executing写路径。"
+        },
+        {
+          "name": "confirmation_snapshot_json",
+          "type": "JSON",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "二次确认时的影响快照",
+          "writer": "审核事务写成功动作及不可变回执；本批无draft/executing写路径。"
+        },
+        {
+          "name": "operator_confirmed_at",
+          "type": "DATETIME(3)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "同一管理员确认时间",
+          "writer": "审核事务写成功动作及不可变回执；本批无draft/executing写路径。"
+        },
+        {
+          "name": "executed_at",
+          "type": "DATETIME(3)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "最后执行时间",
+          "writer": "审核事务写成功动作及不可变回执；本批无draft/executing写路径。"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "创建时间",
+          "writer": "审核事务写成功动作及不可变回执；本批无draft/executing写路径。"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "更新时间",
+          "writer": "审核事务写成功动作及不可变回执；本批无draft/executing写路径。"
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "number",
+          [
+            "action_no"
+          ]
+        ],
+        [
+          "U",
+          "request",
+          [
+            "idempotency_key"
+          ]
+        ],
+        [
+          "U",
+          "step",
+          [
+            "parent_action_id",
+            "step_no"
+          ]
+        ],
+        [
+          "K",
+          "case",
+          [
+            "admin_case_id",
+            "created_at"
+          ]
+        ],
+        [
+          "K",
+          "status",
+          [
+            "action_status",
+            "updated_at"
+          ]
+        ],
+        [
+          "K",
+          "parent",
+          [
+            "parent_action_id",
+            "action_status"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "admin_case_id": "admin_case",
+        "parent_action_id": "admin_case_action",
+        "operator_admin_user_id": "sys_user"
+      },
+      "checks": [
+        "action_status IN ('draft','executing','succeeded','failed','cancelled')",
+        "(parent_action_id IS NULL AND step_no IS NULL) OR (parent_action_id IS NOT NULL AND step_no IS NOT NULL AND step_no>0)",
+        "action_type NOT IN ('realname_approve','realname_reject','student_approve','student_reject') OR (action_status='succeeded' AND target_module='01' AND target_id IS NOT NULL AND request_payload_json IS NOT NULL AND result_payload_json IS NOT NULL AND failure_code IS NULL AND failure_message IS NULL AND executed_at IS NOT NULL AND parent_action_id IS NULL AND planned_rent_refund_amount_fen IS NULL AND planned_deposit_refund_amount_fen IS NULL AND planned_freight_refund_amount_fen IS NULL)",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`id`))>0",
+        "CHAR_LENGTH(TRIM(`action_no`))>0",
+        "`admin_case_id` IS NULL OR REGEXP_LIKE(`admin_case_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`admin_case_id`))>0",
+        "`parent_action_id` IS NULL OR REGEXP_LIKE(`parent_action_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`step_no` IS NULL OR `step_no`>=0",
+        "CHAR_LENGTH(TRIM(`action_type`))>0",
+        "CHAR_LENGTH(TRIM(`action_status`))>0",
+        "CHAR_LENGTH(TRIM(`target_module`))>0",
+        "CHAR_LENGTH(TRIM(`target_type`))>0",
+        "`target_id` IS NULL OR REGEXP_LIKE(`target_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`planned_rent_refund_amount_fen` IS NULL OR `planned_rent_refund_amount_fen`>=0",
+        "`planned_deposit_refund_amount_fen` IS NULL OR `planned_deposit_refund_amount_fen`>=0",
+        "`planned_freight_refund_amount_fen` IS NULL OR `planned_freight_refund_amount_fen`>=0",
+        "CHAR_LENGTH(TRIM(`idempotency_key`))>0",
+        "`operator_admin_user_id` IS NULL OR REGEXP_LIKE(`operator_admin_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`operator_admin_user_id`))>0"
+      ]
+    },
+    {
+      "table": "admin_operation_audit",
+      "source": "v2.0数据库设计/08-Web管理模型-数据库设计.md",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "主键",
+          "writer": "敏感授权查看、审核、必要自动操作追加；成功审计不能事后编辑/删除。"
+        },
+        {
+          "name": "audit_no",
+          "type": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "平台唯一",
+          "writer": "敏感授权查看、审核、必要自动操作追加；成功审计不能事后编辑/删除。"
+        },
+        {
+          "name": "admin_user_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "实际操作管理员",
+          "writer": "敏感授权查看、审核、必要自动操作追加；成功审计不能事后编辑/删除。"
+        },
+        {
+          "name": "admin_case_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "非案件操作可空",
+          "writer": "敏感授权查看、审核、必要自动操作追加；成功审计不能事后编辑/删除。"
+        },
+        {
+          "name": "case_action_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "关联动作",
+          "writer": "敏感授权查看、审核、必要自动操作追加；成功审计不能事后编辑/删除。"
+        },
+        {
+          "name": "permission_code",
+          "type": "VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "本次校验的按钮权限",
+          "writer": "敏感授权查看、审核、必要自动操作追加；成功审计不能事后编辑/删除。"
+        },
+        {
+          "name": "operation_code",
+          "type": "VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "领域动作编码",
+          "writer": "敏感授权查看、审核、必要自动操作追加；成功审计不能事后编辑/删除。"
+        },
+        {
+          "name": "operation_name",
+          "type": "VARCHAR(128)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "中文快照",
+          "writer": "敏感授权查看、审核、必要自动操作追加；成功审计不能事后编辑/删除。"
+        },
+        {
+          "name": "target_module",
+          "type": "VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "业务模块",
+          "writer": "敏感授权查看、审核、必要自动操作追加；成功审计不能事后编辑/删除。"
+        },
+        {
+          "name": "target_type",
+          "type": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "目标对象类型",
+          "writer": "敏感授权查看、审核、必要自动操作追加；成功审计不能事后编辑/删除。"
+        },
+        {
+          "name": "target_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "目标对象 ID",
+          "writer": "敏感授权查看、审核、必要自动操作追加；成功审计不能事后编辑/删除。"
+        },
+        {
+          "name": "request_id",
+          "type": "VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "链路追踪",
+          "writer": "敏感授权查看、审核、必要自动操作追加；成功审计不能事后编辑/删除。"
+        },
+        {
+          "name": "idempotency_key",
+          "type": "VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "幂等键",
+          "writer": "敏感授权查看、审核、必要自动操作追加；成功审计不能事后编辑/删除。"
+        },
+        {
+          "name": "operation_reason",
+          "type": "VARCHAR(1000)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "高风险动作必填",
+          "writer": "敏感授权查看、审核、必要自动操作追加；成功审计不能事后编辑/删除。"
+        },
+        {
+          "name": "before_snapshot_json",
+          "type": "JSON",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "脱敏前态",
+          "writer": "敏感授权查看、审核、必要自动操作追加；成功审计不能事后编辑/删除。"
+        },
+        {
+          "name": "after_snapshot_json",
+          "type": "JSON",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "脱敏后态",
+          "writer": "敏感授权查看、审核、必要自动操作追加；成功审计不能事后编辑/删除。"
+        },
+        {
+          "name": "result_status",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "success、failed、rejected",
+          "writer": "敏感授权查看、审核、必要自动操作追加；成功审计不能事后编辑/删除。"
+        },
+        {
+          "name": "result_message",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "结果说明",
+          "writer": "敏感授权查看、审核、必要自动操作追加；成功审计不能事后编辑/删除。"
+        },
+        {
+          "name": "client_ip",
+          "type": "VARCHAR(64)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "客户端 IP",
+          "writer": "敏感授权查看、审核、必要自动操作追加；成功审计不能事后编辑/删除。"
+        },
+        {
+          "name": "user_agent",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "浏览器标识",
+          "writer": "敏感授权查看、审核、必要自动操作追加；成功审计不能事后编辑/删除。"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "创建时间",
+          "writer": "敏感授权查看、审核、必要自动操作追加；成功审计不能事后编辑/删除。"
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "number",
+          [
+            "audit_no"
+          ]
+        ],
+        [
+          "K",
+          "actor",
+          [
+            "admin_user_id",
+            "created_at"
+          ]
+        ],
+        [
+          "K",
+          "target",
+          [
+            "target_module",
+            "target_type",
+            "target_id",
+            "created_at"
+          ]
+        ],
+        [
+          "K",
+          "case",
+          [
+            "admin_case_id",
+            "created_at"
+          ]
+        ],
+        [
+          "K",
+          "trace",
+          [
+            "request_id"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "admin_user_id": "sys_user",
+        "admin_case_id": "admin_case",
+        "case_action_id": "admin_case_action"
+      },
+      "checks": [
+        "result_status IN ('success','failed','rejected')",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`id`))>0",
+        "CHAR_LENGTH(TRIM(`audit_no`))>0",
+        "`admin_user_id` IS NULL OR REGEXP_LIKE(`admin_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`admin_user_id`))>0",
+        "`admin_case_id` IS NULL OR REGEXP_LIKE(`admin_case_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`case_action_id` IS NULL OR REGEXP_LIKE(`case_action_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`operation_code`))>0",
+        "CHAR_LENGTH(TRIM(`operation_name`))>0",
+        "CHAR_LENGTH(TRIM(`target_module`))>0",
+        "CHAR_LENGTH(TRIM(`target_type`))>0",
+        "`target_id` IS NULL OR REGEXP_LIKE(`target_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`request_id`))>0",
+        "CHAR_LENGTH(TRIM(`result_status`))>0"
+      ]
+    },
+    {
+      "table": "coupon_template",
+      "source": "v2.0数据库设计/12-优惠券运营权益模型-数据库设计.md",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "主键",
+          "writer": "本批完整结构空表，无写入口/种子；后续券模块配置。"
+        },
+        {
+          "name": "template_code",
+          "type": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "系列编码；同一系列各版本共用，唯一性为(template_code, template_version)，id标识具体版本",
+          "writer": "本批完整结构空表，无写入口/种子；后续券模块配置。"
+        },
+        {
+          "name": "template_name",
+          "type": "VARCHAR(128)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "例如 30 元复租券",
+          "writer": "本批完整结构空表，无写入口/种子；后续券模块配置。"
+        },
+        {
+          "name": "template_version",
+          "type": "INT",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "同编码从 1 递增",
+          "writer": "本批完整结构空表，无写入口/种子；后续券模块配置。"
+        },
+        {
+          "name": "coupon_type",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "fixed_amount 金额券；percentage 比例券",
+          "writer": "本批完整结构空表，无写入口/种子；后续券模块配置。"
+        },
+        {
+          "name": "face_amount_fen",
+          "type": "INT",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "金额券必填且大于 0；比例券必须为空",
+          "writer": "本批完整结构空表，无写入口/种子；后续券模块配置。"
+        },
+        {
+          "name": "discount_rate_bps",
+          "type": "INT",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "比例券必填，1～10000；1000 表示减免 10%（即付九折），不是支付比例；金额券必须为空",
+          "writer": "本批完整结构空表，无写入口/种子；后续券模块配置。"
+        },
+        {
+          "name": "threshold_rent_amount_fen",
+          "type": "INT",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "0 表示无门槛",
+          "writer": "本批完整结构空表，无写入口/种子；后续券模块配置。"
+        },
+        {
+          "name": "applicable_scope_type",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "all 全平台或 factory 指定工厂；其他值拒绝",
+          "writer": "本批完整结构空表，无写入口/种子；后续券模块配置。"
+        },
+        {
+          "name": "cost_bearer",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "首期固定 shared_by_settlement_ratio，服务端写入并拒绝其他值；共同承担不是平台另行打款",
+          "writer": "本批完整结构空表，无写入口/种子；后续券模块配置。"
+        },
+        {
+          "name": "validity_type",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "relative_days、fixed_range",
+          "writer": "本批完整结构空表，无写入口/种子；后续券模块配置。"
+        },
+        {
+          "name": "valid_days",
+          "type": "INT",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "相对有效期使用",
+          "writer": "本批完整结构空表，无写入口/种子；后续券模块配置。"
+        },
+        {
+          "name": "valid_start_at",
+          "type": "DATETIME(3)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "",
+          "writer": "本批完整结构空表，无写入口/种子；后续券模块配置。"
+        },
+        {
+          "name": "valid_end_at",
+          "type": "DATETIME(3)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "",
+          "writer": "本批完整结构空表，无写入口/种子；后续券模块配置。"
+        },
+        {
+          "name": "refund_return_policy",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "首期固定return_with_extension，不能配置不返券",
+          "writer": "本批完整结构空表，无写入口/种子；后续券模块配置。"
+        },
+        {
+          "name": "return_extension_days",
+          "type": "INT",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "首期固定7，new_expiry=max(old_expiry,returned_at+7天)",
+          "writer": "本批完整结构空表，无写入口/种子；后续券模块配置。"
+        },
+        {
+          "name": "issued_count",
+          "type": "BIGINT",
+          "nullable": false,
+          "default": "0",
+          "generated": null,
+          "sourceNote": "默认0、非负；发券事务内按实际张数原子增加，不因退款/返券/失效减少；溢出拒绝并回滚，API用十进制字符串",
+          "writer": "本批完整结构空表，无写入口/种子；后续券模块配置。"
+        },
+        {
+          "name": "template_status",
+          "type": "VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "draft、active、paused、ended",
+          "writer": "本批完整结构空表，无写入口/种子；后续券模块配置。"
+        },
+        {
+          "name": "created_by_admin_user_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "",
+          "writer": "本批完整结构空表，无写入口/种子；后续券模块配置。"
+        },
+        {
+          "name": "published_at",
+          "type": "DATETIME(3)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "",
+          "writer": "本批完整结构空表，无写入口/种子；后续券模块配置。"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "",
+          "writer": "本批完整结构空表，无写入口/种子；后续券模块配置。"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "",
+          "writer": "本批完整结构空表，无写入口/种子；后续券模块配置。"
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "version",
+          [
+            "template_code",
+            "template_version"
+          ]
+        ],
+        [
+          "K",
+          "status",
+          [
+            "template_status",
+            "updated_at"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "created_by_admin_user_id": "sys_user"
+      },
+      "checks": [
+        "coupon_type IN ('fixed_amount','percentage')",
+        "applicable_scope_type IN ('all','factory')",
+        "validity_type IN ('relative_days','fixed_range')",
+        "template_status IN ('draft','active','paused','ended')",
+        "(coupon_type='fixed_amount' AND face_amount_fen IS NOT NULL AND face_amount_fen>0 AND discount_rate_bps IS NULL) OR (coupon_type='percentage' AND face_amount_fen IS NULL AND discount_rate_bps IS NOT NULL AND discount_rate_bps BETWEEN 1 AND 10000)",
+        "cost_bearer='shared_by_settlement_ratio' AND refund_return_policy='return_with_extension' AND return_extension_days=7",
+        "(validity_type='relative_days' AND valid_days IS NOT NULL AND valid_days>0 AND valid_start_at IS NULL AND valid_end_at IS NULL) OR (validity_type='fixed_range' AND valid_days IS NULL AND valid_start_at IS NOT NULL AND valid_end_at IS NOT NULL AND valid_start_at<valid_end_at)",
+        "template_status='draft' OR published_at IS NOT NULL",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`id`))>0",
+        "CHAR_LENGTH(TRIM(`template_code`))>0",
+        "CHAR_LENGTH(TRIM(`template_name`))>0",
+        "`template_version` IS NULL OR `template_version`>=1",
+        "CHAR_LENGTH(TRIM(`coupon_type`))>0",
+        "`face_amount_fen` IS NULL OR `face_amount_fen`>=0",
+        "`discount_rate_bps` IS NULL OR `discount_rate_bps`>=0",
+        "`threshold_rent_amount_fen` IS NULL OR `threshold_rent_amount_fen`>=0",
+        "CHAR_LENGTH(TRIM(`applicable_scope_type`))>0",
+        "CHAR_LENGTH(TRIM(`cost_bearer`))>0",
+        "CHAR_LENGTH(TRIM(`validity_type`))>0",
+        "`valid_days` IS NULL OR `valid_days`>=0",
+        "CHAR_LENGTH(TRIM(`refund_return_policy`))>0",
+        "`return_extension_days` IS NULL OR `return_extension_days`>=0",
+        "`issued_count` IS NULL OR `issued_count`>=0",
+        "CHAR_LENGTH(TRIM(`template_status`))>0",
+        "`created_by_admin_user_id` IS NULL OR REGEXP_LIKE(`created_by_admin_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`created_by_admin_user_id`))>0"
+      ]
+    },
+    {
+      "table": "coupon_reward_rule",
+      "source": "v2.0数据库设计/12-优惠券运营权益模型-数据库设计.md",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "后端UUID，主键，固定版本ID",
+          "writer": "本批空表，仅检查禁止active配置；后续券模块发布不可变版本。"
+        },
+        {
+          "name": "event_type",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "first_rental_paid / first_realname_verified / first_rental_review",
+          "writer": "本批空表，仅检查禁止active配置；后续券模块发布不可变版本。"
+        },
+        {
+          "name": "rule_version",
+          "type": "INT",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "同event_type从1递增，发布后规则内容不可改",
+          "writer": "本批空表，仅检查禁止active配置；后续券模块发布不可变版本。"
+        },
+        {
+          "name": "template_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "FK coupon_template.id RESTRICT；奖励模板须fixed_amount；draft可引用合法模板草稿，启用/发券时须已发布、可发且有效",
+          "writer": "本批空表，仅检查禁止active配置；后续券模块发布不可变版本。"
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "draft / active / ended；启用新版本同事务结束旧版本",
+          "writer": "本批空表，仅检查禁止active配置；后续券模块发布不可变版本。"
+        },
+        {
+          "name": "active_event_type",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "生成，不可赋值",
+          "generated": "CASE WHEN status='active' THEN event_type ELSE NULL END",
+          "sourceNote": "生成列：status=active时取event_type，否则NULL；唯一索引，防止同时启用两个规则",
+          "writer": "本批空表，仅检查禁止active配置；后续券模块发布不可变版本。"
+        },
+        {
+          "name": "created_by_admin_user_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "FK sys_user.id RESTRICT，须具备奖励配置权限",
+          "writer": "本批空表，仅检查禁止active配置；后续券模块发布不可变版本。"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "创建时刻",
+          "writer": "本批空表，仅检查禁止active配置；后续券模块发布不可变版本。"
+        },
+        {
+          "name": "activated_at",
+          "type": "DATETIME(3)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "启用时刻；生效边界，不补发启用前首次事件",
+          "writer": "本批空表，仅检查禁止active配置；后续券模块发布不可变版本。"
+        },
+        {
+          "name": "ended_at",
+          "type": "DATETIME(3)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "结束时刻；不取消已产生的待履行奖励",
+          "writer": "本批空表，仅检查禁止active配置；后续券模块发布不可变版本。"
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "version",
+          [
+            "event_type",
+            "rule_version"
+          ]
+        ],
+        [
+          "U",
+          "active",
+          [
+            "active_event_type"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "template_id": "coupon_template",
+        "created_by_admin_user_id": "sys_user"
+      },
+      "checks": [
+        "event_type IN ('first_rental_paid','first_realname_verified','first_rental_review')",
+        "status IN ('draft','active','ended')",
+        "(status='draft' AND activated_at IS NULL AND ended_at IS NULL) OR (status='active' AND activated_at IS NOT NULL AND ended_at IS NULL) OR (status='ended' AND activated_at IS NOT NULL AND ended_at IS NOT NULL AND ended_at>=activated_at)",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`id`))>0",
+        "CHAR_LENGTH(TRIM(`event_type`))>0",
+        "`rule_version` IS NULL OR `rule_version`>=1",
+        "`template_id` IS NULL OR REGEXP_LIKE(`template_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`template_id`))>0",
+        "CHAR_LENGTH(TRIM(`status`))>0",
+        "`created_by_admin_user_id` IS NULL OR REGEXP_LIKE(`created_by_admin_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`created_by_admin_user_id`))>0"
+      ]
+    },
+    {
+      "table": "coupon_reward_record",
+      "source": "v2.0数据库设计/12-优惠券运营权益模型-数据库设计.md",
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "主键；event_reward来源ID",
+          "writer": "首次实名成功事务新增not_eligible/NO_ACTIVE_RULE；既有首次source/time永不覆盖，本批不发券。"
+        },
+        {
+          "name": "user_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "FK sys_user.id RESTRICT，首次事件所属用户",
+          "writer": "首次实名成功事务新增not_eligible/NO_ACTIVE_RULE；既有首次source/time永不覆盖，本批不发券。"
+        },
+        {
+          "name": "event_type",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "与rule.event_type一致；用户＋事件唯一",
+          "writer": "首次实名成功事务新增not_eligible/NO_ACTIVE_RULE；既有首次source/time永不覆盖，本批不发券。"
+        },
+        {
+          "name": "source_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "按event_type指向payment_order.id / user_realname_verification.id / order_review.id，校验归属",
+          "writer": "首次实名成功事务新增not_eligible/NO_ACTIVE_RULE；既有首次source/time永不覆盖，本批不发券。"
+        },
+        {
+          "name": "rule_id",
+          "type": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "当时有效coupon_reward_rule.id，选定后不可换；无启用规则时NULL",
+          "writer": "首次实名成功事务新增not_eligible/NO_ACTIVE_RULE；既有首次source/time永不覆盖，本批不发券。"
+        },
+        {
+          "name": "reward_status",
+          "type": "VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "pending待履行 / granted已发 / not_eligible首次时不符合奖励条件",
+          "writer": "首次实名成功事务新增not_eligible/NO_ACTIVE_RULE；既有首次source/time永不覆盖，本批不发券。"
+        },
+        {
+          "name": "ineligible_reason",
+          "type": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "not_eligible必填：NO_ACTIVE_RULE / ROLE_NOT_ELIGIBLE / ACCOUNT_RESTRICTED；其他状态NULL",
+          "writer": "首次实名成功事务新增not_eligible/NO_ACTIVE_RULE；既有首次source/time永不覆盖，本批不发券。"
+        },
+        {
+          "name": "occurred_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "来源首次有效业务转移时刻，服务器生成，不接受客户端回填",
+          "writer": "首次实名成功事务新增not_eligible/NO_ACTIVE_RULE；既有首次source/time永不覆盖，本批不发券。"
+        },
+        {
+          "name": "granted_at",
+          "type": "DATETIME(3)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "granted必填，否则NULL",
+          "writer": "首次实名成功事务新增not_eligible/NO_ACTIVE_RULE；既有首次source/time永不覆盖，本批不发券。"
+        },
+        {
+          "name": "attempt_count",
+          "type": "INT",
+          "nullable": false,
+          "default": "0",
+          "generated": null,
+          "sourceNote": "默认0，非负；实际履行尝试次数",
+          "writer": "首次实名成功事务新增not_eligible/NO_ACTIVE_RULE；既有首次source/time永不覆盖，本批不发券。"
+        },
+        {
+          "name": "next_retry_at",
+          "type": "DATETIME(3)",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "pending失败后重试时刻；无重试计划NULL",
+          "writer": "首次实名成功事务新增not_eligible/NO_ACTIVE_RULE；既有首次source/time永不覆盖，本批不发券。"
+        },
+        {
+          "name": "last_error_code",
+          "type": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "default": "NULL",
+          "generated": null,
+          "sourceNote": "技术失败/模板暂停、已过期等稳定原因，不存密文或完整敏感材料",
+          "writer": "首次实名成功事务新增not_eligible/NO_ACTIVE_RULE；既有首次source/time永不覆盖，本批不发券。"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "服务器时刻",
+          "writer": "首次实名成功事务新增not_eligible/NO_ACTIVE_RULE；既有首次source/time永不覆盖，本批不发券。"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME(3)",
+          "nullable": false,
+          "default": null,
+          "generated": null,
+          "sourceNote": "服务器时刻",
+          "writer": "首次实名成功事务新增not_eligible/NO_ACTIVE_RULE；既有首次source/time永不覆盖，本批不发券。"
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "first",
+          [
+            "user_id",
+            "event_type"
+          ]
+        ],
+        [
+          "K",
+          "retry",
+          [
+            "reward_status",
+            "next_retry_at"
+          ]
+        ],
+        [
+          "K",
+          "source",
+          [
+            "event_type",
+            "source_id"
+          ]
+        ],
+        [
+          "K",
+          "rule",
+          [
+            "rule_id"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "user_id": "sys_user",
+        "rule_id": "coupon_reward_rule"
+      },
+      "checks": [
+        "event_type IN ('first_rental_paid','first_realname_verified','first_rental_review')",
+        "reward_status IN ('pending','granted','not_eligible')",
+        "(reward_status='not_eligible' AND ineligible_reason IS NOT NULL AND ineligible_reason IN ('NO_ACTIVE_RULE','ROLE_NOT_ELIGIBLE','ACCOUNT_RESTRICTED') AND granted_at IS NULL) OR (reward_status='pending' AND rule_id IS NOT NULL AND ineligible_reason IS NULL AND granted_at IS NULL) OR (reward_status='granted' AND rule_id IS NOT NULL AND ineligible_reason IS NULL AND granted_at IS NOT NULL)",
+        "ineligible_reason IS NULL OR ineligible_reason<>'NO_ACTIVE_RULE' OR rule_id IS NULL",
+        "reward_status='pending' OR next_retry_at IS NULL",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`id`))>0",
+        "`user_id` IS NULL OR REGEXP_LIKE(`user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`user_id`))>0",
+        "CHAR_LENGTH(TRIM(`event_type`))>0",
+        "`source_id` IS NULL OR REGEXP_LIKE(`source_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`source_id`))>0",
+        "`rule_id` IS NULL OR REGEXP_LIKE(`rule_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "CHAR_LENGTH(TRIM(`reward_status`))>0",
+        "`attempt_count` IS NULL OR `attempt_count`>=0"
+      ]
+    }
+  ]
+}

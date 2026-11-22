@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC '-//mybatis.org//DTD Mapper 3.0//EN' 'https://mybatis.org/dtd/mybatis-3-mapper.dtd'>
+<mapper namespace="com.mujian.backend.casework.mapper.ServiceCaseMapper">
+  <sql id="filter">1=1 <if test="filter.caseType!=null">AND c.case_type=#{filter.caseType}</if>
+    <if test="filter.caseStatus!=null">AND c.case_status=#{filter.caseStatus}</if>
+    <if test="filter.keyword!=null">AND (LOCATE(#{filter.keyword},c.title)&gt;0 OR c.case_no=#{filter.keyword})</if></sql>
+  <select id="countCases" resultType="long">SELECT COUNT(*) FROM admin_case c WHERE <include refid="filter"/></select>
+  <sql id="summaryColumns">
+    c.id,c.case_no,c.case_type,c.case_status,c.title,c.deadline_at,
+    r.relation_type AS source_type,r.relation_id AS source_id,c.version
+  </sql>
+  <sql id="caseWithPrimarySource">
+    FROM admin_case c LEFT JOIN admin_case_relation r ON r.admin_case_id=c.id AND r.is_primary=1
+  </sql>
+  <select id="selectCaseSummaries" resultType="com.mujian.backend.casework.projection.ServiceCaseSummaryProjection">
+    <bind name="pageOffset" value="page.offset()"/>
+    SELECT <include refid="summaryColumns"/> <include refid="caseWithPrimarySource"/>
+    WHERE <include refid="filter"/> ORDER BY c.updated_at DESC,c.id DESC LIMIT #{page.pageSize} OFFSET #{pageOffset}
+  </select>
+  <select id="selectCase" resultType="com.mujian.backend.casework.projection.ServiceCaseDetailProjection" useCache="false" flushCache="true">
+    SELECT <include refid="summaryColumns"/>,c.summary,c.resolution_summary,
+      IF(c.case_type='customer_service',c.closure_checklist_json-&gt;'$.resultRefs',NULL) AS refs_json,
+      x.id AS context_id,r.snapshot_json-&gt;&gt;'$.demand' AS demand,r.snapshot_json-&gt;&gt;'$.mainConflict' AS main_conflict
+    <include refid="caseWithPrimarySource"/>
+    LEFT JOIN customer_service_context x ON x.admin_case_id=c.id WHERE c.id=#{id}
+  </select>
+  <select id="selectCaseResolutionById" resultType="com.mujian.backend.casework.projection.CaseResolutionProjection" useCache="false" flushCache="true">
+    SELECT c.case_type,c.case_status,c.version,r.relation_type AS source_type,r.relation_id AS source_id,
+      COALESCE(c.buyer_user_id,o.buyer_user_id) AS beneficiary
+    <include refid="caseWithPrimarySource"/> LEFT JOIN rental_order o ON o.id=c.rental_order_id WHERE c.id=#{id}
+  </select>
+  <select id="selectCaseBeneficiaryById" resultType="string" useCache="false" flushCache="true">
+    SELECT COALESCE(c.buyer_user_id,o.buyer_user_id) FROM admin_case c
+    LEFT JOIN rental_order o ON o.id=c.rental_order_id WHERE c.id=#{id}
+  </select>
+  <select id="lockCase" resultType="string">SELECT id FROM admin_case WHERE id=#{id} FOR UPDATE</select>
+  <insert id="insertCase">INSERT INTO admin_case(id,case_no,active_case_key,case_type,case_status,priority,title,summary,buyer_user_id,version,
+    created_by_type,created_by_admin_user_id,created_at,updated_at) VALUES(#{id},#{id},CONCAT('service:',#{id}),'customer_service','pending','P2',
+    LEFT(#{input.demand},128),#{input.mainConflict},#{input.userId},0,'admin',#{actor},#{at},#{at})</insert>
+  <insert id="insertSource">INSERT INTO admin_case_relation(id,admin_case_id,relation_type,relation_id,relation_role,is_primary,snapshot_json,created_at)
+    VALUES(#{id},#{caseId},#{source.sourceType},#{source.sourceId},'source',1,JSON_OBJECT('demand',#{input.demand},'mainConflict',#{input.mainConflict}),#{at})</insert>
+  <insert id="insertAction">INSERT INTO admin_case_action(id,action_no,admin_case_id,action_type,action_status,target_module,target_type,target_id,
+    idempotency_key,operator_admin_user_id,operation_reason,result_payload_json,executed_at,created_at,updated_at)
+    VALUES(#{id},#{id},#{caseId},#{type},'succeeded','08','admin_case',#{caseId},#{id},#{actor},#{reason},#{result},#{at},#{at},#{at})</insert>
+  <update id="resolveCase">UPDATE admin_case SET case_status='closed',active_case_key=NULL,resolution_code='customer_service_resolved',
+    resolution_summary=#{summary},closure_checklist_json=JSON_OBJECT('resultRefs',CAST(#{refs} AS JSON)),closed_at=#{at},closed_by_admin_user_id=#{actor},
+    version=version+1,updated_at=#{at} WHERE id=#{id} AND version=#{version} AND case_type='customer_service' AND case_status NOT IN ('closed','cancelled')</update>
+  <update id="linkContext">UPDATE customer_service_context SET context_status='linked_case',admin_case_id=#{caseId},updated_at=#{at} WHERE id=#{id} AND admin_case_id IS NULL</update>
+  <update id="resolveContext">UPDATE customer_service_context SET context_status='resolved',resolved_at=#{at},updated_at=#{at} WHERE admin_case_id=#{id}</update>
+  <select id="resultBelongs" resultType="boolean"><choose>
+<when test="ref.sourceType=='user_coupon'">
+ SELECT EXISTS(SELECT 1 FROM user_coupon WHERE id=#{ref.sourceId} AND user_id=#{user} AND issue_source_type='admin_compensation' AND issue_source_id=#{caseId})
+</when><otherwise>
+ WITH source_orders AS (<choose>
+<when test="source.sourceType=='rental_order'">SELECT id AS order_id FROM rental_order WHERE id=#{source.sourceId}</when>
+<when test="source.sourceType=='custom_order'">SELECT id AS order_id FROM custom_order WHERE id=#{source.sourceId}</when>
+<when test="source.sourceType=='custom_quote'">SELECT id AS order_id FROM custom_order WHERE accepted_quote_id=#{source.sourceId}</when>
+<when test="source.sourceType=='custom_requirement'">SELECT id AS order_id FROM custom_order WHERE requirement_id=#{source.sourceId}</when>
+<when test="source.sourceType=='custom_after_sale'">SELECT custom_order_id AS order_id FROM custom_after_sale_request WHERE id=#{source.sourceId}</when>
+<when test="source.sourceType=='payment_order'">SELECT id AS order_id FROM rental_order WHERE payment_order_id=#{source.sourceId} UNION ALL SELECT id FROM custom_order WHERE payment_order_id=#{source.sourceId}</when>
+<when test="source.sourceType=='refund_order'">SELECT COALESCE(rental_order_id,biz_order_id) AS order_id FROM refund_order WHERE id=#{source.sourceId}</when>
+<when test="source.sourceType=='order_issue'">SELECT rental_order_id AS order_id FROM order_issue_report WHERE id=#{source.sourceId}</when>
+<when test="source.sourceType=='extension_application'">SELECT rental_order_id AS order_id FROM order_extension_request WHERE id=#{source.sourceId}</when>
+<when test="source.sourceType=='return_verification'">SELECT rental_order_id AS order_id FROM order_return_check WHERE id=#{source.sourceId}</when>
+<when test="source.sourceType=='transport_order'">SELECT rental_order_id AS order_id FROM order_transport_leg WHERE id=#{source.sourceId}</when>
+<when test="source.sourceType=='compensation_receivable'">SELECT rental_order_id AS order_id FROM order_compensation_receivable WHERE id=#{source.sourceId}</when>
+<when test="source.sourceType=='claim'">SELECT rental_order_id AS order_id FROM order_claim WHERE id=#{source.sourceId}</when>
+<when test="source.sourceType=='arbitration_case'">SELECT rental_order_id AS order_id FROM arbitration_case WHERE id=#{source.sourceId}</when>
+<when test="source.sourceType=='arbitration_decision'">SELECT rental_order_id AS order_id FROM arbitration_decision WHERE id=#{source.sourceId}</when>
+<otherwise>SELECT NULL AS order_id WHERE FALSE</otherwise>
+</choose>), evidence AS (<choose>
+<when test="ref.sourceType=='rental_order'">SELECT id AS order_id FROM rental_order WHERE id=#{ref.sourceId}</when>
+<when test="ref.sourceType=='custom_order'">SELECT id AS order_id FROM custom_order WHERE id=#{ref.sourceId}</when>
+<when test="ref.sourceType=='order_issue'">SELECT rental_order_id AS order_id FROM order_issue_report WHERE id=#{ref.sourceId}</when>
+<when test="ref.sourceType=='claim'">SELECT rental_order_id AS order_id FROM order_claim WHERE id=#{ref.sourceId}</when>
+<when test="ref.sourceType=='arbitration_decision'">SELECT rental_order_id AS order_id FROM arbitration_decision WHERE id=#{ref.sourceId} AND decision_status='confirmed'</when>
+<when test="ref.sourceType=='refund_order'">SELECT COALESCE(rental_order_id,biz_order_id) AS order_id FROM refund_order WHERE id=#{ref.sourceId} AND refund_status='success'</when>
+<when test="ref.sourceType=='custom_after_sale'">SELECT custom_order_id AS order_id FROM custom_after_sale_request WHERE id=#{ref.sourceId}</when>
+<otherwise>SELECT NULL AS order_id WHERE FALSE</otherwise>
+</choose>)
+ SELECT EXISTS(SELECT 1 FROM evidence e LEFT JOIN rental_order r ON r.id=e.order_id LEFT JOIN custom_order c ON c.id=e.order_id
+ LEFT JOIN factory_profile f ON f.id=COALESCE(r.factory_id,c.factory_id)
+ WHERE (COALESCE(r.buyer_user_id,c.buyer_user_id)=#{user} OR f.owner_user_id=#{user})
+ AND (#{source.sourceType}='sys_user' OR EXISTS(SELECT 1 FROM source_orders s WHERE s.order_id=e.order_id)))
+</otherwise></choose></select>
+</mapper>

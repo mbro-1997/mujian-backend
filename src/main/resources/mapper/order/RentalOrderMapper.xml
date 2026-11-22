@@ -1,0 +1,714 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.order.mapper.RentalOrderMapper">
+
+  <select id="selectOrderIdsByBatch" resultType="string" useCache="false" flushCache="true">
+    SELECT
+      id
+    FROM rental_order
+    WHERE checkout_batch_id=#{batch}
+    ORDER BY id
+    <if test="lock">
+      FOR UPDATE
+    </if>
+  </select>
+
+  <insert id="insertOrder">
+    INSERT INTO rental_order(id,
+      order_no,
+      checkout_batch_id,
+      payment_order_id,
+      source_checklist_id,
+      buyer_user_id,
+      factory_id,
+      order_status,
+      accept_status,
+      refund_status,
+      transport_notice_snapshot,
+      rental_start_date,
+      rental_end_date,
+      current_due_date,
+      rental_days,
+      rent_original_amount_fen,
+      coupon_discount_amount_fen,
+      other_rent_discount_amount_fen,
+      rent_payable_amount_fen,
+      rent_paid_amount_fen,
+      rent_refunded_amount_fen,
+      rent_deducted_amount_fen,
+      deposit_original_amount_fen,
+      deposit_waived_amount_fen,
+      deposit_payable_amount_fen,
+      deposit_paid_amount_fen,
+      deposit_refunded_amount_fen,
+      deposit_deducted_amount_fen,
+      deposit_status,
+      service_fee_fen,
+      freight_prepaid_paid_amount_fen,
+      freight_refunded_amount_fen,
+      total_payable_amount_fen,
+      total_paid_amount_fen,
+      total_refunded_amount_fen,
+      total_deducted_amount_fen,
+      receiver_name_snapshot,
+      receiver_phone_snapshot,
+      region_text_snapshot,
+      detail_address_snapshot,
+      address_full_text_snapshot,
+      buyer_remark,
+      accept_deadline_at,
+      paid_at,
+      created_at,
+      updated_at)
+    VALUES (#{order.id},
+      #{order.id},
+      #{order.batch.id},
+      #{order.paymentId},
+      #{order.batch.sourceChecklistId},
+      #{order.batch.buyerUserId},
+      #{order.transport.factoryId},
+      'pending_accept',
+      'pending_accept',
+      'none',
+      #{order.batch.transportNoticeSnapshot},
+      #{order.batch.rentalStartDate},
+      #{order.batch.rentalEndDate},
+      #{order.batch.rentalEndDate},
+      #{order.batch.rentalDays},
+      #{order.amounts.rentOriginalFen},
+      #{order.amounts.couponDiscountFen},
+      0,
+      #{order.amounts.rentCashFen},
+      #{order.amounts.rentCashFen},
+      0,
+      0,
+      #{order.amounts.depositFen},
+      0,
+      #{order.amounts.depositFen},
+      #{order.amounts.depositFen},
+      0,
+      0,
+      'paid',
+      0,
+      #{order.amounts.freightFen},
+      0,
+      #{order.amounts.totalFen},
+      #{order.amounts.totalFen},
+      0,
+      0,
+      #{order.receiver.name},
+      #{order.receiver.phone},
+      #{order.receiver.regionText},
+      #{order.receiver.detailAddress},
+      #{order.transport.receiverAddressSnapshot},
+      #{order.transport.buyerRemarkSnapshot},
+      #{order.deadline},
+      #{order.paidAt},
+      #{order.at},
+      #{order.at})
+  </insert>
+
+  <insert id="insertItemFromSnapshot">
+    INSERT INTO rental_order_item(id,
+      rental_order_id,
+      checkout_batch_item_snapshot_id,
+      source_checklist_item_id,
+      sku_id,
+      factory_id,
+      prop_name_snapshot,
+      image_url_snapshot,
+      asset_type_snapshot,
+      quantity,
+      daily_rent_price_fen,
+      deposit_unit_amount_fen,
+      rent_amount_fen,
+      coupon_discount_amount_fen,
+      rent_cash_paid_amount_fen,
+      deposit_original_amount_fen,
+      deposit_waived_amount_fen,
+      deposit_payable_amount_fen,
+      transport_requirement_snapshot,
+      item_snapshot_json,
+      created_at)
+    SELECT
+      #{item.id},
+      #{item.orderId},
+      id,
+      source_checklist_item_id,
+      sku_id,
+      factory_id,
+      prop_name_snapshot,
+      image_url_snapshot,
+      asset_type_snapshot,
+      quantity,
+      daily_rent_price_fen,
+      deposit_unit_amount_fen,
+      rent_amount_fen,
+      coupon_discount_amount_fen,
+      rent_cash_payable_amount_fen,
+      deposit_original_amount_fen,
+      deposit_waived_amount_fen,
+      deposit_payable_amount_fen,
+      transport_requirement_snapshot,
+      item_snapshot_json,
+      #{item.at}
+    FROM checkout_batch_item_snapshot
+    WHERE id=#{item.snapshotId}
+  </insert>
+
+  <insert id="insertDelivery">
+    INSERT INTO rental_order_delivery(id,
+      rental_order_id,
+      factory_id,
+      checkout_batch_transport_snapshot_id,
+      outbound_service_mode,
+      return_service_mode,
+      delivery_status,
+      receiver_name_snapshot,
+      receiver_phone_snapshot,
+      region_text_snapshot,
+      detail_address_snapshot,
+      address_full_text_snapshot,
+      transport_requirement_snapshot,
+      transport_notice_snapshot,
+      created_at,
+      updated_at)
+    VALUES (#{delivery.id},
+      #{delivery.orderId},
+      #{delivery.transport.factoryId},
+      #{delivery.transport.id},
+      #{delivery.transport.outboundServiceMode},
+      #{delivery.transport.returnServiceMode},
+      'pending_outbound',
+      #{delivery.receiver.name},
+      #{delivery.receiver.phone},
+      #{delivery.receiver.regionText},
+      #{delivery.receiver.detailAddress},
+      #{delivery.transport.receiverAddressSnapshot},
+      LEFT(#{delivery.transport.transportRequirementSnapshot},
+      1000),
+      #{delivery.notice},
+      #{delivery.at},
+      #{delivery.at})
+  </insert>
+
+  <insert id="insertFreight">
+    INSERT INTO rental_order_freight_account(id,
+      rental_order_id,
+      factory_id,
+      freight_status,
+      outbound_prepaid_amount_fen,
+      return_prepaid_amount_fen,
+      initial_prepaid_amount_fen,
+      outbound_approved_amount_fen,
+      return_approved_amount_fen,
+      approved_total_amount_fen,
+      online_settle_amount_fen,
+      over_budget_amount_fen,
+      refunded_amount_fen,
+      refundable_amount_fen,
+      created_at,
+      updated_at)
+    VALUES (#{freight.id},
+      #{freight.orderId},
+      #{freight.transport.factoryId},
+      'prepaid',
+      #{freight.transport.outboundPrepaidAmountFen},
+      #{freight.transport.returnPrepaidAmountFen},
+      #{freight.transport.freightPrepaidAmountFen},
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      #{freight.transport.freightPrepaidAmountFen},
+      #{freight.at},
+      #{freight.at})
+  </insert>
+
+  <insert id="insertPaymentAllocation">
+    INSERT INTO payment_allocation(id,
+      payment_order_id,
+      payment_channel_suborder_id,
+      rental_order_id,
+      rent_allocated_amount_fen,
+      coupon_discount_allocated_fen,
+      deposit_allocated_amount_fen,
+      service_fee_allocated_fen,
+      freight_prepaid_allocated_fen,
+      compensation_allocated_amount_fen,
+      custom_goods_allocated_amount_fen,
+      total_allocated_amount_fen,
+      created_at)
+    VALUES (#{allocation.id},
+      #{allocation.paymentId},
+      #{allocation.suborderId},
+      #{allocation.orderId},
+      #{allocation.amounts.rentCashFen},
+      #{allocation.amounts.couponDiscountFen},
+      #{allocation.amounts.depositFen},
+      0,
+      #{allocation.amounts.freightFen},
+      0,
+      0,
+      #{allocation.amounts.totalFen},
+      #{allocation.at})
+  </insert>
+
+  <insert id="insertTransportLeg">
+    INSERT INTO order_transport_leg(id,
+      rental_order_id,
+      rental_order_delivery_id,
+      factory_id,
+      leg_type,
+      service_mode,
+      charge_mode,
+      leg_status,
+      from_address_snapshot,
+      from_longitude,
+      from_latitude,
+      to_address_snapshot,
+      to_longitude,
+      to_latitude,
+      driving_distance_meter,
+      map_provider,
+      map_calculated_at,
+      max_item_length_mm,
+      max_item_width_mm,
+      max_item_height_mm,
+      total_volume_cm3,
+      total_weight_gram,
+      matched_vehicle_tier_id,
+      pricing_rule_id,
+      pricing_snapshot_json,
+      guide_min_amount_fen,
+      guide_max_amount_fen,
+      prepaid_allocated_amount_fen,
+      approved_base_amount_fen,
+      approved_extra_amount_fen,
+      approved_total_amount_fen,
+      created_at,
+      updated_at)
+    VALUES (#{leg.id},
+      #{leg.orderId},
+      #{leg.deliveryId},
+      #{leg.factoryId},
+      #{leg.type},
+      #{leg.pricing.serviceMode},
+      #{leg.pricing.chargeMode},
+      'selected',
+      #{leg.fromAddress},
+      #{leg.pricing.route.from.longitude},
+      #{leg.pricing.route.from.latitude},
+      #{leg.toAddress},
+      #{leg.pricing.route.to.longitude},
+      #{leg.pricing.route.to.latitude},
+      #{leg.pricing.route.distanceMeter},
+    <choose>
+      <when test="leg.pricing.route!=null">
+        'tencent'
+      </when>
+      <otherwise>
+        NULL
+      </otherwise>
+    </choose>
+    ,
+      #{leg.mapAt},
+      #{leg.maxItemLengthMm},
+      #{leg.maxItemWidthMm},
+      #{leg.maxItemHeightMm},
+      #{leg.pricing.volumeCm3},
+      #{leg.pricing.weightGram},
+      #{leg.pricing.vehicle.id},
+      #{leg.pricing.rule.id},
+      #{leg.pricingJson},
+      #{leg.pricing.guideMinFen},
+      #{leg.pricing.guideMaxFen},
+      #{leg.pricing.prepaidFen},
+      0,
+      0,
+      0,
+      #{leg.at},
+      #{leg.at})
+  </insert>
+
+  <update id="bindSuborder">
+    UPDATE payment_channel_suborder
+    SET
+      rental_order_id=#{orderId},
+      version=version+1,
+      updated_at=#{now}
+    WHERE id=#{id}
+      AND rental_order_id IS NULL
+      AND payment_status='success'
+  </update>
+  <sql id="orderColumns">
+    id,
+      order_no,
+      checkout_batch_id,
+      payment_order_id,
+      source_checklist_id,
+      buyer_user_id,
+      factory_id,
+      order_status,
+      accept_status,
+      refund_status,
+      transport_notice_snapshot,
+      rental_start_date,
+      rental_end_date,
+      current_due_date,
+      rental_days,
+      rent_original_amount_fen,
+      coupon_discount_amount_fen,
+      rent_paid_amount_fen,
+      rent_refunded_amount_fen,
+      rent_deducted_amount_fen,
+      deposit_paid_amount_fen,
+      deposit_refunded_amount_fen,
+      deposit_deducted_amount_fen,
+      freight_prepaid_paid_amount_fen,
+      freight_refunded_amount_fen,
+      total_paid_amount_fen,
+      total_refunded_amount_fen,
+      total_deducted_amount_fen,
+      receiver_name_snapshot,
+      receiver_phone_snapshot,
+      region_text_snapshot,
+      detail_address_snapshot,
+      buyer_remark,
+      accept_deadline_at,
+      accepted_at,
+      rejected_at,
+      reject_reason,
+      cancel_reason,
+      cancelled_at,
+      paid_at,
+      version,
+      created_at,
+      updated_at
+  </sql>
+
+  <select id="selectOrderById" resultType="com.mujian.backend.order.domain.RentalOrderDO" useCache="false" flushCache="true">
+    SELECT
+    <include refid="orderColumns"/>
+    FROM rental_order
+    WHERE id=#{id}
+  </select>
+
+  <select id="selectOrderDeliveryStatus" resultType="string" useCache="false" flushCache="true">
+    SELECT
+      delivery_status
+    FROM rental_order_delivery
+    WHERE rental_order_id=#{id}
+  </select>
+
+  <update id="acceptOrder">
+    UPDATE rental_order
+    SET
+      order_status='accepted',
+      accept_status='accepted',
+      accepted_at=#{now},
+      version=version+1,
+      updated_at=#{now}
+    WHERE id=#{id}
+      AND version=#{version}
+      AND order_status='pending_accept'
+      AND accept_status='pending_accept'
+      AND accept_deadline_at&gt;#{now}
+  </update>
+
+  <update id="terminateOrder">
+    UPDATE rental_order
+    SET
+      order_status=#{termination.orderStatus},
+      accept_status=#{termination.acceptStatus},
+      refund_status=CASE WHEN #{termination.refundFen}&gt;0 THEN 'processing' ELSE 'none' END,
+      rent_deducted_amount_fen=#{termination.deductionFen},
+      total_deducted_amount_fen=#{termination.deductionFen},
+      deposit_status=CASE WHEN deposit_paid_amount_fen&gt;0 THEN 'refunding' ELSE 'settled' END,
+      reject_type=#{termination.rejectType},
+      reject_reason=CASE WHEN #{termination.rejectType} IS NOT NULL THEN #{termination.reason} ELSE reject_reason END,
+      rejected_at=CASE WHEN #{termination.rejectType} IS NOT NULL THEN #{termination.now} ELSE rejected_at END,
+      cancel_type=CASE WHEN #{termination.rejectType} IS NULL THEN #{termination.refundType} ELSE cancel_type END,
+      cancel_reason=CASE WHEN #{termination.rejectType} IS NULL THEN #{termination.reason} ELSE cancel_reason END,
+      cancelled_at=CASE WHEN #{termination.rejectType} IS NULL THEN #{termination.now} ELSE cancelled_at END,
+      version=version+1,
+      updated_at=#{termination.now}
+    WHERE id=#{termination.id}
+      AND version=#{termination.version}
+      AND order_status IN ('pending_accept',
+      'accepted')
+  </update>
+
+  <insert id="insertCancellationDeduction">
+    INSERT INTO order_deduction(id,
+      rental_order_id,
+      deduction_type,
+      fund_component,
+      deduction_status,
+      amount_fen,
+      calculation_base_amount_fen,
+      calculation_rate_bps,
+      calculation_snapshot_json,
+      source_type,
+      source_id,
+      reason,
+      created_by,
+      confirmed_at,
+      created_at,
+      updated_at)
+    VALUES (#{deduction.id},
+      #{deduction.orderId},
+      'cancellation_fee',
+      'rent',
+      'confirmed',
+      #{deduction.amountFen},
+      #{deduction.baseFen},
+      #{deduction.rateBps},
+      #{deduction.snapshot},
+      'user_cancel',
+      #{deduction.orderId},
+      #{deduction.reason},
+      #{deduction.actor},
+      #{deduction.now},
+      #{deduction.now},
+      #{deduction.now})
+  </insert>
+
+  <update id="cancelOrderDelivery">
+    UPDATE rental_order_delivery
+    SET
+      delivery_status='cancelled',
+      updated_at=#{now}
+    WHERE rental_order_id=#{id}
+      AND delivery_status='pending_outbound'
+  </update>
+
+  <update id="cancelTransportLegs">
+    UPDATE order_transport_leg
+    SET
+      leg_status='cancelled',
+      updated_at=#{now}
+    WHERE rental_order_id=#{id}
+      AND leg_status IN ('selected',
+      'ready')
+  </update>
+
+  <update id="cancelFreight">
+    UPDATE rental_order_freight_account
+    SET
+      freight_status=CASE WHEN initial_prepaid_amount_fen&gt;refunded_amount_fen THEN 'refunding' ELSE 'cancelled' END,
+      updated_at=#{now}
+    WHERE rental_order_id=#{id}
+  </update>
+
+  <select id="selectAcceptanceTimeoutOrderIds" resultType="string">
+    SELECT
+      id
+    FROM rental_order
+    WHERE order_status='pending_accept'
+      AND accept_status='pending_accept'
+      AND accept_deadline_at&lt;=#{now}
+    ORDER BY accept_deadline_at,
+      id
+    LIMIT 100
+  </select>
+  <!-- 一单一行的履约投影供分页、计数、首页和详情共用；时钟来自同一业务读取。 -->
+  <sql id="fulfillmentStage">CASE
+    WHEN o.order_status IN ('manual_rejected','timeout_rejected','user_cancelled','cancelled') THEN 'cancelled'
+    WHEN c.closed_at IS NOT NULL THEN 'return_closed'
+    WHEN c.id IS NOT NULL THEN 'return_checking'
+    WHEN s.shipment_status='sent' THEN 'return_in_transit'
+    WHEN r.check_status IN ('confirmed','auto_confirmed') THEN IF(o.current_due_date&lt;DATE(#{at}),'overdue','renting')
+    WHEN r.id IS NOT NULL THEN IF(#{at}&lt;r.start_at,'pending_receipt','receipt_checking')
+    WHEN o.order_status='accepted' THEN 'pending_outbound'
+    ELSE 'not_started' END</sql>
+  <sql id="fulfillmentProjection">SELECT o.id order_ref,<include refid="fulfillmentStage"/> fulfillment_stage,
+    CASE WHEN ex.factory_deadline_at&gt;#{at} THEN ex.factory_deadline_at
+      WHEN c.closed_at IS NOT NULL THEN NULL
+      WHEN c.id IS NOT NULL THEN IF(c.check_status='pending' AND #{at}&lt;c.warning_at,c.warning_at,c.auto_close_at)
+      WHEN s.shipment_status='sent' THEN s.expected_check_start_at
+      WHEN r.check_status IN ('confirmed','auto_confirmed') AND o.current_due_date&gt;=DATE(#{at}) THEN DATE_ADD(o.current_due_date,INTERVAL 1 DAY)
+      WHEN r.check_status='pending' THEN IF(#{at}&lt;r.start_at,r.start_at,r.deadline_at)
+      WHEN o.order_status='pending_accept' THEN o.accept_deadline_at END next_deadline_at,
+    COALESCE(c.check_start_at,s.sent_at,r.confirmed_at,o.accepted_at,o.created_at) actionable_since,
+    c.claim_created active_claim,r.confirmed_at received_at
+    FROM rental_order o LEFT JOIN order_extension_request ex ON ex.active_order_guard=o.id AND ex.extension_status IN ('pending_factory','factory_warning')
+    LEFT JOIN order_return_check c ON c.rental_order_id=o.id
+    LEFT JOIN order_return_shipment s ON s.rental_order_id=o.id
+    LEFT JOIN order_receipt_check r ON r.rental_order_id=o.id</sql>
+  <!-- 只有当前仍需所属工厂核验/补证的来源进入待办。已交给资金或自动库存执行的步骤不要求工厂再次处理。 -->
+  <sql id="claimStockWork">EXISTS(SELECT 1 FROM order_claim cl
+    JOIN inventory_reservation hold ON hold.rental_order_id=cl.rental_order_id AND hold.reservation_status='disputed_holding'
+    WHERE cl.rental_order_id=${orderRef} AND cl.claim_status='executing'
+      AND NOT EXISTS(SELECT 1 FROM arbitration_case a WHERE a.claim_id=cl.id AND a.case_status!='closed')
+      AND (hold.quantity&gt;(SELECT COALESCE(SUM(f.quantity),0) FROM order_claim_stock_result f
+            WHERE f.claim_id=cl.id AND f.original_reservation_id=hold.id AND f.result_status IN ('recorded','repair_pending'))
+        OR EXISTS(SELECT 1 FROM order_claim_stock_result f WHERE f.claim_id=cl.id AND f.original_reservation_id=hold.id AND f.result_status='repair_pending')))</sql>
+  <sql id="factoryDisputeWork">EXISTS(SELECT 1 FROM order_claim cl WHERE cl.rental_order_id=rental_order.id AND cl.claim_status='supplement_required')
+    OR <include refid="claimStockWork"><property name="orderRef" value="rental_order.id"/></include>
+    OR EXISTS(SELECT 1 FROM arbitration_case a JOIN admin_case_relation rel ON rel.relation_type='arbitration_case'
+       AND rel.relation_id=a.id AND rel.is_primary=1 WHERE a.rental_order_id=rental_order.id AND a.case_status='waiting_evidence'
+       AND (SELECT k.request_payload_json->>'$.party' FROM admin_case_action k WHERE k.admin_case_id=rel.admin_case_id AND k.action_type='requestArbitrationEvidence'
+         ORDER BY k.created_at DESC,k.id DESC LIMIT 1)='factory')
+    OR EXISTS(SELECT 1 FROM admin_case_action ac WHERE ac.target_type='rental_order' AND ac.target_id=rental_order.id
+      AND ac.action_type='resolve_order_issue' AND ac.action_status='executing' AND ac.operator_confirmed_at IS NOT NULL
+      AND ac.request_payload_json->>'$.fulfillment_decision'='terminate' AND f.fulfillment_stage IN ('return_in_transit','return_checking')
+      AND COALESCE(f.active_claim,0)=0)</sql>
+  <sql id="exceptionOrder">(EXISTS(SELECT 1 FROM order_issue_report i WHERE i.rental_order_id=rental_order.id AND i.issue_status NOT IN ('resolved','closed'))
+    OR EXISTS(SELECT 1 FROM order_claim cl WHERE cl.rental_order_id=rental_order.id AND cl.claim_status NOT IN ('draft','closed','withdrawn','rejected')
+      <if test="_parameter.containsKey('query') and query.buyerId!=null">AND cl.user_response_deadline_at IS NOT NULL</if>)
+    OR EXISTS(SELECT 1 FROM arbitration_case ac WHERE ac.rental_order_id=rental_order.id AND ac.case_status NOT IN ('closed','cancelled'))
+    OR EXISTS(SELECT 1 FROM order_compensation_receivable ar WHERE ar.rental_order_id=rental_order.id AND ar.receivable_status IN ('pending','paying')))</sql>
+  <sql id="stageJoin">JOIN (<include refid="fulfillmentProjection"/>) f ON f.order_ref=rental_order.id</sql>
+  <sql id="orderQueryWhere">
+    WHERE 1=1
+    <if test="query.buyerId!=null">
+        AND buyer_user_id=#{query.buyerId}
+    </if>
+    <if test="query.factoryId!=null">
+        AND factory_id=#{query.factoryId}
+    </if>
+    <if test="query.keyword!=null">
+        AND (LOCATE(#{query.keyword},
+        CONVERT(order_no USING utf8mb4) COLLATE utf8mb4_bin)&gt;0
+        OR EXISTS(
+      SELECT
+        1
+      FROM rental_order_item i
+      WHERE i.rental_order_id=rental_order.id
+        AND LOCATE(#{query.keyword},
+        i.prop_name_snapshot)&gt;0))
+    </if>
+    <if test="query.startDate!=null">
+        AND rental_start_date&gt;=#{query.startDate}
+    </if>
+    <if test="query.endDate!=null">
+        AND rental_end_date&lt;=#{query.endDate}
+    </if>
+    <choose>
+      <when test="query.view=='pending_accept'">
+          AND order_status='pending_accept'
+      </when>
+      <when test="query.view=='accepted'">
+          AND order_status='accepted'
+      </when>
+      <when test="query.view=='cancelled'">
+          AND order_status IN ('manual_rejected',
+          'timeout_rejected',
+          'user_cancelled',
+          'cancelled')
+      </when>
+      <when test="query.view=='factory_pending'">
+        AND (order_status='pending_accept' AND accept_deadline_at&gt;#{at}
+          <if test="ready">OR ((f.fulfillment_stage='pending_outbound' OR
+            (f.received_at IS NOT NULL AND f.fulfillment_stage IN ('renting','overdue','return_in_transit','return_checking')
+            AND COALESCE(f.active_claim,0)=0))
+            <if test="!blocked.isEmpty()">AND rental_order.id NOT IN
+              <foreach collection="blocked" item="id" open="(" close=")" separator=",">#{id}</foreach></if>) OR (<include refid="factoryDisputeWork"/>)</if>)
+      </when>
+      <when test="query.view=='completed'">AND order_status='completed'</when>
+      <when test="query.view=='pending_receipt'">AND f.fulfillment_stage IN ('pending_receipt','receipt_checking')</when>
+      <when test="query.view=='pending_outbound' or query.view=='renting' or query.view=='overdue' or query.view=='return_in_transit' or query.view=='return_checking' or query.view=='return_closed'">
+        AND f.fulfillment_stage=#{query.view} AND order_status&lt;&gt;'completed'
+      </when>
+      <when test="query.view=='exceptions'">AND <include refid="exceptionOrder"/></when>
+      <when test="query.view=='refund_exception'">
+          AND refund_status='failed'
+      </when>
+    </choose>
+  </sql>
+
+  <select id="selectOrdersByQuery" resultType="com.mujian.backend.order.projection.RentalOrderListProjection">
+    SELECT rental_order.id,
+      rental_order.order_no,
+      rental_order.factory_id,
+      rental_order.order_status,
+      rental_order.accept_status,
+      rental_order.refund_status,
+      rental_order.rental_start_date,
+      rental_order.rental_end_date,
+      rental_order.current_due_date,
+      rental_order.rent_original_amount_fen,
+      rental_order.coupon_discount_amount_fen,
+      rental_order.rent_paid_amount_fen,
+      rental_order.deposit_paid_amount_fen,
+      rental_order.freight_prepaid_paid_amount_fen,
+      rental_order.total_paid_amount_fen,
+      rental_order.total_refunded_amount_fen,
+      rental_order.total_deducted_amount_fen,
+      rental_order.accept_deadline_at,
+      rental_order.version,
+      rental_order.created_at
+    FROM rental_order <include refid="stageJoin"/>
+    <include refid="orderQueryWhere"/>
+    <choose><when test="query.view=='factory_pending'">ORDER BY (f.next_deadline_at IS NULL), f.next_deadline_at,f.actionable_since,id</when>
+    <otherwise>ORDER BY created_at DESC,id DESC</otherwise></choose>
+    LIMIT #{query.page.pageSize}
+    OFFSET #{query.page.offset}
+  </select>
+
+  <select id="countOrdersByQuery" resultType="long">
+    SELECT
+      COUNT(*)
+    FROM rental_order <include refid="stageJoin"/>
+    <include refid="orderQueryWhere"/>
+  </select>
+
+  <select id="hasSettlementTables" resultType="boolean">SELECT COUNT(*)=2 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name IN ('factory_settlement_detail','factory_settlement_batch')</select>
+  <select id="selectOrderMetadata" resultType="com.mujian.backend.order.projection.OrderMetadataProjection">
+    SELECT o.id order_id,(SELECT MIN(i.factory_name_snapshot) FROM checkout_batch_item_snapshot i
+      WHERE i.checkout_batch_id=o.checkout_batch_id AND i.factory_id=o.factory_id) factory_name,
+      d.delivery_status,f.fulfillment_stage,f.next_deadline_at,l.service_mode return_mode,
+      EXISTS(SELECT 1 FROM order_transport_leg expense_leg WHERE expense_leg.rental_order_id=o.id AND expense_leg.charge_mode='freight_pool') expense_required,
+      <choose><when test="settlements">EXISTS(SELECT 1 FROM factory_settlement_detail sd JOIN factory_settlement_batch sb ON sb.id=sd.settlement_batch_id WHERE sd.rental_order_id=o.id AND sb.settlement_status='settled')</when><otherwise>FALSE</otherwise></choose> settled_batch,
+      (SELECT issue_scene FROM order_issue_report i WHERE i.rental_order_id=o.id AND i.fulfillment_effect='paused'
+        AND i.issue_status IN ('submitted','processing','waiting_evidence') ORDER BY i.reported_at DESC,i.id DESC LIMIT 1) paused_issue_scene,
+      CASE WHEN EXISTS (SELECT 1 FROM admin_case_action a WHERE a.target_id=o.id AND a.target_type='rental_order'
+           AND a.action_type='resolve_order_issue' AND a.parent_action_id IS NULL AND a.operator_confirmed_at IS NOT NULL
+           AND a.action_status IN ('executing','failed','succeeded') AND a.request_payload_json->>'$.fulfillment_decision'='terminate')
+        THEN CASE
+          WHEN NOT (<include refid="com.mujian.backend.delivery.mapper.IssuePlanMapper.dispatchedFact"><property name="orderRef" value="o.id"/></include>) OR (<include refid="com.mujian.backend.delivery.mapper.IssuePlanMapper.physicallyReceivedFact"><property name="orderRef" value="o.id"/></include>) THEN 'terminated'
+          WHEN EXISTS (SELECT 1 FROM order_return_check rc WHERE rc.rental_order_id=o.id) THEN 'return_checking'
+          WHEN EXISTS (SELECT 1 FROM order_return_shipment rs WHERE rs.rental_order_id=o.id AND rs.sent_at IS NOT NULL) THEN 'return_in_transit'
+          ELSE 'termination_pending' END END termination_display_status,
+      EXISTS(SELECT 1 FROM order_issue_report i WHERE i.rental_order_id=o.id) issue_exists,
+      EXISTS(SELECT 1 FROM order_extension_request ex WHERE ex.rental_order_id=o.id) extension_exists,
+      EXISTS(SELECT 1 FROM order_extension_request ex WHERE ex.rental_order_id=o.id AND ex.submitted_to_factory_at IS NOT NULL) factory_extension_exists,
+      EXISTS(SELECT 1 FROM order_extension_request ex WHERE ex.active_order_guard=o.id) pending_extension,
+      EXISTS(SELECT 1 FROM order_claim cl WHERE cl.rental_order_id=o.id) claim_exists,
+      EXISTS(SELECT 1 FROM order_claim cl WHERE cl.rental_order_id=o.id AND cl.user_response_deadline_at IS NOT NULL) buyer_claim_exists,
+      EXISTS(SELECT 1 FROM order_claim cl WHERE cl.rental_order_id=o.id AND cl.claim_status NOT IN ('draft','closed','withdrawn','rejected')) claim_active,
+      EXISTS(SELECT 1 FROM order_claim cl WHERE cl.rental_order_id=o.id AND cl.user_response_deadline_at IS NOT NULL AND cl.claim_status NOT IN ('draft','closed','withdrawn','rejected')) buyer_claim_active,
+      EXISTS(SELECT 1 FROM arbitration_case a WHERE a.rental_order_id=o.id) arbitration_exists,
+      EXISTS(SELECT 1 FROM arbitration_case a WHERE a.rental_order_id=o.id AND a.case_status NOT IN ('closed','cancelled')) arbitration_active,
+      EXISTS(SELECT 1 FROM order_compensation_receivable ar WHERE ar.rental_order_id=o.id) debt_exists,
+      EXISTS(SELECT 1 FROM order_return_check rc WHERE rc.rental_order_id=o.id AND rc.claim_created=0 AND rc.closed_at IS NULL AND rc.check_start_at&lt;=#{at} AND rc.auto_close_at&gt;#{at}) claim_window,
+      <include refid="claimStockWork"><property name="orderRef" value="o.id"/></include> claim_stock_work
+    FROM rental_order o JOIN (<include refid="fulfillmentProjection"/>) f ON f.order_ref=o.id
+    JOIN rental_order_delivery d ON d.rental_order_id=o.id
+    JOIN order_transport_leg l ON l.rental_order_id=o.id AND l.leg_type='return'
+    WHERE o.id IN <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+  </select>
+
+  <select id="selectFactoryOrderOverview" resultType="com.mujian.backend.order.projection.OrderOverviewProjection">
+    SELECT
+      COALESCE(SUM(order_status='pending_accept'),
+      0) pending_accept_count,
+      COALESCE(SUM(order_status='accepted'),
+      0) accepted_count,
+      COALESCE(SUM(refund_status='failed'),
+      0) refund_exception_count,
+      COUNT(*) all_order_count,
+      COALESCE(SUM(f.fulfillment_stage='pending_outbound'),0) pending_outbound_count,
+      COALESCE(SUM(f.fulfillment_stage='return_checking'),0) return_checking_count, COALESCE(SUM(<include refid="exceptionOrder"/>),0) exception_order_count
+    FROM rental_order <include refid="stageJoin"/>
+    WHERE factory_id=#{id}
+  </select>
+  <update id="readyTransportLegs">
+    UPDATE order_transport_leg l JOIN rental_order o ON o.id=l.rental_order_id
+    SET l.leg_status='ready',l.updated_at=#{now}
+    WHERE l.rental_order_id=#{orderId} AND o.order_status='accepted' AND l.leg_status='selected'
+  </update>
+</mapper>

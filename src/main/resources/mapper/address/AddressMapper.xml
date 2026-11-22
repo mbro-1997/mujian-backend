@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.address.mapper.AddressMapper">
+
+  <select id="selectOwnedAddressById" resultType="com.mujian.backend.address.domain.ShippingAddressDO" useCache="false" flushCache="true">
+    SELECT
+      id,
+      user_id,
+      receiver_name,
+      phone,
+      region_text,
+      detail_address,
+      is_default,
+      address_status,
+      version,
+      default_user_guard,
+      created_at,
+      updated_at
+    FROM shipping_address
+    WHERE user_id=#{actor}
+      AND id=#{id}
+    <if test="lock">
+      FOR UPDATE
+    </if>
+  </select>
+
+  <select id="selectAddressCountByActor" resultType="long" useCache="false" flushCache="true">
+    SELECT
+      COUNT(*)
+    FROM shipping_address
+    WHERE user_id=#{actor}
+      AND address_status='active'
+  </select>
+
+  <select id="selectAddressPageByQuery" resultType="com.mujian.backend.address.domain.ShippingAddressDO" useCache="false" flushCache="true">
+    SELECT
+      id,
+      user_id,
+      receiver_name,
+      phone,
+      region_text,
+      detail_address,
+      is_default,
+      address_status,
+      version,
+      default_user_guard,
+      created_at,
+      updated_at
+    FROM shipping_address
+    WHERE user_id=#{query.actor}
+      AND address_status='active'
+    ORDER BY is_default DESC,
+      updated_at DESC,
+      id DESC
+    LIMIT #{query.limit}
+    OFFSET #{query.offset}
+  </select>
+
+  <insert id="insertAddress">
+    INSERT INTO shipping_address (id,
+      user_id,
+      receiver_name,
+      phone,
+      region_text,
+      detail_address,
+      is_default,
+      address_status,
+      version,
+      created_at,
+      updated_at)
+    VALUES (#{row.id},
+      #{row.userId},
+      #{row.receiverName},
+      #{row.phone},
+      #{row.regionText},
+      #{row.detailAddress},
+      #{row.isDefault},
+      #{row.addressStatus},
+      #{row.version},
+      #{row.createdAt},
+      #{row.updatedAt})
+  </insert>
+
+  <update id="updateAddress">
+    UPDATE shipping_address
+    SET
+      receiver_name=#{row.receiverName},
+      phone=#{row.phone},
+      region_text=#{row.regionText},
+      detail_address=#{row.detailAddress},
+      is_default=#{row.isDefault},
+      address_status=#{row.addressStatus},
+      version=#{row.version},
+      updated_at=#{row.updatedAt}
+    WHERE id=#{row.id}
+  </update>
+
+  <update id="clearOtherAddressDefaultsByActor">
+    UPDATE shipping_address
+    SET
+      is_default=0,
+      version=version+1,
+      updated_at=#{now}
+    WHERE user_id=#{actor}
+      AND id&lt;&gt;#{exceptId}
+      AND is_default=1
+      AND address_status='active'
+  </update>
+</mapper>

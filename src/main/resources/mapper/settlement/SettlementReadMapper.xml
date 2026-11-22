@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.settlement.mapper.SettlementReadMapper">
+  <sql id="summaryColumns">b.id,b.settlement_batch_no batchNo,b.factory_id factoryId,f.factory_name factoryName,IF(b.settlement_status='settled','settled','processing') status,b.order_count orderCount,
+    CAST(b.rent_settle_base_amount_fen AS CHAR) rentBaseFen,CAST(b.platform_commission_amount_fen AS CHAR) commissionFen,CAST(b.deposit_compensation_amount_fen AS CHAR) depositCompensationFen,
+    CAST(b.freight_reimbursement_amount_fen AS CHAR) freightFen,CAST(b.factory_settle_amount_fen AS CHAR) factorySettleFen,CAST(COALESCE((SELECT SUM(w.actual_unlock_amount_fen) FROM wechat_profit_sharing_order w WHERE w.settlement_batch_id=b.id),0) AS CHAR) actualUnlockFen,
+    CONCAT(LEFT(DATE_FORMAT(b.generated_at,'%Y-%m-%dT%H:%i:%s.%f'),23),'+08:00') generatedAt,CONCAT(LEFT(DATE_FORMAT(b.settled_at,'%Y-%m-%dT%H:%i:%s.%f'),23),'+08:00') settledAt</sql>
+  <sql id="filters"><where><if test="query.factory!=null">AND b.factory_id=#{query.factory}</if>
+    <if test="query.status=='settled'">AND b.settlement_status='settled'</if><if test="query.status=='processing'">AND b.settlement_status&lt;&gt;'settled'</if>
+    <if test="query.fromDate!=null">AND b.generated_at&gt;=#{query.from} AND b.generated_at&lt;#{query.until}</if></where></sql>
+  <select id="selectSettlementBatchPageByQuery" resultType="com.mujian.backend.settlement.vo.SettlementViews$Summary">SELECT <include refid="summaryColumns"/> FROM factory_settlement_batch b JOIN factory_profile f ON f.id=b.factory_id <include refid="filters"/> ORDER BY b.generated_at DESC,b.id DESC LIMIT #{query.page.pageSize} OFFSET #{query.page.offset}</select>
+  <select id="selectFactorySettlementBatchCountByQuery" resultType="long">SELECT COUNT(*) FROM factory_settlement_batch b <include refid="filters"/></select>
+  <sql id="visibleBatch">FROM factory_settlement_batch b JOIN factory_profile f ON f.id=b.factory_id WHERE b.id=#{id} <if test="owner!=null">AND b.factory_id=#{owner} AND b.settlement_status='settled'</if></sql>
+  <select id="existsVisibleBatch" resultType="boolean">SELECT EXISTS(SELECT 1 <include refid="visibleBatch"/>)</select>
+  <select id="selectSettlementBatchSummaryById" resultType="com.mujian.backend.settlement.vo.SettlementViews$Summary">SELECT <include refid="summaryColumns"/> <include refid="visibleBatch"/></select>
+  <select id="selectSettlementPaymentInfoByBatch" resultType="com.mujian.backend.settlement.mapper.SettlementReadMapper$Info">SELECT p.receiver_name_snapshot receiver,p.receiver_account_masked_snapshot masked,
+    (SELECT MAX(last_queried_at) FROM wechat_profit_sharing_order WHERE settlement_batch_id=#{id}) checked,
+    (SELECT exception_code FROM wechat_profit_sharing_order WHERE settlement_batch_id=#{id} AND exception_code IS NOT NULL ORDER BY updated_at DESC,id DESC LIMIT 1) exception,
+    (SELECT MAX(created_at) FROM admin_operation_audit WHERE target_type='factory_settlement_batch' AND target_id=#{id} AND operation_code='acknowledgeSettlement' AND admin_user_id=#{actor}) acknowledged
+    FROM factory_settlement_payment p WHERE p.settlement_batch_id=#{id} ORDER BY p.payment_attempt_no DESC LIMIT 1</select>
+  <select id="selectSettlementItemsByBatch" resultType="com.mujian.backend.settlement.vo.SettlementViews$Item">SELECT d.id,d.rental_order_id orderId,o.order_no orderNo,NULL goodsPaidFen,NULL goodsRefundedFen,NULL goodsBaseFen,NULL factoryGoodsFen,d.initial_rent_paid_amount_fen initialRentFen,d.shared_coupon_discount_amount_fen couponDiscountFen,d.extension_rent_paid_amount_fen extensionRentFen,d.overdue_rent_amount_fen overdueRentFen,d.overdue_commission_amount_fen overdueCommissionFen,d.rent_refunded_amount_fen rentRefundedFen,d.rent_settlement_adjustment_amount_fen rentAdjustmentFen,d.rent_settle_base_amount_fen rentBaseFen,d.commission_rate_bps commissionRateBps,d.platform_commission_amount_fen commissionFen,d.factory_rent_income_amount_fen factoryRentFen,d.deposit_compensation_amount_fen depositCompensationFen,d.excess_compensation_paid_amount_fen excessCompensationFen,d.freight_approved_amount_fen freightApprovedFen,d.freight_refunded_amount_fen freightRefundedFen,d.freight_reimbursement_amount_fen freightSettleFen,d.factory_settle_amount_fen factorySettleFen,d.detail_status status FROM factory_settlement_detail d JOIN rental_order o ON o.id=d.rental_order_id WHERE d.settlement_batch_id=#{id} UNION ALL SELECT d.id,o.id,o.custom_order_no,
+    d.goods_paid_amount_fen,d.goods_refunded_amount_fen,d.goods_settle_base_amount_fen,d.factory_goods_income_fen,
+    0,0,0,0,0,0,0,0,d.commission_rate_bps,d.platform_commission_amount_fen,0,0,0,
+    o.delivery_fee_paid_fen,o.delivery_fee_paid_fen-d.delivery_fee_settle_fen,d.delivery_fee_settle_fen,d.factory_settle_amount_fen,d.settlement_status
+    FROM custom_order_settlement d JOIN custom_order o ON o.id=d.custom_order_id WHERE d.settlement_batch_id=#{id}
+    ORDER BY id LIMIT #{page.pageSize} OFFSET #{page.offset}</select>
+  <select id="selectWechatProfitSharingOrderExecutions" resultType="com.mujian.backend.settlement.vo.SettlementViews$Execution">SELECT id,COALESCE(settlement_detail_id,custom_settlement_id) detailId,payment_channel_suborder_id sourceSuborderId,execution_type type,commission_status commissionStatus,unfreeze_status unfreezeStatus,platform_commission_amount_fen expectedCommissionFen,actual_commission_amount_fen actualCommissionFen,factory_unlock_amount_fen expectedUnlockFen,actual_unlock_amount_fen actualUnlockFen,channel_sharing_no channelSharingNo,channel_finish_no channelFinishNo,exception_code exceptionCode,
+    CONCAT(LEFT(DATE_FORMAT(last_queried_at,'%Y-%m-%dT%H:%i:%s.%f'),23),'+08:00') lastQueriedAt,CONCAT(LEFT(DATE_FORMAT(success_at,'%Y-%m-%dT%H:%i:%s.%f'),23),'+08:00') successAt
+    FROM wechat_profit_sharing_order WHERE settlement_batch_id=#{id} ORDER BY id LIMIT #{page.pageSize} OFFSET #{page.offset}</select>
+  <select id="itemCount" resultType="long">SELECT (SELECT COUNT(*) FROM factory_settlement_detail WHERE settlement_batch_id=#{id})+(SELECT COUNT(*) FROM custom_order_settlement WHERE settlement_batch_id=#{id})</select>
+  <select id="executionCount" resultType="long">SELECT COUNT(*) FROM wechat_profit_sharing_order WHERE settlement_batch_id=#{id}</select>
+  <select id="selectFactsFingerprint" resultType="string">SELECT h FROM (
+    SELECT 'i' kind,id,SHA2(JSON_ARRAY(id,detail_status,rent_settle_base_amount_fen,platform_commission_amount_fen,factory_settle_amount_fen,source_allocation_snapshot_json),256) h FROM factory_settlement_detail WHERE settlement_batch_id=#{id}
+    UNION ALL SELECT 'c',id,SHA2(JSON_ARRAY(id,settlement_status,goods_settle_base_amount_fen,platform_commission_amount_fen,factory_settle_amount_fen),256) FROM custom_order_settlement WHERE settlement_batch_id=#{id}
+    UNION ALL SELECT 'w',id,SHA2(JSON_ARRAY(id,version,commission_status,unfreeze_status,actual_commission_amount_fen,actual_unlock_amount_fen,exception_code),256) FROM wechat_profit_sharing_order WHERE settlement_batch_id=#{id}
+    UNION ALL SELECT 'p',id,SHA2(JSON_ARRAY(id,payment_status,payable_amount_fen,actual_paid_amount_fen,receiver_account_masked_snapshot),256) FROM factory_settlement_payment WHERE settlement_batch_id=#{id}
+    ) facts ORDER BY kind,id</select>
+  <select id="selectAdminOperationAuditByActor" resultType="com.mujian.backend.settlement.mapper.SettlementReadMapper$Audit">SELECT id,JSON_UNQUOTE(JSON_EXTRACT(after_snapshot_json,'$.requestHash')) digest,created_at at FROM admin_operation_audit WHERE admin_user_id=#{actor} AND operation_code='acknowledgeSettlement' AND target_type='factory_settlement_batch' AND target_id=#{id} AND idempotency_key=#{key}</select>
+</mapper>

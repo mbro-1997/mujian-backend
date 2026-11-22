@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.account.mapper.UserRuleAcceptanceMapper">
+<select id="countSupplierRuleAcceptance" resultType="long" useCache="false" flushCache="true">
+    SELECT COUNT(*) FROM user_rule_acceptance WHERE user_id=#{user} AND rule_document_id=#{doc} AND acceptance_scene='supplier_apply'
+  </select>
+  
+<insert id="insertSupplierRuleAcceptance">
+    INSERT INTO user_rule_acceptance(id,user_id,rule_document_id,rule_code,rule_version,content_hash,acceptance_scene,accepted_at,created_at) VALUES(#{id},#{user},#{doc},#{code},#{version},#{hash},'supplier_apply',#{now},#{now})
+  </insert>
+  
+</mapper>

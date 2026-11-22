@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.casework.mapper.AdminCaseMapper">
+<insert id="insertAdminCase">INSERT INTO admin_case
+<trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="adminCaseDO.id != null">id,</if>
+<if test="adminCaseDO.caseNo != null">case_no,</if>
+<if test="adminCaseDO.activeCaseKey != null">active_case_key,</if>
+<if test="adminCaseDO.caseType != null">case_type,</if>
+<if test="adminCaseDO.caseStatus != null">case_status,</if>
+<if test="adminCaseDO.priority != null">priority,</if>
+<if test="adminCaseDO.title != null">title,</if>
+<if test="adminCaseDO.summary != null">summary,</if>
+<if test="adminCaseDO.rentalOrderId != null">rental_order_id,</if>
+<if test="adminCaseDO.buyerUserId != null">buyer_user_id,</if>
+<if test="adminCaseDO.factoryId != null">factory_id,</if>
+<if test="adminCaseDO.deadlineAt != null">deadline_at,</if>
+<if test="adminCaseDO.resolutionCode != null">resolution_code,</if>
+<if test="adminCaseDO.resolutionSummary != null">resolution_summary,</if>
+<if test="adminCaseDO.closureChecklistJson != null">closure_checklist_json,</if>
+<if test="adminCaseDO.closedAt != null">closed_at,</if>
+<if test="adminCaseDO.closedByAdminUserId != null">closed_by_admin_user_id,</if>
+<if test="adminCaseDO.version != null">version,</if>
+<if test="adminCaseDO.createdByType != null">created_by_type,</if>
+<if test="adminCaseDO.createdByAdminUserId != null">created_by_admin_user_id,</if>
+<if test="adminCaseDO.createdAt != null">created_at,</if>
+<if test="adminCaseDO.updatedAt != null">updated_at,</if>
+</trim> VALUES <trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="adminCaseDO.id != null">#{adminCaseDO.id},</if>
+<if test="adminCaseDO.caseNo != null">#{adminCaseDO.caseNo},</if>
+<if test="adminCaseDO.activeCaseKey != null">#{adminCaseDO.activeCaseKey},</if>
+<if test="adminCaseDO.caseType != null">#{adminCaseDO.caseType},</if>
+<if test="adminCaseDO.caseStatus != null">#{adminCaseDO.caseStatus},</if>
+<if test="adminCaseDO.priority != null">#{adminCaseDO.priority},</if>
+<if test="adminCaseDO.title != null">#{adminCaseDO.title},</if>
+<if test="adminCaseDO.summary != null">#{adminCaseDO.summary},</if>
+<if test="adminCaseDO.rentalOrderId != null">#{adminCaseDO.rentalOrderId},</if>
+<if test="adminCaseDO.buyerUserId != null">#{adminCaseDO.buyerUserId},</if>
+<if test="adminCaseDO.factoryId != null">#{adminCaseDO.factoryId},</if>
+<if test="adminCaseDO.deadlineAt != null">#{adminCaseDO.deadlineAt},</if>
+<if test="adminCaseDO.resolutionCode != null">#{adminCaseDO.resolutionCode},</if>
+<if test="adminCaseDO.resolutionSummary != null">#{adminCaseDO.resolutionSummary},</if>
+<if test="adminCaseDO.closureChecklistJson != null">#{adminCaseDO.closureChecklistJson},</if>
+<if test="adminCaseDO.closedAt != null">#{adminCaseDO.closedAt},</if>
+<if test="adminCaseDO.closedByAdminUserId != null">#{adminCaseDO.closedByAdminUserId},</if>
+<if test="adminCaseDO.version != null">#{adminCaseDO.version},</if>
+<if test="adminCaseDO.createdByType != null">#{adminCaseDO.createdByType},</if>
+<if test="adminCaseDO.createdByAdminUserId != null">#{adminCaseDO.createdByAdminUserId},</if>
+<if test="adminCaseDO.createdAt != null">#{adminCaseDO.createdAt},</if>
+<if test="adminCaseDO.updatedAt != null">#{adminCaseDO.updatedAt},</if>
+</trim></insert>
+  
+<select id="selectAdminCasesBySource" resultType="com.mujian.backend.casework.domain.AdminCaseDO" useCache="false" flushCache="true">
+    SELECT c.id,c.version,c.case_type,c.case_status,c.buyer_user_id,c.closure_checklist_json FROM admin_case c JOIN admin_case_relation r ON r.admin_case_id=c.id WHERE r.relation_type=#{type} AND r.relation_id=#{source} AND r.is_primary=1 AND r.relation_role='source'
+    <if test="lock">FOR UPDATE</if>
+  </select>
+  
+<update id="closeAdminCaseByVersion">UPDATE admin_case SET case_status='closed',active_case_key=NULL,resolution_code=#{closeCaseDTO.status},resolution_summary=#{closeCaseDTO.summary},closure_checklist_json=#{closeCaseDTO.checklist},closed_at=#{closeCaseDTO.now},closed_by_admin_user_id=#{closeCaseDTO.actor},updated_at=#{closeCaseDTO.now},version=version+1 WHERE id=#{closeCaseDTO.id} AND case_status='pending' AND version=#{closeCaseDTO.version}</update>
+
+<update id="updateAdminCaseFactory">
+    UPDATE admin_case SET factory_id=#{factory} WHERE id=#{id}
+  </update>
+  
+
+</mapper>

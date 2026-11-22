@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.infrastructure.persistence.mapper.admin.AdminMapper">
+ <sql id="accountColumns">a.id,a.user_id,a.username,a.password_hash,a.enabled,u.nickname,u.user_status,r.role_code</sql>
+ <sql id="accountJoin">admin_account a JOIN sys_user u ON u.id=a.user_id LEFT JOIN sys_user_role r ON r.user_id=u.id AND r.enabled=1</sql>
+ <select id="selectAdminByUsername" resultType="com.mujian.backend.infrastructure.persistence.record.admin.AdminRecord">SELECT <include refid="accountColumns"/> FROM <include refid="accountJoin"/> WHERE a.username=#{username}</select>
+ <select id="selectAdminByUserId" resultType="com.mujian.backend.infrastructure.persistence.record.admin.AdminRecord">SELECT <include refid="accountColumns"/> FROM <include refid="accountJoin"/> WHERE a.user_id=#{userId}</select>
+ <select id="selectAdminRolesByAccountId" resultType="com.mujian.backend.infrastructure.persistence.record.admin.RoleRecord">SELECT r.id,r.role_code,r.role_name FROM admin_account_role ar JOIN admin_role r ON r.id=ar.admin_role_id WHERE ar.admin_account_id=#{accountId} AND r.enabled=1 ORDER BY r.role_sort,r.id</select>
+ <select id="selectAllAdminMenus" resultType="com.mujian.backend.infrastructure.persistence.record.admin.MenuRecord">SELECT id,parent_id,menu_name,menu_type,permission_code,route_path,component_path,icon_name,visible,enabled,sort_no FROM admin_menu ORDER BY sort_no,id</select>
+ <select id="selectAssignedMenuIdsByAccountId" resultType="string">SELECT DISTINCT rm.admin_menu_id FROM admin_account_role ar JOIN admin_role r ON r.id=ar.admin_role_id AND r.enabled=1 JOIN admin_role_menu rm ON rm.admin_role_id=r.id WHERE ar.admin_account_id=#{accountId}</select>
+ <update id="updateAdminLoginTime">UPDATE admin_account SET last_login_at=#{now},updated_at=#{now} WHERE id=#{id}</update>
+ <insert id="insertAdminAccount">INSERT INTO admin_account(id,user_id,username,password_hash,enabled,created_at,updated_at) VALUES(#{id},#{userId},#{username},#{hash},1,#{now},#{now})</insert>
+ <insert id="insertAdminRoleBinding">INSERT INTO admin_account_role(id,admin_account_id,admin_role_id,granted_by_admin_user_id,granted_at,created_at) VALUES(#{id},#{accountId},#{roleId},#{actor},#{now},#{now})</insert>
+</mapper>

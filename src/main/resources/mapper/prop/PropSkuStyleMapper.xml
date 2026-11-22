@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.prop.mapper.PropSkuStyleMapper">
+  <select id="selectPropSkuStyleListBySkuIds" resultType="com.mujian.backend.prop.projection.PropStyleProjection" useCache="false" flushCache="true">
+    SELECT sku_id, style_code FROM prop_sku_style
+    WHERE sku_id IN
+    <foreach collection="skuIds" item="sku" open="(" separator="," close=")">#{sku}</foreach>
+    ORDER BY sku_id, sort_order
+  </select>
+
+<sql id="columns_prop_sku_style">id,sku_id,style_code,sort_order,created_at</sql>
+<sql id="aliased_prop_sku_style">s.id,s.sku_id,s.style_code,s.sort_order,s.created_at</sql>
+<delete id="deletePropSkuStylesBySkuId">
+    DELETE FROM prop_sku_style WHERE sku_id=#{skuId}
+  </delete>
+<select id="selectPropSkuStyleListBySkuId" resultType="com.mujian.backend.prop.domain.PropSkuStyleDO" useCache="false" flushCache="true">
+    SELECT 
+    <include refid="columns_prop_sku_style"/>
+     FROM prop_sku_style WHERE sku_id=#{sku} ORDER BY sort_order
+  </select>
+<select id="selectPropSkuStyle" resultType="com.mujian.backend.prop.domain.PropSkuStyleDO" useCache="false" flushCache="true">
+    SELECT id,sku_id,style_code,sort_order,created_at FROM prop_sku_style WHERE id=#{id} <if test="lock">FOR UPDATE</if>
+  </select>
+<insert id="insertPropSkuStyle">INSERT INTO prop_sku_style
+<trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="row.id != null">id,</if>
+<if test="row.skuId != null">sku_id,</if>
+<if test="row.styleCode != null">style_code,</if>
+<if test="row.sortOrder != null">sort_order,</if>
+<if test="row.createdAt != null">created_at,</if>
+</trim> VALUES
+<trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="row.id != null">#{row.id},</if>
+<if test="row.skuId != null">#{row.skuId},</if>
+<if test="row.styleCode != null">#{row.styleCode},</if>
+<if test="row.sortOrder != null">#{row.sortOrder},</if>
+<if test="row.createdAt != null">#{row.createdAt},</if>
+</trim></insert>
+</mapper>

@@ -1,0 +1,66 @@
+{
+  "mysql": {
+    "tag": "8.4.10",
+    "indexDigest": "sha256:8dbcf531a03aade657e181b9cf2f1d1803ce621a1d55610cb44cb531ab7d7db6",
+    "manifests": [
+      {
+        "digest": "sha256:870634c634aae968ea1a93e5c094a14e00c692da2ee9bed956b3dfcc7bd08cb0",
+        "platform": {
+          "architecture": "amd64",
+          "os": "linux"
+        }
+      },
+      {
+        "digest": "sha256:3f616910ccd923d5089d7889d491cefa65e24fcfa79d74db4084729f48c9cab1",
+        "platform": {
+          "architecture": "arm64",
+          "os": "linux",
+          "variant": "v8"
+        }
+      }
+    ]
+  },
+  "redis": {
+    "tag": "7.2.16",
+    "indexDigest": "sha256:1009f15ccd9ed271996d1c65745a1ab1dadedea188feb3f1ab938602a32e50a3",
+    "manifests": [
+      {
+        "digest": "sha256:7cd025cf5b832cc4780477f5bb22df4c90fc6c0e0aab775593c5147b7aed3fc1",
+        "platform": {
+          "architecture": "amd64",
+          "os": "linux"
+        }
+      },
+      {
+        "digest": "sha256:da115d3817f5c0a2c080ea685836bde82bf550bbecdebb12074577ee43926cde",
+        "platform": {
+          "architecture": "arm",
+          "os": "linux",
+          "variant": "v7"
+        }
+      },
+      {
+        "digest": "sha256:9f18a00b04d24d4f88d34f9e8773e296b066c59ba899bd6e09fe30b010b4a5e6",
+        "platform": {
+          "architecture": "arm64",
+          "os": "linux",
+          "variant": "v8"
+        }
+      },
+      {
+        "digest": "sha256:e28c026a6aa01f131456b2d3165c974bee609dbbe374704ed1e77ecdc637fac0",
+        "platform": {
+          "architecture": "386",
+          "os": "linux"
+        }
+      },
+      {
+        "digest": "sha256:70674f929131eea2925cd4adf89bd21035f0f8d1c02042e41fef01889d3b14d1",
+        "platform": {
+          "architecture": "ppc64le",
+          "os": "linux"
+        }
+      }
+    ]
+  }
+}

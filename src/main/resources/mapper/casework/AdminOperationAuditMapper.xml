@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.casework.mapper.AdminOperationAuditMapper">
+<insert id="insertAdminOperationAudit">INSERT INTO admin_operation_audit
+<trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="adminOperationAuditDO.id != null">id,</if>
+<if test="adminOperationAuditDO.auditNo != null">audit_no,</if>
+<if test="adminOperationAuditDO.adminUserId != null">admin_user_id,</if>
+<if test="adminOperationAuditDO.adminCaseId != null">admin_case_id,</if>
+<if test="adminOperationAuditDO.caseActionId != null">case_action_id,</if>
+<if test="adminOperationAuditDO.permissionCode != null">permission_code,</if>
+<if test="adminOperationAuditDO.operationCode != null">operation_code,</if>
+<if test="adminOperationAuditDO.operationName != null">operation_name,</if>
+<if test="adminOperationAuditDO.targetModule != null">target_module,</if>
+<if test="adminOperationAuditDO.targetType != null">target_type,</if>
+<if test="adminOperationAuditDO.targetId != null">target_id,</if>
+<if test="adminOperationAuditDO.requestId != null">request_id,</if>
+<if test="adminOperationAuditDO.idempotencyKey != null">idempotency_key,</if>
+<if test="adminOperationAuditDO.operationReason != null">operation_reason,</if>
+<if test="adminOperationAuditDO.beforeSnapshotJson != null">before_snapshot_json,</if>
+<if test="adminOperationAuditDO.afterSnapshotJson != null">after_snapshot_json,</if>
+<if test="adminOperationAuditDO.resultStatus != null">result_status,</if>
+<if test="adminOperationAuditDO.resultMessage != null">result_message,</if>
+<if test="adminOperationAuditDO.clientIp != null">client_ip,</if>
+<if test="adminOperationAuditDO.userAgent != null">user_agent,</if>
+<if test="adminOperationAuditDO.createdAt != null">created_at,</if>
+</trim> VALUES <trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="adminOperationAuditDO.id != null">#{adminOperationAuditDO.id},</if>
+<if test="adminOperationAuditDO.auditNo != null">#{adminOperationAuditDO.auditNo},</if>
+<if test="adminOperationAuditDO.adminUserId != null">#{adminOperationAuditDO.adminUserId},</if>
+<if test="adminOperationAuditDO.adminCaseId != null">#{adminOperationAuditDO.adminCaseId},</if>
+<if test="adminOperationAuditDO.caseActionId != null">#{adminOperationAuditDO.caseActionId},</if>
+<if test="adminOperationAuditDO.permissionCode != null">#{adminOperationAuditDO.permissionCode},</if>
+<if test="adminOperationAuditDO.operationCode != null">#{adminOperationAuditDO.operationCode},</if>
+<if test="adminOperationAuditDO.operationName != null">#{adminOperationAuditDO.operationName},</if>
+<if test="adminOperationAuditDO.targetModule != null">#{adminOperationAuditDO.targetModule},</if>
+<if test="adminOperationAuditDO.targetType != null">#{adminOperationAuditDO.targetType},</if>
+<if test="adminOperationAuditDO.targetId != null">#{adminOperationAuditDO.targetId},</if>
+<if test="adminOperationAuditDO.requestId != null">#{adminOperationAuditDO.requestId},</if>
+<if test="adminOperationAuditDO.idempotencyKey != null">#{adminOperationAuditDO.idempotencyKey},</if>
+<if test="adminOperationAuditDO.operationReason != null">#{adminOperationAuditDO.operationReason},</if>
+<if test="adminOperationAuditDO.beforeSnapshotJson != null">#{adminOperationAuditDO.beforeSnapshotJson},</if>
+<if test="adminOperationAuditDO.afterSnapshotJson != null">#{adminOperationAuditDO.afterSnapshotJson},</if>
+<if test="adminOperationAuditDO.resultStatus != null">#{adminOperationAuditDO.resultStatus},</if>
+<if test="adminOperationAuditDO.resultMessage != null">#{adminOperationAuditDO.resultMessage},</if>
+<if test="adminOperationAuditDO.clientIp != null">#{adminOperationAuditDO.clientIp},</if>
+<if test="adminOperationAuditDO.userAgent != null">#{adminOperationAuditDO.userAgent},</if>
+<if test="adminOperationAuditDO.createdAt != null">#{adminOperationAuditDO.createdAt},</if>
+</trim></insert>
+  
+<select id="selectInvitationRevocationAuditByRequest" resultType="java.lang.String" useCache="false" flushCache="true">
+    SELECT after_snapshot_json FROM admin_operation_audit WHERE admin_user_id=#{actor} AND idempotency_key=#{key} ORDER BY created_at,id
+  </select>
+  
+
+</mapper>

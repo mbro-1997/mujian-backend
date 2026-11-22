@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.prop.mapper.PropQrCodeMapper">
+<sql id="columns_prop_qr_code">id,qr_code_id,code_type,target_type,target_id,sku_id,supersedes_qr_code_id,qr_scene,qr_page,qr_content,resolve_url,qr_image_url,qr_image_storage_key,image_sha256,status,active_sku_guard,active_sn_guard,created_by_admin_user_id,used_by_factory_user_id,used_at,revoked_by_admin_user_id,revoked_at,version,created_at,image_generation_status,image_attempts,image_lease_until,image_next_retry_at,image_error_code,updated_at</sql>
+<sql id="aliased_prop_qr_code">s.id,s.qr_code_id,s.code_type,s.target_type,s.target_id,s.sku_id,s.supersedes_qr_code_id,s.qr_scene,s.qr_page,s.qr_content,s.resolve_url,s.qr_image_url,s.qr_image_storage_key,s.image_sha256,s.status,s.active_sku_guard,s.active_sn_guard,s.created_by_admin_user_id,s.used_by_factory_user_id,s.used_at,s.revoked_by_admin_user_id,s.revoked_at,s.version,s.created_at,s.image_generation_status,s.image_attempts,s.image_lease_until,s.image_next_retry_at,s.image_error_code,s.updated_at</sql>
+<update id="updatePropQrImageLease">
+    UPDATE prop_qr_code SET image_generation_status='generating',image_attempts=image_attempts+1,image_lease_until=#{leaseUntil},image_next_retry_at=NULL,image_error_code=NULL,version=version+1,updated_at=#{now} WHERE id=#{id} AND status='bound' AND version=#{version} AND image_generation_status&lt;&gt;'ready' AND image_attempts&lt;5 AND (image_generation_status&lt;&gt;'generating' OR image_lease_until&lt;=#{now})
+  </update>
+<update id="updatePropQrImageSuccess">
+    UPDATE prop_qr_code SET image_generation_status='ready',qr_image_storage_key=#{storageKey},image_sha256=#{sha256},image_error_code=NULL,image_lease_until=NULL,image_next_retry_at=NULL,version=version+1,updated_at=#{now} WHERE id=#{id} AND status='bound' AND version=#{version} AND image_generation_status='generating' AND image_lease_until&gt;#{now}
+  </update>
+<update id="updatePropQrImageFailure">
+    UPDATE prop_qr_code SET image_generation_status='failed',image_lease_until=NULL,image_next_retry_at=#{nextRetryAt},image_error_code='QR_GENERATION_UNAVAILABLE',version=version+1,updated_at=#{now} WHERE id=#{id} AND status='bound' AND version=#{version} AND image_generation_status='generating'
+  </update>
+<update id="updateExhaustedQrImageLeases">
+    UPDATE prop_qr_code SET image_generation_status='failed',image_lease_until=NULL,image_next_retry_at=NULL,image_error_code='QR_GENERATION_UNAVAILABLE',version=version+1,updated_at=#{now} WHERE status='bound' AND image_generation_status='generating' AND image_attempts&gt;=5 AND image_lease_until&lt;=#{now}
+  </update>
+<select id="selectDueQrImageListByTime" resultType="com.mujian.backend.prop.domain.PropQrCodeDO" useCache="false" flushCache="true">
+    SELECT id FROM prop_qr_code WHERE status='bound' AND image_generation_status&lt;&gt;'ready' AND image_attempts&lt;5 AND (image_next_retry_at IS NULL OR image_next_retry_at&lt;=#{now}) AND (image_generation_status&lt;&gt;'generating' OR image_lease_until&lt;=#{now}) ORDER BY created_at,id LIMIT 5
+  </select>
+<select id="selectPropQrChainListByTargets" resultType="com.mujian.backend.prop.domain.PropQrCodeDO" useCache="false" flushCache="true">
+    
+    SELECT id,qr_code_id,code_type,target_type,target_id,sku_id,supersedes_qr_code_id,qr_scene,qr_page,qr_content,resolve_url,qr_image_url,qr_image_storage_key,image_sha256,status,active_sku_guard,active_sn_guard,created_by_admin_user_id,used_by_factory_user_id,used_at,revoked_by_admin_user_id,revoked_at,version,created_at,image_generation_status,image_attempts,image_lease_until,image_next_retry_at,image_error_code,updated_at FROM prop_qr_code WHERE target_type=#{targetType} AND target_id IN 
+    <foreach collection="targetIds" item="value" open="(" separator="," close=")">#{value}</foreach>
+  </select>
+<select id="selectPropQrCodeListByCode" resultType="com.mujian.backend.prop.domain.PropQrCodeDO" useCache="false" flushCache="true">
+    SELECT id,qr_code_id,code_type,target_type,target_id,sku_id,supersedes_qr_code_id,qr_scene,qr_page,qr_content,resolve_url,qr_image_url,qr_image_storage_key,image_sha256,status,active_sku_guard,active_sn_guard,created_by_admin_user_id,used_by_factory_user_id,used_at,revoked_by_admin_user_id,revoked_at,version,created_at,image_generation_status,image_attempts,image_lease_until,image_next_retry_at,image_error_code,updated_at FROM prop_qr_code WHERE qr_code_id=#{qrCode}
+  </select>
+<select id="selectPropQrCodeListByCodeForUpdate" resultType="com.mujian.backend.prop.domain.PropQrCodeDO" useCache="false" flushCache="true">
+    SELECT id,qr_code_id,code_type,target_type,target_id,sku_id,supersedes_qr_code_id,qr_scene,qr_page,qr_content,resolve_url,qr_image_url,qr_image_storage_key,image_sha256,status,active_sku_guard,active_sn_guard,created_by_admin_user_id,used_by_factory_user_id,used_at,revoked_by_admin_user_id,revoked_at,version,created_at,image_generation_status,image_attempts,image_lease_until,image_next_retry_at,image_error_code,updated_at FROM prop_qr_code WHERE qr_code_id=#{qrCode} FOR UPDATE
+  </select>
+<select id="selectActivePropQrCodeByTargetForUpdate" resultType="com.mujian.backend.prop.domain.PropQrCodeDO" useCache="false" flushCache="true">
+    SELECT id,qr_code_id,code_type,target_type,target_id,sku_id,supersedes_qr_code_id,qr_scene,qr_page,qr_content,resolve_url,qr_image_url,qr_image_storage_key,image_sha256,status,active_sku_guard,active_sn_guard,created_by_admin_user_id,used_by_factory_user_id,used_at,revoked_by_admin_user_id,revoked_at,version,created_at,image_generation_status,image_attempts,image_lease_until,image_next_retry_at,image_error_code,updated_at FROM prop_qr_code WHERE target_type=#{targetType} AND target_id=#{targetId} AND status='bound' FOR UPDATE
+  </select>
+<select id="selectPropQrHistoryCountByTarget" resultType="long" useCache="false" flushCache="true">
+    SELECT COUNT(*) FROM prop_qr_code WHERE target_type=#{targetType} AND target_id=#{targetId}
+  </select>
+<select id="selectPropQrCode" resultType="com.mujian.backend.prop.domain.PropQrCodeDO" useCache="false" flushCache="true">
+    SELECT id,qr_code_id,code_type,target_type,target_id,sku_id,supersedes_qr_code_id,qr_scene,qr_page,qr_content,resolve_url,qr_image_url,qr_image_storage_key,image_sha256,status,active_sku_guard,active_sn_guard,created_by_admin_user_id,used_by_factory_user_id,used_at,revoked_by_admin_user_id,revoked_at,version,created_at,image_generation_status,image_attempts,image_lease_until,image_next_retry_at,image_error_code,updated_at FROM prop_qr_code WHERE id=#{id} <if test="lock">FOR UPDATE</if>
+  </select>
+<insert id="insertPropQrCode">INSERT INTO prop_qr_code
+<trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="row.id != null">id,</if>
+<if test="row.qrCodeId != null">qr_code_id,</if>
+<if test="row.codeType != null">code_type,</if>
+<if test="row.targetType != null">target_type,</if>
+<if test="row.targetId != null">target_id,</if>
+<if test="row.skuId != null">sku_id,</if>
+<if test="row.supersedesQrCodeId != null">supersedes_qr_code_id,</if>
+<if test="row.qrScene != null">qr_scene,</if>
+<if test="row.qrPage != null">qr_page,</if>
+<if test="row.qrContent != null">qr_content,</if>
+<if test="row.resolveUrl != null">resolve_url,</if>
+<if test="row.qrImageUrl != null">qr_image_url,</if>
+<if test="row.qrImageStorageKey != null">qr_image_storage_key,</if>
+<if test="row.imageSha256 != null">image_sha256,</if>
+<if test="row.status != null">status,</if>
+<if test="row.createdByAdminUserId != null">created_by_admin_user_id,</if>
+<if test="row.usedByFactoryUserId != null">used_by_factory_user_id,</if>
+<if test="row.usedAt != null">used_at,</if>
+<if test="row.revokedByAdminUserId != null">revoked_by_admin_user_id,</if>
+<if test="row.revokedAt != null">revoked_at,</if>
+<if test="row.version != null">version,</if>
+<if test="row.createdAt != null">created_at,</if>
+<if test="row.imageGenerationStatus != null">image_generation_status,</if>
+<if test="row.imageAttempts != null">image_attempts,</if>
+<if test="row.imageLeaseUntil != null">image_lease_until,</if>
+<if test="row.imageNextRetryAt != null">image_next_retry_at,</if>
+<if test="row.imageErrorCode != null">image_error_code,</if>
+<if test="row.updatedAt != null">updated_at,</if>
+</trim> VALUES
+<trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="row.id != null">#{row.id},</if>
+<if test="row.qrCodeId != null">#{row.qrCodeId},</if>
+<if test="row.codeType != null">#{row.codeType},</if>
+<if test="row.targetType != null">#{row.targetType},</if>
+<if test="row.targetId != null">#{row.targetId},</if>
+<if test="row.skuId != null">#{row.skuId},</if>
+<if test="row.supersedesQrCodeId != null">#{row.supersedesQrCodeId},</if>
+<if test="row.qrScene != null">#{row.qrScene},</if>
+<if test="row.qrPage != null">#{row.qrPage},</if>
+<if test="row.qrContent != null">#{row.qrContent},</if>
+<if test="row.resolveUrl != null">#{row.resolveUrl},</if>
+<if test="row.qrImageUrl != null">#{row.qrImageUrl},</if>
+<if test="row.qrImageStorageKey != null">#{row.qrImageStorageKey},</if>
+<if test="row.imageSha256 != null">#{row.imageSha256},</if>
+<if test="row.status != null">#{row.status},</if>
+<if test="row.createdByAdminUserId != null">#{row.createdByAdminUserId},</if>
+<if test="row.usedByFactoryUserId != null">#{row.usedByFactoryUserId},</if>
+<if test="row.usedAt != null">#{row.usedAt},</if>
+<if test="row.revokedByAdminUserId != null">#{row.revokedByAdminUserId},</if>
+<if test="row.revokedAt != null">#{row.revokedAt},</if>
+<if test="row.version != null">#{row.version},</if>
+<if test="row.createdAt != null">#{row.createdAt},</if>
+<if test="row.imageGenerationStatus != null">#{row.imageGenerationStatus},</if>
+<if test="row.imageAttempts != null">#{row.imageAttempts},</if>
+<if test="row.imageLeaseUntil != null">#{row.imageLeaseUntil},</if>
+<if test="row.imageNextRetryAt != null">#{row.imageNextRetryAt},</if>
+<if test="row.imageErrorCode != null">#{row.imageErrorCode},</if>
+<if test="row.updatedAt != null">#{row.updatedAt},</if>
+</trim></insert>
+<update id="updatePropQrImageRetry">UPDATE prop_qr_code SET image_generation_status=#{command.imageGenerationStatus},image_attempts=#{command.imageAttempts},image_lease_until=#{command.imageLeaseUntil},image_next_retry_at=#{command.imageNextRetryAt},image_error_code=#{command.imageErrorCode},version=#{command.version},updated_at=#{command.updatedAt} WHERE id=#{command.id}</update>
+<update id="updatePropQrLabelConfirmation">UPDATE prop_qr_code SET used_by_factory_user_id=#{command.usedByFactoryUserId},used_at=#{command.usedAt},version=#{command.version},updated_at=#{command.updatedAt} WHERE id=#{command.id}</update>
+<update id="updatePropQrRevocation">UPDATE prop_qr_code SET status=#{command.status},revoked_by_admin_user_id=#{command.revokedByAdminUserId},revoked_at=#{command.revokedAt},version=#{command.version},image_lease_until=#{command.imageLeaseUntil},updated_at=#{command.updatedAt} WHERE id=#{command.id}</update>
+<select id="selectPropQrCodeListByIds" resultType="com.mujian.backend.prop.domain.PropQrCodeDO" useCache="false" flushCache="true">
+ SELECT <include refid="columns_prop_qr_code"/> FROM prop_qr_code WHERE id IN
+ <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+</select>
+</mapper>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.delivery.mapper.OverdueFeeMapper">
+  <select id="selectFeeFactsByOrder" resultType="com.mujian.backend.delivery.mapper.OverdueFeeMapper$Facts" flushCache="true" useCache="false">
+    SELECT o.id orderId,COALESCE(f.due_date,o.current_due_date) dueDate,o.deposit_paid_amount_fen deposit,l.service_mode mode,
+      COALESCE(rc.confirmed_at,ob.dispatch_at,ob.outbound_at) earliest,
+      (s.shipment_status='sent' OR k.id IS NOT NULL) IS TRUE AS `returning`,
+      (o.order_status IN ('completed','cancelled','user_cancelled') OR k.closed_at IS NOT NULL) AS closed,
+      IF(l.service_mode='factory_pickup',
+         COALESCE(l.dispatched_at,IF(s.operator_role='factory' AND s.shipment_status='sent',s.sent_at,NULL)),NULL) dispatch,
+      IF(k.check_start_source IN ('factory_scan','admin_confirm'),k.check_start_at,NULL) arrival,
+      IF(s.operator_role='buyer' AND s.tracking_no IS NOT NULL,'carrier',NULL) legacyMethod,
+      IF(s.operator_role='buyer' AND s.shipment_status='sent',s.sent_at,NULL) legacyAt,COALESCE(s.remark,s.tracking_no) legacyBasis,
+      f.id feeId,f.fee_status status,COALESCE(f.version,0) version,COALESCE(f.handover_method,f.reported_method) method,
+      COALESCE(f.handover_at,f.reported_at) handoverAt,f.reported_basis basis,COALESCE(f.disputed,0) disputed,
+      f.excluded_ms excludedMs,f.item_snapshot snapshot,f.rent_fen rent,f.liability_fen liability,
+      f.rent_offset_fen rentOffset,f.liability_offset_fen liabilityOffset,f.review_basis reviewBasis,c.id receivableId,
+      COALESCE(a.rent_allocated_amount_fen,0) rentPaid,COALESCE(a.compensation_allocated_amount_fen,0) liabilityPaid
+    FROM rental_order o JOIN order_transport_leg l ON l.rental_order_id=o.id AND l.leg_type='return'
+    LEFT JOIN order_receipt_check rc ON rc.rental_order_id=o.id
+    LEFT JOIN order_outbound_record ob ON ob.rental_order_id=o.id
+    LEFT JOIN order_return_shipment s ON s.rental_order_id=o.id
+    LEFT JOIN order_return_check k ON k.rental_order_id=o.id
+    LEFT JOIN rental_overdue_fee f ON f.rental_order_id=o.id
+    LEFT JOIN order_compensation_receivable c ON c.source_type='overdue_return' AND c.source_id=f.id
+    LEFT JOIN payment_allocation a ON a.payment_order_id=c.current_payment_order_id AND a.rental_order_id=o.id
+    WHERE o.id=#{orderId}
+  </select>
+  <select id="selectPriceLinesByOrder" resultType="com.mujian.backend.delivery.mapper.OverdueFeeMapper$Line">
+    SELECT id itemId,quantity,daily_rent_price_fen dailyRentFen FROM rental_order_item WHERE rental_order_id=#{orderId} ORDER BY id
+  </select>
+  <insert id="insertFeeSource">INSERT INTO rental_overdue_fee(id,rental_order_id,due_date,fee_status,version,created_at,updated_at)
+    VALUES(#{id},#{orderId},#{dueDate},#{status},0,#{now},#{now})</insert>
+  <update id="recordReportedHandover">UPDATE rental_overdue_fee SET reported_method=#{method},reported_at=#{handoverAt},reported_basis=#{basis},
+    reported_by=#{actor},disputed=#{disputed},fee_status='pending_review',version=version+1,updated_at=#{now}
+    WHERE rental_order_id=#{orderId} AND fee_status='awaiting_handover'</update>
+  <update id="confirmFeeAssessment">UPDATE rental_overdue_fee SET handover_method=#{method},handover_at=#{handoverAt},excluded_ms=#{excludedMs},
+    charge_days=#{days},item_snapshot=#{snapshot},rent_fen=#{rent},liability_fen=#{liability},rent_offset_fen=#{rentOffset},
+    liability_offset_fen=#{liabilityOffset},review_basis=#{basis},reviewed_by=#{actor},unreported_buyer_fault=#{fault},effective_at=#{now},
+    fee_status='effective',version=version+1,updated_at=#{now} WHERE rental_order_id=#{orderId} AND version=#{version} AND fee_status!='effective'</update>
+  <insert id="insertDepositOffset">INSERT INTO order_deduction(id,rental_order_id,deduction_type,fund_component,deduction_status,amount_fen,
+    source_type,source_id,reason,evidence_summary,created_by,confirmed_at,created_at,updated_at)
+    VALUES(#{id},#{orderId},'overdue','deposit','confirmed',#{amount},#{kind},#{source},LEFT(#{basis},255),#{basis},#{actor},#{now},#{now},#{now})</insert>
+  <insert id="insertGapReceivable">INSERT INTO order_compensation_receivable(id,receivable_no,rental_order_id,buyer_user_id,factory_id,source_type,source_id,
+    confirmed_loss_amount_fen,available_deposit_amount_fen,deposit_deducted_amount_fen,receivable_amount_fen,paid_amount_fen,waived_amount_fen,
+    receivable_status,effective_at,version,created_at,updated_at)
+    SELECT #{id},CONCAT('RC',#{id}),o.id,o.buyer_user_id,o.factory_id,'overdue_return',f.id,f.liability_fen,#{available},f.liability_offset_fen,
+      f.rent_fen-f.rent_offset_fen+f.liability_fen-f.liability_offset_fen,0,0,'pending',#{now},0,#{now},#{now}
+    FROM rental_order o JOIN rental_overdue_fee f ON f.rental_order_id=o.id WHERE o.id=#{orderId}</insert>
+</mapper>

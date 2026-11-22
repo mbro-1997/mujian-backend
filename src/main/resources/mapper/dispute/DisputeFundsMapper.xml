@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.dispute.mapper.DisputeFundsMapper">
+  <select id="selectAvailableOrderFundsBySubject" resultType="int">SELECT GREATEST(0,IF(#{subject}='deposit',o.deposit_paid_amount_fen,o.rent_paid_amount_fen)
+    -COALESCE((SELECT SUM(IF(#{subject}='deposit',r.deposit_refund_amount_fen,r.rent_refund_amount_fen)) FROM refund_order r WHERE r.rental_order_id=o.id AND r.refund_status!='cancelled'),0)
+    -COALESCE((SELECT SUM(d.amount_fen) FROM order_deduction d WHERE d.rental_order_id=o.id AND d.fund_component=#{subject} AND d.deduction_status IN ('pending','confirmed')),0))
+    FROM rental_order o WHERE o.id=#{order}</select>
+  <insert id="insertOrderDeduction">INSERT INTO order_deduction(id,rental_order_id,deduction_type,fund_component,deduction_status,amount_fen,source_type,source_id,
+    reason,evidence_summary,created_by,confirmed_at,created_at,updated_at) VALUES(#{id},#{order},#{type},#{subject},'confirmed',#{amount},#{type},#{source},
+    LEFT(#{reason},255),#{reason},#{actor},#{at},#{at},#{at})</insert>
+  <insert id="insertOrderCompensationReceivable">INSERT INTO order_compensation_receivable(id,receivable_no,rental_order_id,buyer_user_id,factory_id,source_type,source_id,
+    confirmed_loss_amount_fen,available_deposit_amount_fen,deposit_deducted_amount_fen,receivable_amount_fen,paid_amount_fen,waived_amount_fen,receivable_status,
+    effective_at,version,created_at,updated_at) SELECT #{id},CONCAT('RC',#{id}),id,buyer_user_id,factory_id,#{type},#{source},#{loss},#{available},#{deduction},
+     #{loss}-#{deduction},0,0,'pending',#{at},0,#{at},#{at} FROM rental_order WHERE id=#{order}</insert>
+  <update id="updateRentalOrderTotals">UPDATE rental_order o JOIN (SELECT COALESCE(SUM(IF(fund_component='deposit',amount_fen,0)),0) deposit,
+    COALESCE(SUM(IF(fund_component='rent',amount_fen,0)),0) rent,COALESCE(SUM(amount_fen),0) total FROM order_deduction WHERE rental_order_id=#{order}
+    AND deduction_status='confirmed') d SET o.deposit_deducted_amount_fen=d.deposit,o.rent_deducted_amount_fen=d.rent,o.total_deducted_amount_fen=d.total,
+    o.deposit_status=IF(d.deposit=0,o.deposit_status,IF(d.deposit+o.deposit_refunded_amount_fen=o.deposit_paid_amount_fen,'settled','partially_deducted')),
+    o.version=o.version+1,o.updated_at=#{at} WHERE id=#{order}</update>
+</mapper>

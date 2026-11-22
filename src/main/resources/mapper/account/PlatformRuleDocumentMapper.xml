@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.account.mapper.PlatformRuleDocumentMapper">
+<select id="selectRequiredSupplierRulesForShare" resultType="com.mujian.backend.factory.projection.FactoryRuleProjection" useCache="false" flushCache="true">
+    
+    SELECT id,rule_code,rule_title,rule_version,content_hash,effective_at,content_text,rule_status FROM platform_rule_document WHERE rule_scope='supplier' AND rule_code IN 
+    <foreach collection="codes" item="value" open="(" separator="," close=")">#{value}</foreach>
+     AND rule_status='active' AND is_required=1 ORDER BY rule_code FOR SHARE
+  
+  </select>
+  
+<select id="selectSupplierRuleById" resultType="com.mujian.backend.factory.projection.FactoryRuleProjection" useCache="false" flushCache="true">
+    
+    SELECT id,rule_code,rule_title,rule_version,content_hash,effective_at,content_text,rule_status FROM platform_rule_document WHERE id=#{id} AND rule_code IN 
+    <foreach collection="codes" item="value" open="(" separator="," close=")">#{value}</foreach>
+     AND rule_status IN ('active','archived') AND effective_at&lt;=#{now}
+  
+  </select>
+  
+<select id="selectAcceptedRulesByIds" resultType="com.mujian.backend.factory.projection.FactoryRuleProjection" useCache="false" flushCache="true">
+    SELECT id,rule_version,content_hash FROM platform_rule_document WHERE id IN 
+    <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+     ORDER BY id
+  </select>
+  
+<select id="selectActiveTradeRules" resultType="com.mujian.backend.account.projection.TradeRuleProjection">
+ SELECT id,rule_code,rule_version,content_hash FROM platform_rule_document
+ WHERE rule_status='active' AND effective_at&lt;=#{now} AND rule_code IN
+ <foreach collection="codes" item="code" open="(" separator="," close=")">#{code}</foreach> ORDER BY rule_code
+</select>
+</mapper>

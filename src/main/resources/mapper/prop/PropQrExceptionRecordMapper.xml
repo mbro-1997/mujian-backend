@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.prop.mapper.PropQrExceptionRecordMapper">
+<sql id="columns_prop_qr_exception_record">id,exception_no,factory_id,sku_id,sn_id,original_qr_code_id,reported_by_user_id,exception_type,description,evidence_urls_json,exception_status,active_original_qr_guard,resolution_type,replacement_qr_code_id,resolved_by_admin_user_id,resolution_reason,resolved_at,version,created_at,request_id,request_hash,updated_at</sql>
+<sql id="aliased_prop_qr_exception_record">s.id,s.exception_no,s.factory_id,s.sku_id,s.sn_id,s.original_qr_code_id,s.reported_by_user_id,s.exception_type,s.description,s.evidence_urls_json,s.exception_status,s.active_original_qr_guard,s.resolution_type,s.replacement_qr_code_id,s.resolved_by_admin_user_id,s.resolution_reason,s.resolved_at,s.version,s.created_at,s.request_id,s.request_hash,s.updated_at</sql>
+<select id="selectPendingQrExceptionListByQrId" resultType="com.mujian.backend.prop.domain.PropQrExceptionRecordDO" useCache="false" flushCache="true">
+    SELECT id,exception_no,factory_id,sku_id,sn_id,original_qr_code_id,reported_by_user_id,exception_type,description,evidence_urls_json,exception_status,active_original_qr_guard,resolution_type,replacement_qr_code_id,resolved_by_admin_user_id,resolution_reason,resolved_at,version,created_at,request_id,request_hash,updated_at FROM prop_qr_exception_record WHERE original_qr_code_id=#{qrId} AND exception_status='reported'
+  </select>
+<select id="selectPropQrExceptionRecordListByActorAndRequest" resultType="com.mujian.backend.prop.domain.PropQrExceptionRecordDO" useCache="false" flushCache="true">SELECT <include refid="columns_prop_qr_exception_record"/> FROM prop_qr_exception_record WHERE reported_by_user_id=#{actorId} AND request_id=#{requestId}</select>
+<select id="selectUnlinkedPendingPropQrExceptionRecordList" resultType="com.mujian.backend.prop.domain.PropQrExceptionRecordDO" useCache="false" flushCache="true">SELECT s.id FROM prop_qr_exception_record s WHERE s.exception_status='reported' AND NOT EXISTS (SELECT 1 FROM admin_case_relation c WHERE c.relation_type='prop_qr_exception_record' AND c.relation_id=s.id AND c.is_primary=1 AND c.relation_role='source') ORDER BY s.created_at,s.id LIMIT 100</select>
+<sql id="exceptionDisplayColumns">e.id, e.created_at, e.description, e.evidence_urls_json, e.exception_no, e.exception_status, e.exception_type, e.factory_id, e.original_qr_code_id, e.replacement_qr_code_id, e.reported_by_user_id, e.resolution_reason, e.resolution_type, e.resolved_at, e.resolved_by_admin_user_id, e.sku_id, e.sn_id, e.version</sql>
+<sql id="exceptionFrom"> FROM prop_qr_exception_record e JOIN factory_profile f ON f.id=e.factory_id JOIN prop_sku s ON s.id=e.sku_id JOIN prop_qr_code q ON q.id=e.original_qr_code_id LEFT JOIN prop_sn_instance sn ON sn.id=e.sn_id </sql>
+<sql id="exceptionWhere">
+     WHERE 1=1
+    <if test="qrExceptionQueryDTO.factoryId != null"> AND e.factory_id=#{qrExceptionQueryDTO.factoryId}</if>
+    <if test="qrExceptionQueryDTO.exceptionType != null"> AND e.exception_type=#{qrExceptionQueryDTO.exceptionType}</if>
+    <if test="qrExceptionQueryDTO.factoryKeyword != null"> AND LOCATE(#{qrExceptionQueryDTO.factoryKeyword},f.factory_name)&gt;0</if>
+    <if test="qrExceptionQueryDTO.keyword != null"> AND (LOCATE(#{qrExceptionQueryDTO.keyword},CONVERT(e.exception_no USING utf8mb4) COLLATE utf8mb4_bin)&gt;0 OR LOCATE(#{qrExceptionQueryDTO.keyword},CONVERT(q.qr_code_id USING utf8mb4) COLLATE utf8mb4_bin)&gt;0 OR LOCATE(#{qrExceptionQueryDTO.keyword},CONVERT(s.sku_code USING utf8mb4) COLLATE utf8mb4_bin)&gt;0 OR LOCATE(#{qrExceptionQueryDTO.keyword},CONVERT(sn.sn_code USING utf8mb4) COLLATE utf8mb4_bin)&gt;0)</if>
+  </sql>
+<select id="selectQrExceptionDetailById" resultType="com.mujian.backend.prop.projection.PropQrExceptionProjection" useCache="false" flushCache="true">
+    SELECT <include refid="exceptionDisplayColumns"/>,f.factory_name,s.sku_code,s.prop_name,q.qr_code_id,sn.sn_code
+    <include refid="exceptionFrom"/>
+     WHERE e.id=#{id}
+  </select>
+<select id="selectQrExceptionStatsByQuery" resultType="com.mujian.backend.prop.projection.PropQrExceptionStatsProjection" useCache="false" flushCache="true">
+    SELECT COALESCE(SUM(e.exception_status='reported'),0) reported,COALESCE(SUM(e.exception_status='reported' AND e.exception_type='suspected_leak'),0) suspected_leak,COALESCE(SUM(e.exception_status='resolved' AND e.resolved_at&gt;=#{qrExceptionQueryDTO.today} AND e.resolved_at&lt;#{qrExceptionQueryDTO.tomorrow}),0) resolved_today,COALESCE(SUM(e.exception_status='cancelled' AND e.resolved_at&gt;=#{qrExceptionQueryDTO.today} AND e.resolved_at&lt;#{qrExceptionQueryDTO.tomorrow}),0) cancelled_today
+    <include refid="exceptionFrom"/>
+    <include refid="exceptionWhere"/>
+  </select>
+<select id="selectQrExceptionCountByQuery" resultType="long" useCache="false" flushCache="true">
+    SELECT COUNT(*)
+    <include refid="exceptionFrom"/>
+    <include refid="exceptionWhere"/>
+    <if test="qrExceptionQueryDTO.status != null"> AND e.exception_status=#{qrExceptionQueryDTO.status}</if>
+  </select>
+<select id="selectQrExceptionPageByQuery" resultType="com.mujian.backend.prop.projection.PropQrExceptionProjection" useCache="false" flushCache="true">
+    SELECT <include refid="exceptionDisplayColumns"/>,f.factory_name,s.sku_code,s.prop_name,q.qr_code_id,sn.sn_code
+    <include refid="exceptionFrom"/>
+    <include refid="exceptionWhere"/>
+    <if test="qrExceptionQueryDTO.status != null"> AND e.exception_status=#{qrExceptionQueryDTO.status}</if>
+     ORDER BY e.created_at DESC,e.id DESC LIMIT #{qrExceptionQueryDTO.limit} OFFSET #{qrExceptionQueryDTO.offset}
+  </select>
+<select id="selectPropQrExceptionRecord" resultType="com.mujian.backend.prop.domain.PropQrExceptionRecordDO" useCache="false" flushCache="true">
+    SELECT id,exception_no,factory_id,sku_id,sn_id,original_qr_code_id,reported_by_user_id,exception_type,description,evidence_urls_json,exception_status,active_original_qr_guard,resolution_type,replacement_qr_code_id,resolved_by_admin_user_id,resolution_reason,resolved_at,version,created_at,request_id,request_hash,updated_at FROM prop_qr_exception_record WHERE id=#{id} <if test="lock">FOR UPDATE</if>
+  </select>
+<insert id="insertPropQrExceptionRecord">INSERT INTO prop_qr_exception_record
+<trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="row.id != null">id,</if>
+<if test="row.exceptionNo != null">exception_no,</if>
+<if test="row.factoryId != null">factory_id,</if>
+<if test="row.skuId != null">sku_id,</if>
+<if test="row.snId != null">sn_id,</if>
+<if test="row.originalQrCodeId != null">original_qr_code_id,</if>
+<if test="row.reportedByUserId != null">reported_by_user_id,</if>
+<if test="row.exceptionType != null">exception_type,</if>
+<if test="row.description != null">description,</if>
+<if test="row.evidenceUrlsJson != null">evidence_urls_json,</if>
+<if test="row.exceptionStatus != null">exception_status,</if>
+<if test="row.resolutionType != null">resolution_type,</if>
+<if test="row.replacementQrCodeId != null">replacement_qr_code_id,</if>
+<if test="row.resolvedByAdminUserId != null">resolved_by_admin_user_id,</if>
+<if test="row.resolutionReason != null">resolution_reason,</if>
+<if test="row.resolvedAt != null">resolved_at,</if>
+<if test="row.version != null">version,</if>
+<if test="row.createdAt != null">created_at,</if>
+<if test="row.requestId != null">request_id,</if>
+<if test="row.requestHash != null">request_hash,</if>
+<if test="row.updatedAt != null">updated_at,</if>
+</trim> VALUES
+<trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="row.id != null">#{row.id},</if>
+<if test="row.exceptionNo != null">#{row.exceptionNo},</if>
+<if test="row.factoryId != null">#{row.factoryId},</if>
+<if test="row.skuId != null">#{row.skuId},</if>
+<if test="row.snId != null">#{row.snId},</if>
+<if test="row.originalQrCodeId != null">#{row.originalQrCodeId},</if>
+<if test="row.reportedByUserId != null">#{row.reportedByUserId},</if>
+<if test="row.exceptionType != null">#{row.exceptionType},</if>
+<if test="row.description != null">#{row.description},</if>
+<if test="row.evidenceUrlsJson != null">#{row.evidenceUrlsJson},</if>
+<if test="row.exceptionStatus != null">#{row.exceptionStatus},</if>
+<if test="row.resolutionType != null">#{row.resolutionType},</if>
+<if test="row.replacementQrCodeId != null">#{row.replacementQrCodeId},</if>
+<if test="row.resolvedByAdminUserId != null">#{row.resolvedByAdminUserId},</if>
+<if test="row.resolutionReason != null">#{row.resolutionReason},</if>
+<if test="row.resolvedAt != null">#{row.resolvedAt},</if>
+<if test="row.version != null">#{row.version},</if>
+<if test="row.createdAt != null">#{row.createdAt},</if>
+<if test="row.requestId != null">#{row.requestId},</if>
+<if test="row.requestHash != null">#{row.requestHash},</if>
+<if test="row.updatedAt != null">#{row.updatedAt},</if>
+</trim></insert>
+<update id="updateQrExceptionResolution">UPDATE prop_qr_exception_record SET exception_status=#{command.exceptionStatus},resolved_by_admin_user_id=#{command.resolvedByAdminUserId},resolution_type=#{command.resolutionType},resolution_reason=#{command.resolutionReason},resolved_at=#{command.resolvedAt},version=#{command.version},updated_at=#{command.updatedAt} WHERE id=#{command.id}</update>
+</mapper>

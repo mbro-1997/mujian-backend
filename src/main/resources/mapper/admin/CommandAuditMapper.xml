@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC '-//mybatis.org//DTD Mapper 3.0//EN' 'https://mybatis.org/dtd/mybatis-3-mapper.dtd'>
+<mapper namespace="com.mujian.backend.admin.mapper.CommandAuditMapper">
+  <select id="selectReceipt" resultType="com.mujian.backend.admin.mapper.CommandAuditMapper$Replay">
+    SELECT after_snapshot_json-&gt;&gt;'$.requestDigest' AS digest,after_snapshot_json-&gt;'$.result' AS result_json
+    FROM admin_operation_audit WHERE admin_user_id=#{actor} AND operation_code=#{operation} AND idempotency_key=#{key}
+      AND result_status='success'
+  </select>
+  <insert id="insertReceipt">
+    INSERT INTO admin_operation_audit(id,audit_no,admin_user_id,permission_code,operation_code,operation_name,target_module,target_type,
+      target_id,request_id,idempotency_key,operation_reason,before_snapshot_json,after_snapshot_json,result_status,created_at)
+    VALUES(#{id},#{id},#{actor},#{permission},#{operation},#{label},#{module},#{targetType},#{targetId},#{trace},#{key},#{reason},CAST(#{before} AS JSON),
+      JSON_OBJECT('requestDigest',#{digest},'result',CAST(#{result} AS JSON)),'success',#{at})
+  </insert>
+</mapper>

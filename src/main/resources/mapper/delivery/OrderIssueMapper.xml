@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.delivery.mapper.OrderIssueMapper">
+  <select id="selectOrderItems" resultType="com.mujian.backend.delivery.mapper.OrderIssueMapper$ItemSource">
+    SELECT id,sku_id,quantity FROM rental_order_item WHERE rental_order_id=#{orderId} ORDER BY id
+  </select>
+  <insert id="insertIssue">
+    INSERT INTO order_issue_report(id,issue_no,submit_idempotency_key,rental_order_id,receipt_check_id,reporter_user_id,
+      reporter_role,issue_scene,primary_issue_type,issue_summary,fulfillment_effect,issue_status,reported_at,version,created_at,updated_at)
+    VALUES(#{issueId},CONCAT('ISS',#{issueId}),CONCAT(#{actor},':',#{key}),#{orderId},#{checkId},#{actor},'buyer',
+      #{input.scene},#{input.primaryIssueType},#{input.summary},#{input.effect.code},'submitted',#{at},0,#{at},#{at})
+  </insert>
+  <insert id="insertIssueItem">
+    INSERT INTO order_issue_item(id,issue_report_id,rental_order_id,rental_order_item_id,sku_id,issue_type,affected_quantity,item_summary,created_at)
+    VALUES(#{id},#{issueId},#{orderId},#{item.itemId},#{skuId},#{item.issueType},#{item.quantity},#{item.description},#{at})
+  </insert>
+  <select id="selectOwnedEvidenceIds" resultType="string">
+    SELECT id FROM order_evidence_record WHERE rental_order_id=#{orderId} AND uploaded_by_user_id=#{actor}
+      AND evidence_node=#{node} AND evidence_type='photo' AND draft_removed_at IS NULL AND id IN
+      <foreach collection="ids" item="id" open="(" close=")" separator=",">#{id}</foreach>
+  </select>
+  <update id="bindIssueEvidence">
+    UPDATE order_evidence_record SET issue_report_id=#{issueId} WHERE id=#{id} AND rental_order_id=#{orderId} AND issue_report_id IS NULL
+  </update>
+  <update id="reportReceiptIssue">
+    UPDATE order_receipt_check SET
+    <if test="pause">
+      remaining_check_ms=COALESCE(remaining_check_ms,GREATEST(0,TIMESTAMPDIFF(MICROSECOND,GREATEST(start_at,#{at}),deadline_at) DIV 1000),43200000),
+      check_status='problem_reported',deadline_at=NULL,
+    </if>
+    version=version+1,updated_at=#{at} WHERE id=#{checkId} AND version=#{version} AND check_status IN ('pending','problem_reported')
+  </update>
+  <update id="synchronizeReceiptDeadline">
+    UPDATE rental_order_delivery d JOIN order_receipt_check c ON c.rental_order_id=d.rental_order_id
+    SET d.receipt_check_deadline_at=c.deadline_at,d.updated_at=#{at} WHERE d.rental_order_id=#{orderId}
+  </update>
+  <update id="advanceOrderVersion">UPDATE rental_order SET version=version+1,updated_at=#{at} WHERE id=#{orderId} AND version=#{version}</update>
+  <select id="selectFrozenReceipts" resultType="string">
+    SELECT rental_order_id FROM order_receipt_check WHERE check_status='problem_reported' AND remaining_check_ms IS NOT NULL
+      AND rental_order_id &gt; #{afterId} ORDER BY rental_order_id LIMIT 100
+  </select>
+  <update id="resumeReceipt">
+    UPDATE order_receipt_check SET deadline_at=TIMESTAMPADD(MICROSECOND,remaining_check_ms*1000,GREATEST(start_at,#{at})),
+      check_status='pending',remaining_check_ms=NULL,version=version+1,updated_at=#{at}
+    WHERE rental_order_id=#{orderId} AND check_status='problem_reported' AND remaining_check_ms IS NOT NULL AND start_at IS NOT NULL
+  </update>
+</mapper>

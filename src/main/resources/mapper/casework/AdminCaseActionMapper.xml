@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.casework.mapper.AdminCaseActionMapper">
+<insert id="insertAdminCaseAction">INSERT INTO admin_case_action
+<trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="adminCaseActionDO.id != null">id,</if>
+<if test="adminCaseActionDO.actionNo != null">action_no,</if>
+<if test="adminCaseActionDO.adminCaseId != null">admin_case_id,</if>
+<if test="adminCaseActionDO.parentActionId != null">parent_action_id,</if>
+<if test="adminCaseActionDO.stepNo != null">step_no,</if>
+<if test="adminCaseActionDO.actionType != null">action_type,</if>
+<if test="adminCaseActionDO.actionStatus != null">action_status,</if>
+<if test="adminCaseActionDO.targetModule != null">target_module,</if>
+<if test="adminCaseActionDO.targetType != null">target_type,</if>
+<if test="adminCaseActionDO.targetId != null">target_id,</if>
+<if test="adminCaseActionDO.requestPayloadJson != null">request_payload_json,</if>
+<if test="adminCaseActionDO.plannedRentRefundAmountFen != null">planned_rent_refund_amount_fen,</if>
+<if test="adminCaseActionDO.plannedDepositRefundAmountFen != null">planned_deposit_refund_amount_fen,</if>
+<if test="adminCaseActionDO.plannedFreightRefundAmountFen != null">planned_freight_refund_amount_fen,</if>
+<if test="adminCaseActionDO.resultPayloadJson != null">result_payload_json,</if>
+<if test="adminCaseActionDO.failureCode != null">failure_code,</if>
+<if test="adminCaseActionDO.failureMessage != null">failure_message,</if>
+<if test="adminCaseActionDO.idempotencyKey != null">idempotency_key,</if>
+<if test="adminCaseActionDO.operatorAdminUserId != null">operator_admin_user_id,</if>
+<if test="adminCaseActionDO.operationReason != null">operation_reason,</if>
+<if test="adminCaseActionDO.confirmationSnapshotJson != null">confirmation_snapshot_json,</if>
+<if test="adminCaseActionDO.operatorConfirmedAt != null">operator_confirmed_at,</if>
+<if test="adminCaseActionDO.executedAt != null">executed_at,</if>
+<if test="adminCaseActionDO.createdAt != null">created_at,</if>
+<if test="adminCaseActionDO.updatedAt != null">updated_at,</if>
+</trim> VALUES <trim prefix="(" suffix=")" suffixOverrides=",">
+<if test="adminCaseActionDO.id != null">#{adminCaseActionDO.id},</if>
+<if test="adminCaseActionDO.actionNo != null">#{adminCaseActionDO.actionNo},</if>
+<if test="adminCaseActionDO.adminCaseId != null">#{adminCaseActionDO.adminCaseId},</if>
+<if test="adminCaseActionDO.parentActionId != null">#{adminCaseActionDO.parentActionId},</if>
+<if test="adminCaseActionDO.stepNo != null">#{adminCaseActionDO.stepNo},</if>
+<if test="adminCaseActionDO.actionType != null">#{adminCaseActionDO.actionType},</if>
+<if test="adminCaseActionDO.actionStatus != null">#{adminCaseActionDO.actionStatus},</if>
+<if test="adminCaseActionDO.targetModule != null">#{adminCaseActionDO.targetModule},</if>
+<if test="adminCaseActionDO.targetType != null">#{adminCaseActionDO.targetType},</if>
+<if test="adminCaseActionDO.targetId != null">#{adminCaseActionDO.targetId},</if>
+<if test="adminCaseActionDO.requestPayloadJson != null">#{adminCaseActionDO.requestPayloadJson},</if>
+<if test="adminCaseActionDO.plannedRentRefundAmountFen != null">#{adminCaseActionDO.plannedRentRefundAmountFen},</if>
+<if test="adminCaseActionDO.plannedDepositRefundAmountFen != null">#{adminCaseActionDO.plannedDepositRefundAmountFen},</if>
+<if test="adminCaseActionDO.plannedFreightRefundAmountFen != null">#{adminCaseActionDO.plannedFreightRefundAmountFen},</if>
+<if test="adminCaseActionDO.resultPayloadJson != null">#{adminCaseActionDO.resultPayloadJson},</if>
+<if test="adminCaseActionDO.failureCode != null">#{adminCaseActionDO.failureCode},</if>
+<if test="adminCaseActionDO.failureMessage != null">#{adminCaseActionDO.failureMessage},</if>
+<if test="adminCaseActionDO.idempotencyKey != null">#{adminCaseActionDO.idempotencyKey},</if>
+<if test="adminCaseActionDO.operatorAdminUserId != null">#{adminCaseActionDO.operatorAdminUserId},</if>
+<if test="adminCaseActionDO.operationReason != null">#{adminCaseActionDO.operationReason},</if>
+<if test="adminCaseActionDO.confirmationSnapshotJson != null">#{adminCaseActionDO.confirmationSnapshotJson},</if>
+<if test="adminCaseActionDO.operatorConfirmedAt != null">#{adminCaseActionDO.operatorConfirmedAt},</if>
+<if test="adminCaseActionDO.executedAt != null">#{adminCaseActionDO.executedAt},</if>
+<if test="adminCaseActionDO.createdAt != null">#{adminCaseActionDO.createdAt},</if>
+<if test="adminCaseActionDO.updatedAt != null">#{adminCaseActionDO.updatedAt},</if>
+</trim></insert>
+  
+<select id="selectAdminCaseActionsByIdempotencyKey" resultType="com.mujian.backend.casework.domain.AdminCaseActionDO" useCache="false" flushCache="true">SELECT id,operator_admin_user_id,target_id,request_payload_json,result_payload_json,operation_reason FROM admin_case_action WHERE idempotency_key=#{key}</select>
+  
+<select id="selectLatestSucceededActionRemark" resultType="string" useCache="false" flushCache="true">SELECT operation_reason FROM admin_case_action WHERE target_id=#{source} AND action_status='succeeded' ORDER BY created_at DESC,id DESC LIMIT 1</select>
+  
+  <select id="selectReturnSteps" resultType="int">SELECT step_no FROM admin_case_action WHERE parent_action_id=#{parent} AND action_status='succeeded' ORDER BY step_no</select>
+  <select id="selectReturnParent" resultType="string">SELECT id FROM admin_case_action WHERE admin_case_id=#{caseId} AND parent_action_id IS NULL AND action_type='close_return_check' AND target_id=#{checkId} AND action_status='succeeded'</select>
+</mapper>

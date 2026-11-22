@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.delivery.mapper.HandoverMapper">
+  <select id="countOutboundPhotos" resultType="int">
+    SELECT COUNT(*) FROM order_evidence_record WHERE rental_order_id=#{orderId} AND evidence_node='outbound'
+    AND evidence_type='photo' AND uploaded_role='factory' AND draft_removed_at IS NULL
+    AND file_storage_key IS NOT NULL AND upload_receipt_id IS NOT NULL
+  </select>
+  <select id="hasIncompleteOutbound" resultType="boolean">
+    SELECT EXISTS(SELECT 1 FROM rental_order_item i LEFT JOIN order_outbound_item_check c
+      ON c.rental_order_id=i.rental_order_id AND c.rental_order_item_id=i.id
+      WHERE i.rental_order_id=#{orderId} AND (c.id IS NULL OR c.expected_quantity&lt;&gt;i.quantity OR c.checked_quantity&lt;&gt;i.quantity
+        OR (i.asset_type_snapshot='A_ASSET' AND i.quantity&lt;&gt;(SELECT COUNT(*) FROM order_outbound_scan_record s
+          WHERE s.outbound_record_id=c.outbound_record_id AND s.rental_order_item_id=i.id))))
+  </select>
+  <update id="completeOutbound">UPDATE order_outbound_record SET outbound_status='completed',outbound_photo_count=#{photos},operator_user_id=#{actor},
+    outbound_at=#{at},dispatch_at=#{at},updated_at=#{at},version=version+1 WHERE id=#{id} AND version=#{version} AND outbound_status='pending'</update>
+  <update id="changeOrderState">UPDATE rental_order SET order_status=#{after},version=version+1,updated_at=#{at} WHERE id=#{orderId} AND order_status=#{before}</update>
+  <update id="dispatchLeg">UPDATE order_transport_leg SET leg_status='dispatched',dispatched_at=#{at},updated_at=#{at},version=version+1
+    WHERE id=#{id} AND rental_order_id=#{orderId} AND leg_status='ready'</update>
+  <update id="completeLeg">UPDATE order_transport_leg SET leg_status='completed',completed_at=#{at},updated_at=#{at},version=version+1
+    WHERE id=#{id} AND rental_order_id=#{orderId} AND leg_status='dispatched'</update>
+  <update id="dispatchDelivery">UPDATE rental_order_delivery SET delivery_status=IF(#{receipt.startAt}&lt;=#{at},'receipt_checking','dispatched'),factory_dispatch_at=#{at},
+    receipt_check_start_at=#{receipt.startAt},receipt_check_deadline_at=#{receipt.deadlineAt},updated_at=#{at}
+    WHERE rental_order_id=#{receipt.rentalOrderId} AND delivery_status='pending_outbound'</update>
+  <insert id="insertReceipt">INSERT INTO order_receipt_check(id,rental_order_id,outbound_transport_leg_id,buyer_user_id,check_status,start_at,deadline_at,version,created_at,updated_at)
+    VALUES(#{receipt.id},#{receipt.rentalOrderId},#{receipt.outboundTransportLegId},#{receipt.buyerUserId},#{receipt.checkStatus},#{receipt.startAt},#{receipt.deadlineAt},0,#{receipt.createdAt},#{receipt.updatedAt})</insert>
+  <update id="confirmReceipt">UPDATE order_receipt_check SET check_status=#{status},confirmed_at=#{at},updated_at=#{at},version=version+1
+    WHERE id=#{id} AND version=#{version} AND check_status='pending'</update>
+  <update id="receiveDelivery">UPDATE rental_order_delivery SET delivery_status='received_confirmed',updated_at=#{at}
+    WHERE rental_order_id=#{orderId} AND delivery_status IN ('dispatched','receipt_checking')</update>
+  <select id="selectDueReceipts" resultType="string">SELECT rental_order_id FROM order_receipt_check WHERE check_status='pending' AND deadline_at&lt;=#{at}
+    AND rental_order_id&gt;#{afterId} ORDER BY rental_order_id LIMIT 100</select>
+  <select id="eventId" resultType="string">SELECT id FROM order_fulfillment_event WHERE rental_order_id=#{orderId} AND event_idempotency_key=#{key}</select>
+  <insert id="insertEvent">INSERT INTO order_fulfillment_event(id,event_idempotency_key,rental_order_id,transport_leg_id,source_type,source_id,event_type,event_time,
+    operator_user_id,operator_role,event_payload_json,created_at) VALUES(#{event.id},#{event.key},#{event.orderId},#{event.legId},#{event.sourceType},#{event.sourceId},
+    #{event.type},#{event.time},#{event.actor},#{event.role},JSON_OBJECT('summary',#{event.summary}),#{event.time})</insert>
+  <resultMap id="Event" type="com.mujian.backend.delivery.vo.FulfillmentViews$Event"><constructor>
+    <arg column="id" javaType="java.lang.String"/><arg column="rental_order_id" javaType="java.lang.String"/><arg column="event_type" javaType="java.lang.String"/>
+    <arg column="event_time" javaType="java.time.LocalDateTime"/><arg column="operator_role" javaType="java.lang.String"/><arg column="source_type" javaType="java.lang.String"/>
+    <arg column="source_id" javaType="java.lang.String"/><arg column="summary" javaType="java.lang.String"/></constructor></resultMap>
+  <select id="selectEvents" resultMap="Event">SELECT id,rental_order_id,event_type,event_time,operator_role,source_type,source_id,event_payload_json-&gt;&gt;'$.summary' summary
+    FROM order_fulfillment_event WHERE rental_order_id=#{orderId} ORDER BY event_time DESC,id DESC LIMIT #{query.pageSize} OFFSET #{query.offset}</select>
+  <select id="countEvents" resultType="long">SELECT COUNT(*) FROM order_fulfillment_event WHERE rental_order_id=#{orderId}</select>
+</mapper>

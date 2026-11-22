@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.factory.mapper.FactoryProfileChangeAuditMapper">
+<insert id="insertFactoryProfileChange">INSERT INTO factory_profile_change_audit (id,application_no,submit_request_id,request_hash,factory_id,applicant_user_id,change_payload_json,audit_status,version,submitted_at,created_at,updated_at) VALUES (#{factoryProfileChangeAuditDO.id},#{factoryProfileChangeAuditDO.applicationNo},#{factoryProfileChangeAuditDO.submitRequestId},#{factoryProfileChangeAuditDO.requestHash},#{factoryProfileChangeAuditDO.factoryId},#{factoryProfileChangeAuditDO.applicantUserId},#{factoryProfileChangeAuditDO.changePayloadJson},#{factoryProfileChangeAuditDO.auditStatus},#{factoryProfileChangeAuditDO.version},#{factoryProfileChangeAuditDO.submittedAt},#{factoryProfileChangeAuditDO.createdAt},#{factoryProfileChangeAuditDO.updatedAt})</insert>
+  
+<update id="reviewFactoryProfileChange">UPDATE factory_profile_change_audit SET audit_status=#{factoryProfileChangeAuditDO.auditStatus},reviewed_by_admin_user_id=#{factoryProfileChangeAuditDO.reviewedByAdminUserId},reviewed_at=#{factoryProfileChangeAuditDO.reviewedAt},reject_reason=#{factoryProfileChangeAuditDO.rejectReason},version=#{factoryProfileChangeAuditDO.version},updated_at=#{factoryProfileChangeAuditDO.updatedAt} WHERE id=#{factoryProfileChangeAuditDO.id}</update>
+
+</mapper>

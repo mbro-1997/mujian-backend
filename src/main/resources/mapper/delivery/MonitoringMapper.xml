@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.delivery.mapper.MonitoringMapper">
+  <resultMap id="warning" type="com.mujian.backend.delivery.vo.MonitoringViews$Warning"><constructor>
+    <idArg column="id" javaType="string"/><arg column="order_id" javaType="string"/><arg column="order_no" javaType="string"/>
+    <arg column="factory_id" javaType="string"/><arg column="factory_name" javaType="string"/><arg column="check_status" javaType="string"/>
+    <arg column="check_start_at" javaType="java.time.LocalDateTime"/><arg column="warning_at" javaType="java.time.LocalDateTime"/><arg column="auto_close_at" javaType="java.time.LocalDateTime"/>
+    <arg column="claim_created" javaType="_boolean"/><arg column="deposit_paid_amount_fen" javaType="_int"/>
+  </constructor></resultMap>
+  <resultMap id="risk" type="com.mujian.backend.delivery.vo.MonitoringViews$Risk"><constructor>
+    <idArg column="id" javaType="string"/><arg column="source_rental_order_id" javaType="string"/><arg column="affected_rental_order_id" javaType="string"/>
+    <arg column="sku_id" javaType="string"/><arg column="sn_id" javaType="string"/><arg column="risk_status" javaType="string"/><arg column="created_at" javaType="java.time.LocalDateTime"/>
+    <arg column="case_id" javaType="string"/><arg column="case_version" javaType="java.lang.Integer"/>
+  </constructor></resultMap>
+  <sql id="warningWhere">
+    FROM order_return_check c JOIN rental_order o ON o.id=c.rental_order_id
+    <where>
+      <if test="warnings.status!=null">AND c.check_status=#{warnings.status}</if>
+      <if test="warnings.factoryId!=null">AND c.factory_id=#{warnings.factoryId}</if>
+      <if test="warnings.keyword!=null">AND (LOCATE(#{warnings.keyword},o.order_no)&gt;0 OR EXISTS(SELECT 1 FROM rental_order_item i
+        WHERE i.rental_order_id=o.id AND LOCATE(#{warnings.keyword},i.prop_name_snapshot)&gt;0))</if>
+      <if test="warnings.fromDate!=null">AND c.auto_close_at&gt;=#{warnings.fromDate} AND c.auto_close_at&lt;DATE_ADD(#{warnings.toDate},INTERVAL 1 DAY)</if>
+    </where>
+  </sql>
+  <select id="selectMonitoringWarnings" resultMap="warning">SELECT c.id,o.id order_id,o.order_no,c.factory_id,
+    (SELECT MIN(s.factory_name_snapshot) FROM checkout_batch_item_snapshot s WHERE s.checkout_batch_id=o.checkout_batch_id AND s.factory_id=o.factory_id) factory_name,
+    c.check_status,c.check_start_at,c.warning_at,c.auto_close_at,c.claim_created,o.deposit_paid_amount_fen
+    <include refid="warningWhere"/> ORDER BY c.warning_at,c.id LIMIT #{warnings.page.pageSize} OFFSET #{warnings.page.offset}
+  </select>
+  <select id="countWarnings" resultType="long">SELECT COUNT(*) <include refid="warningWhere"/></select>
+  <sql id="riskColumns">r.id,r.source_rental_order_id,r.affected_rental_order_id,r.sku_id,r.sn_id,r.risk_status,r.created_at,c.id case_id,c.version case_version</sql>
+  <sql id="riskSource">FROM order_fulfillment_risk r
+    LEFT JOIN admin_case_relation rel ON rel.relation_type='fulfillment_risk' AND rel.relation_id=r.id AND rel.is_primary=1
+    LEFT JOIN admin_case c ON c.id=rel.admin_case_id AND c.case_type='fulfillment_risk'
+  </sql>
+  <select id="selectRiskOrder" resultType="com.mujian.backend.delivery.mapper.MonitoringMapper$RiskOrder">
+    SELECT o.current_due_date, o.deposit_paid_amount_fen paid_deposit_fen, r.resolved_at
+    FROM order_fulfillment_risk r JOIN rental_order o ON o.id=r.source_rental_order_id WHERE r.id=#{riskId}
+  </select>
+  <select id="selectRiskById" resultMap="risk">SELECT <include refid="riskColumns"/> <include refid="riskSource"/> WHERE r.id=#{id}</select>
+  <sql id="riskWhere">
+    <where>
+      <if test="risks.status!=null">AND risk_status=#{risks.status}</if>
+      <if test="risks.sourceOrderId!=null">AND source_rental_order_id=#{risks.sourceOrderId}</if>
+      <if test="risks.affectedOrderId!=null">AND affected_rental_order_id=#{risks.affectedOrderId}</if>
+    </where>
+  </sql>
+  <select id="selectMonitoringRisks" resultMap="risk">SELECT <include refid="riskColumns"/> <include refid="riskSource"/>
+    <include refid="riskWhere"/> ORDER BY r.created_at DESC,r.id DESC LIMIT #{risks.page.pageSize} OFFSET #{risks.page.offset}
+  </select>
+  <select id="countRisks" resultType="long">SELECT COUNT(*) FROM order_fulfillment_risk <include refid="riskWhere"/></select>
+</mapper>

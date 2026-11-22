@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.dispute.mapper.ReceivableMapper">
+  <sql id="projection">SELECT c.id,c.rental_order_id order_id,o.order_no,c.factory_id,c.buyer_user_id buyer_id,c.version,c.created_at,c.receivable_no,
+    c.source_type,c.source_id,c.receivable_status status,c.confirmed_loss_amount_fen confirmed_loss_fen,c.deposit_deducted_amount_fen deposit_deducted_fen,
+    c.receivable_amount_fen receivable_fen,c.paid_amount_fen paid_fen,c.waived_amount_fen waived_fen,c.current_payment_order_id payment_id,
+    (SELECT MIN(s.factory_name_snapshot) FROM checkout_batch_item_snapshot s WHERE s.checkout_batch_id=o.checkout_batch_id AND s.factory_id=o.factory_id) factory_name,
+    f.rent_fen-f.rent_offset_fen overdueRentDueFen,f.liability_fen-f.liability_offset_fen overdueLiabilityDueFen,
+    IF(f.id IS NULL,NULL,COALESCE(a.rent_allocated_amount_fen,0)) overdueRentPaidFen,
+    IF(f.id IS NULL,NULL,COALESCE(a.compensation_allocated_amount_fen,0)) overdueLiabilityPaidFen
+    FROM order_compensation_receivable c JOIN rental_order o ON o.id=c.rental_order_id
+    LEFT JOIN rental_overdue_fee f ON c.source_type='overdue_return' AND f.id=c.source_id
+    LEFT JOIN payment_allocation a ON a.payment_order_id=c.current_payment_order_id AND a.rental_order_id=o.id</sql>
+  <sql id="filter"><where><if test="claimFilter.orderId!=null">AND c.rental_order_id=#{claimFilter.orderId}</if><if test="claimFilter.buyerId!=null">AND c.buyer_user_id=#{claimFilter.buyerId}</if>
+    <if test="claimFilter.factoryId!=null">AND c.factory_id=#{claimFilter.factoryId}</if><if test="claimFilter.status!=null">AND c.receivable_status=#{claimFilter.status}</if></where></sql>
+  <select id="selectReceivableById" resultType="com.mujian.backend.dispute.mapper.ReceivableMapper$Row" flushCache="true" useCache="false"><include refid="projection"/> WHERE c.id=#{id}</select>
+  <select id="selectReceivablePageByQuery" resultType="com.mujian.backend.dispute.mapper.ReceivableMapper$Row"><include refid="projection"/><include refid="filter"/> ORDER BY c.created_at DESC,c.id DESC LIMIT #{pageQuery.pageSize} OFFSET #{pageQuery.offset}</select>
+  <select id="selectOrderCompensationReceivableCountByQuery" resultType="long">SELECT COUNT(*) FROM order_compensation_receivable c <include refid="filter"/></select>
+  <select id="selectReceivableIdByPaymentId" resultType="string">SELECT related_compensation_receivable_id FROM payment_order WHERE id=#{payment} AND payment_scene='compensation_supplement'</select>
+  <insert id="createPayment">INSERT INTO payment_order(id,payment_no,request_idempotency_key,payment_scene,related_compensation_receivable_id,buyer_user_id,pay_channel,
+    channel_order_mode,channel_app_id,channel_mch_id,channel_notify_url,channel_combine_out_trade_no,payer_openid,payment_status,payable_amount_fen,
+    paid_amount_fen,refunded_amount_fen,expire_at,next_attempt_at,created_at,updated_at)
+    SELECT #{payment},#{payment},#{key},'compensation_supplement',c.id,c.buyer_user_id,'wechat_pay','combine_jsapi',p.channel_app_id,p.channel_mch_id,
+      p.channel_notify_url,#{payment},p.payer_openid,'pending',c.receivable_amount_fen-c.paid_amount_fen-c.waived_amount_fen,0,0,
+      DATE_ADD(#{at},INTERVAL 10 MINUTE),#{at},#{at},#{at} FROM order_compensation_receivable c JOIN rental_order o ON o.id=c.rental_order_id
+      JOIN payment_order p ON p.checkout_batch_id=o.checkout_batch_id WHERE c.id=#{id} AND c.receivable_status='pending'</insert>
+  <insert id="createSub">INSERT INTO payment_channel_suborder(id,payment_order_id,factory_id,factory_wechat_account_id,sub_mchid_snapshot,channel_sub_order_no,
+    rental_order_id,channel_suborder_amount_fen,channel_suborder_status,channel_description,profit_sharing_flag,payment_status,paid_amount_fen,refunded_amount_fen,
+    freeze_alert_status,created_at,updated_at)
+    SELECT #{sub},#{payment},c.factory_id,s.factory_wechat_account_id,s.sub_mchid_snapshot,#{sub},c.rental_order_id,c.receivable_amount_fen-c.paid_amount_fen-c.waived_amount_fen,
+      'pending',IF(c.source_type='overdue_return','归还费用补缴','订单赔付补缴'),1,'pending',0,0,'none',#{at},#{at} FROM order_compensation_receivable c JOIN payment_channel_suborder s ON s.rental_order_id=c.rental_order_id
+      JOIN payment_order p ON p.id=s.payment_order_id AND p.payment_scene='initial_order' WHERE c.id=#{id}</insert>
+  <update id="updateOrderCompensationReceivableActivate">UPDATE order_compensation_receivable SET current_payment_order_id=#{payment},receivable_status='paying',version=version+1,updated_at=#{at} WHERE id=#{id}</update>
+  <update id="updateOrderCompensationReceivableClosed">UPDATE order_compensation_receivable SET receivable_status='pending',version=version+1,updated_at=#{at}
+    WHERE id=#{id} AND current_payment_order_id=#{paymentId} AND receivable_status='paying'</update>
+  <insert id="insertPaymentAllocation">INSERT INTO payment_allocation(id,payment_order_id,payment_channel_suborder_id,rental_order_id,rent_allocated_amount_fen,coupon_discount_allocated_fen,
+     deposit_allocated_amount_fen,service_fee_allocated_fen,freight_prepaid_allocated_fen,compensation_allocated_amount_fen,custom_goods_allocated_amount_fen,total_allocated_amount_fen,created_at)
+    SELECT #{id},s.payment_order_id,s.id,s.rental_order_id,COALESCE(f.rent_fen-f.rent_offset_fen,0),0,0,0,0,
+      IF(f.id IS NULL,s.paid_amount_fen,f.liability_fen-f.liability_offset_fen),0,s.paid_amount_fen,#{at}
+    FROM payment_channel_suborder s JOIN payment_order p ON p.id=s.payment_order_id
+    JOIN order_compensation_receivable c ON c.id=p.related_compensation_receivable_id
+    LEFT JOIN rental_overdue_fee f ON c.source_type='overdue_return' AND f.id=c.source_id
+    WHERE s.id=#{sub} AND s.payment_status='success' AND NOT EXISTS(SELECT 1 FROM payment_allocation a WHERE a.payment_channel_suborder_id=s.id)</insert>
+  <update id="updateOrderCompensationReceivablePaid">UPDATE order_compensation_receivable SET paid_amount_fen=paid_amount_fen+#{amount},receivable_status='paid',paid_at=#{paidAt},updated_at=#{at},version=version+1
+    WHERE id=#{id} AND current_payment_order_id=#{paymentId} AND receivable_status IN ('pending','paying') AND receivable_amount_fen-paid_amount_fen-waived_amount_fen=#{amount}</update>
+  <update id="incrementOrderPaidAmount">UPDATE rental_order SET total_paid_amount_fen=total_paid_amount_fen+#{amount},version=version+1,updated_at=#{at} WHERE id=#{order}</update>
+</mapper>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.payment.mapper.NormalFundsMapper">
+  <resultMap id="Allocation" type="com.mujian.backend.payment.mapper.NormalFundsMapper$Allocation"><constructor>
+    <arg column="id" javaType="java.lang.String"/><arg column="payment_order_id" javaType="java.lang.String"/><arg column="payment_channel_suborder_id" javaType="java.lang.String"/>
+    <arg column="rent" javaType="_int"/><arg column="deposit" javaType="_int"/><arg column="freight" javaType="_int"/><arg column="other" javaType="_int"/><arg column="total" javaType="_int"/>
+  </constructor></resultMap>
+  <select id="selectAllocations" resultMap="Allocation">SELECT id,payment_order_id,payment_channel_suborder_id,rent_allocated_amount_fen rent,deposit_allocated_amount_fen deposit,
+    freight_prepaid_allocated_fen freight,total_allocated_amount_fen total,service_fee_allocated_fen+compensation_allocated_amount_fen+custom_goods_allocated_amount_fen other
+    FROM payment_allocation WHERE rental_order_id=#{orderId} AND payment_order_id IN (SELECT id FROM payment_order WHERE payment_scene='initial_order') ORDER BY payment_channel_suborder_id</select>
+  <update id="settleNoPool">UPDATE rental_order_freight_account f SET f.freight_status='settled',f.settled_at=#{at},f.updated_at=#{at},f.version=f.version+1
+    WHERE f.rental_order_id=#{orderId} AND f.initial_prepaid_amount_fen=0 AND f.online_settle_amount_fen=0 AND f.refunded_amount_fen=0 AND f.freight_status='prepaid'
+    AND 2=(SELECT COUNT(*) FROM order_transport_leg l WHERE l.rental_order_id=f.rental_order_id AND l.charge_mode IN ('none','cod'))</update>
+  <update id="updateDepositResponsibility">UPDATE rental_order SET deposit_status=CASE WHEN deposit_paid_amount_fen=0 THEN 'settled'
+    WHEN deposit_paid_amount_fen=deposit_refunded_amount_fen THEN 'refunded'
+    WHEN deposit_deducted_amount_fen+deposit_refunded_amount_fen=deposit_paid_amount_fen THEN 'settled' ELSE 'refunding' END,updated_at=#{at},version=version+1 WHERE id=#{orderId}</update>
+  <update id="tryComplete">UPDATE rental_order o JOIN order_return_check c ON c.rental_order_id=o.id JOIN rental_order_freight_account f ON f.rental_order_id=o.id
+    SET o.order_status='completed',o.version=o.version+1,o.updated_at=#{at} WHERE o.id=#{orderId} AND o.order_status='return_checking'
+    AND ((c.check_status IN ('no_issue','admin_closed','auto_closed') AND c.claim_created=0) OR (c.check_status='claim_submitted' AND c.claim_created=1 AND EXISTS(SELECT 1 FROM order_claim cl WHERE cl.return_check_id=c.id AND cl.claim_status='closed'))) AND c.closed_at IS NOT NULL
+    AND f.freight_status='settled' AND f.initial_prepaid_amount_fen=f.online_settle_amount_fen+f.refunded_amount_fen
+    AND o.deposit_refunded_amount_fen+o.deposit_deducted_amount_fen=o.deposit_paid_amount_fen
+    AND EXISTS(SELECT 1 FROM order_fulfillment_event e WHERE e.rental_order_id=o.id AND e.event_idempotency_key=CONCAT('return:',c.id,':complete'))
+    AND EXISTS(SELECT 1 FROM payment_allocation a WHERE a.rental_order_id=o.id)
+    AND EXISTS(SELECT 1 FROM <include refid="com.mujian.backend.prop.mapper.InventoryReservationMapper.all_reservations"/> r WHERE r.rental_order_id=o.id AND r.reservation_status='completed')
+    AND NOT EXISTS(SELECT 1 FROM inventory_reservation r WHERE r.rental_order_id=o.id AND r.reservation_status IN ('held','paid_locked','renting','overdue_holding','disputed_holding'))
+    AND NOT EXISTS(SELECT 1 FROM refund_order r WHERE r.rental_order_id=o.id AND r.refund_status NOT IN ('success','cancelled'))</update>
+  <sql id="missingClosingFacts">
+    NOT EXISTS(SELECT 1 FROM order_fulfillment_event e WHERE e.rental_order_id=o.id AND e.event_idempotency_key=CONCAT('return:',c.id,':complete'))
+    OR NOT EXISTS(SELECT 1 FROM order_fulfillment_event e WHERE e.rental_order_id=o.id AND e.event_idempotency_key=CONCAT('return:',c.id,':closed'))
+    OR EXISTS(SELECT 1 FROM inventory_reservation r WHERE r.rental_order_id=o.id AND r.reservation_status IN ('renting','overdue_holding'))
+    OR EXISTS(SELECT 1 FROM order_transport_leg l WHERE l.rental_order_id=o.id AND l.leg_type='return' AND l.leg_status&lt;&gt;'completed')
+    OR o.deposit_paid_amount_fen-o.deposit_deducted_amount_fen&gt;(SELECT COALESCE(SUM(r.deposit_refund_amount_fen),0) FROM refund_order r WHERE r.rental_order_id=o.id AND r.refund_status&lt;&gt;'cancelled')
+    OR (c.check_status IN ('admin_closed','auto_closed') AND NOT EXISTS(SELECT 1 FROM admin_case k JOIN admin_case_action parent ON parent.admin_case_id=k.id AND parent.parent_action_id IS NULL AND parent.target_id=c.id
+      WHERE k.rental_order_id=o.id AND k.case_status='closed' AND (SELECT COUNT(*) FROM admin_case_action child WHERE child.parent_action_id=parent.id AND child.step_no BETWEEN 1 AND 4)=4))
+  </sql>
+  <select id="requiresClosureRepair" resultType="boolean">SELECT EXISTS(SELECT 1 FROM rental_order o JOIN order_return_check c ON c.rental_order_id=o.id WHERE o.id=#{orderId} AND c.closed_at IS NOT NULL AND (<include refid="missingClosingFacts"/>))</select>
+  <select id="selectCompletionCandidates" resultType="string">SELECT o.id FROM rental_order o JOIN order_return_check c ON c.rental_order_id=o.id
+    WHERE ((c.check_status='claim_submitted' AND c.claim_created=1 AND EXISTS(SELECT 1 FROM order_claim cl WHERE cl.return_check_id=c.id AND cl.claim_status='closed')) AND o.order_status='return_checking' OR c.check_status IN ('no_issue','admin_closed','auto_closed') AND c.claim_created=0) AND c.closed_at IS NOT NULL AND (o.order_status='return_checking' OR (o.order_status='completed' AND (<include refid="missingClosingFacts"/>))) AND o.id&gt;#{afterId} ORDER BY o.id LIMIT 100</select>
+</mapper>

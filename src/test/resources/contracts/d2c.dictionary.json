@@ -1,0 +1,4615 @@
+{
+  "status": "SPECIFIED_NOT_EXECUTED",
+  "tables": [
+    {
+      "name": "prop_sku",
+      "source": "v2.0数据库设计/02-道具库存租期模型-数据库设计.md",
+      "sourceHeading": "### 3.1 `prop_sku`：道具 SKU / 品类主表",
+      "fields": [
+        {
+          "field": "id",
+          "chinese": "SKU ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "主键",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "factory_id",
+          "chinese": "所属工厂 ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "对应工厂业务主体，而不是某个工厂用户账号",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "factory_profile",
+            "id"
+          ]
+        },
+        {
+          "field": "sku_code",
+          "chinese": "SKU 编码",
+          "type": "VARCHAR(64)",
+          "required": "否",
+          "description": "可由系统生成；若 v2.0 暂不展示，可作为后台编号",
+          "storageType": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "prop_name",
+          "chinese": "道具名称",
+          "type": "VARCHAR(128)",
+          "required": "是",
+          "description": "用户端展示名称",
+          "storageType": "VARCHAR(128)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "asset_type",
+          "chinese": "资产类型",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "A_ASSET` A 类资产型；`B_CONSUMABLE` B 类消耗型",
+          "storageType": "VARCHAR(32)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "image_url",
+          "chinese": "主图 URL",
+          "type": "VARCHAR(512)",
+          "required": "是",
+          "description": "保存第一张图片的稳定对象键；完整图片列表见 `prop_image`，与第一项同事务更新",
+          "storageType": "VARCHAR(512)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "type_code",
+          "chinese": "类别编码",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "单选一级类别；中文见字典组 `prop_sku-type",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "size_desc",
+          "chinese": "尺寸描述",
+          "type": "VARCHAR(128)",
+          "required": "是",
+          "description": "表单必填",
+          "storageType": "VARCHAR(128)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "length_cm",
+          "chinese": "长，单位 cm",
+          "type": "DECIMAL(10,2)",
+          "required": "是",
+          "description": "表单必填",
+          "storageType": "DECIMAL(10,2)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "width_cm",
+          "chinese": "宽，单位 cm",
+          "type": "DECIMAL(10,2)",
+          "required": "是",
+          "description": "表单必填",
+          "storageType": "DECIMAL(10,2)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "height_cm",
+          "chinese": "高，单位 cm",
+          "type": "DECIMAL(10,2)",
+          "required": "是",
+          "description": "表单必填",
+          "storageType": "DECIMAL(10,2)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "material_desc",
+          "chinese": "材质",
+          "type": "VARCHAR(128)",
+          "required": "是",
+          "description": "表单必填",
+          "storageType": "VARCHAR(128)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "fire_resistant_code",
+          "chinese": "是否阻燃编码",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "下拉选项：是、否、可喷阻燃液",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "weight_kg",
+          "chinese": "重量，单位 kg",
+          "type": "DECIMAL(10,2)",
+          "required": "是",
+          "description": "表单必填",
+          "storageType": "DECIMAL(10,2)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "transport_suggestion",
+          "chinese": "运输建议",
+          "type": "VARCHAR(255)",
+          "required": "是",
+          "description": "表单必填",
+          "storageType": "VARCHAR(255)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "daily_rent_price_fen",
+          "chinese": "日租金，单位分",
+          "type": "INT",
+          "required": "是",
+          "description": "金额统一存分",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "deposit_amount_fen",
+          "chinese": "押金，单位分",
+          "type": "INT",
+          "required": "是",
+          "description": "上架时由工厂填写，平台审核",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "sku_status",
+          "chinese": "SKU 状态",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "见状态字典",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "fill_status",
+          "chinese": "资料填充状态",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "见状态字典",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "remark",
+          "chinese": "备注",
+          "type": "VARCHAR(255)",
+          "required": "否",
+          "description": "内部备注",
+          "storageType": "VARCHAR(255)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "created_at",
+          "chinese": "创建时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "version",
+          "chinese": "当前资料版本",
+          "type": "INT",
+          "required": "是",
+          "description": "默认0；免审编辑、SKU审核生效均+1；与审核记录version分别校验",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": "0",
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "updated_at",
+          "chinese": "更新时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "code",
+          [
+            "sku_code"
+          ]
+        ],
+        [
+          "K",
+          "owner",
+          [
+            "factory_id",
+            "sku_status",
+            "updated_at",
+            "id"
+          ]
+        ],
+        [
+          "K",
+          "browse",
+          [
+            "sku_status",
+            "type_code",
+            "created_at",
+            "id"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "factory_id": [
+          "factory_profile",
+          "id"
+        ]
+      },
+      "checks": [
+        "daily_rent_price_fen>0 AND deposit_amount_fen>=0",
+        "length_cm>0 AND width_cm>0 AND height_cm>0 AND weight_kg>0",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`factory_id` IS NULL OR REGEXP_LIKE(`factory_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`asset_type` IS NULL OR `asset_type` IN ('A_ASSET','B_CONSUMABLE')",
+        "`sku_status` IS NULL OR `sku_status` IN ('draft','offline','online','disabled')",
+        "`fill_status` IS NULL OR `fill_status` IN ('pending_fill','filled')",
+        "`version`>=0"
+      ]
+    },
+    {
+      "name": "prop_image",
+      "source": "v2.0数据库设计/02-道具库存租期模型-数据库设计.md",
+      "sourceHeading": "### 3.2 `prop_image`：道具图片表",
+      "fields": [
+        {
+          "field": "id",
+          "chinese": "图片 ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "主键",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "sku_id",
+          "chinese": "SKU ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "对应 `prop_sku.id`；从现有 `prop_id` 改名",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_sku",
+            "id"
+          ]
+        },
+        {
+          "field": "image_url",
+          "chinese": "图片 URL",
+          "type": "VARCHAR(512)",
+          "required": "是",
+          "description": "保存私有COS稳定对象键（沿B的_url兼容命名），不保存签名URL；DTO再生成短期URL",
+          "storageType": "VARCHAR(512)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "sort_order",
+          "chinese": "排序",
+          "type": "INT",
+          "required": "是",
+          "description": "最多 4 张，按排序展示",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "created_at",
+          "chinese": "创建时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "position",
+          [
+            "sku_id",
+            "sort_order"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "sku_id": [
+          "prop_sku",
+          "id"
+        ]
+      },
+      "checks": [
+        "sort_order BETWEEN 0 AND 3",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`sku_id` IS NULL OR REGEXP_LIKE(`sku_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')"
+      ]
+    },
+    {
+      "name": "prop_sku_audit",
+      "source": "v2.0数据库设计/02-道具库存租期模型-数据库设计.md",
+      "sourceHeading": "### 3.3 `prop_sku_audit`：SKU 审核申请表",
+      "fields": [
+        {
+          "field": "id",
+          "chinese": "审核 ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "主键",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "sku_id",
+          "chinese": "SKU ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "对应 `prop_sku.id",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_sku",
+            "id"
+          ]
+        },
+        {
+          "field": "applicant_user_id",
+          "chinese": "申请人用户 ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "通常是工厂用户",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "sys_user",
+            "id"
+          ]
+        },
+        {
+          "field": "action_type",
+          "chinese": "申请动作",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "见申请动作字典",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "before_sku_status",
+          "chinese": "申请前 SKU 状态",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "状态快照",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "target_sku_status",
+          "chinese": "审核通过后的目标 SKU 状态",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "例如下架申请通过后变 `offline` 已下架",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "before_snapshot_json",
+          "chinese": "提交前 SKU 快照",
+          "type": "JSON",
+          "required": "否",
+          "description": "新建可为空；变更审核必填，供对比和追溯",
+          "storageType": "JSON",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "proposed_snapshot_json",
+          "chinese": "拟生效 SKU 快照",
+          "type": "JSON",
+          "required": "是",
+          "description": "管理员实际审核的不可变提交快照",
+          "storageType": "JSON",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "initial_sn_quantity",
+          "chinese": "A 类初始实物件数",
+          "type": "INT",
+          "required": "否",
+          "description": "仅 `create + A_ASSET` 使用，审核通过后生成 SN",
+          "storageType": "INT",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "initial_stock_quantity",
+          "chinese": "B 类初始库存数量",
+          "type": "INT",
+          "required": "否",
+          "description": "仅 `create + B_CONSUMABLE` 使用，审核通过后生成数量库存",
+          "storageType": "INT",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "audit_status",
+          "chinese": "审核状态",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "见审核状态字典",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "pending_sku_guard",
+          "chinese": "待审核 SKU 唯一守卫",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "生成列；仅 `pending` 时取 `sku_id",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": "CASE WHEN audit_status='pending' THEN sku_id ELSE NULL END",
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "apply_remark",
+          "chinese": "申请说明",
+          "type": "VARCHAR(255)",
+          "required": "否",
+          "description": "工厂提交说明",
+          "storageType": "VARCHAR(255)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "audit_remark",
+          "chinese": "审核备注",
+          "type": "VARCHAR(255)",
+          "required": "否",
+          "description": "管理员审核说明",
+          "storageType": "VARCHAR(255)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "reject_reason",
+          "chinese": "驳回原因",
+          "type": "VARCHAR(255)",
+          "required": "否",
+          "description": "审核驳回时填写",
+          "storageType": "VARCHAR(255)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "reviewer_id",
+          "chinese": "审核管理员 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "sys_user",
+            "id"
+          ]
+        },
+        {
+          "field": "submitted_at",
+          "chinese": "提交时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "reviewed_at",
+          "chinese": "审核时间",
+          "type": "DATETIME(3)",
+          "required": "否",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "version",
+          "chinese": "乐观锁版本",
+          "type": "INT",
+          "required": "是",
+          "description": "默认 0，审核并发条件更新",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": "0",
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "created_at",
+          "chinese": "创建时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "request_id",
+          "chinese": "提交请求编号",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "客户端UUIDv4；申请人+请求编号唯一",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "request_hash",
+          "chinese": "提交摘要",
+          "type": "VARCHAR(64)",
+          "required": "是",
+          "description": "规范化请求SHA256",
+          "storageType": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "previous_audit_id",
+          "chinese": "上一驳回或撤回申请",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "同SKU、同申请人，重新提交新记录，历史不可覆盖",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_sku_audit",
+            "id"
+          ]
+        },
+        {
+          "field": "base_sku_version",
+          "chinese": "提交时SKU资料版本",
+          "type": "INT",
+          "required": "是",
+          "description": "创建为0，状态申请取当前SKU版本",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": "0",
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "updated_at",
+          "chinese": "更新时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "request",
+          [
+            "applicant_user_id",
+            "request_id"
+          ]
+        ],
+        [
+          "U",
+          "pending",
+          [
+            "pending_sku_guard"
+          ]
+        ],
+        [
+          "K",
+          "queue",
+          [
+            "audit_status",
+            "submitted_at",
+            "id"
+          ]
+        ],
+        [
+          "K",
+          "history",
+          [
+            "sku_id",
+            "submitted_at",
+            "id"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "sku_id": [
+          "prop_sku",
+          "id"
+        ],
+        "applicant_user_id": [
+          "sys_user",
+          "id"
+        ],
+        "reviewer_id": [
+          "sys_user",
+          "id"
+        ],
+        "previous_audit_id": [
+          "prop_sku_audit",
+          "id"
+        ]
+      },
+      "checks": [
+        "(action_type='create' AND ((initial_sn_quantity>0 AND initial_stock_quantity IS NULL) OR (initial_stock_quantity>0 AND initial_sn_quantity IS NULL))) OR (action_type<>'create' AND initial_sn_quantity IS NULL AND initial_stock_quantity IS NULL)",
+        "JSON_TYPE(proposed_snapshot_json)='OBJECT' AND JSON_CONTAINS_PATH(proposed_snapshot_json,'all','$.schema_version','$.fields','$.asset_type')=1",
+        "(audit_status='pending' AND reviewed_at IS NULL AND reviewer_id IS NULL AND version=0) OR (audit_status<>'pending' AND reviewed_at IS NOT NULL AND reviewer_id IS NOT NULL AND version>=1)",
+        "(audit_status='rejected' AND reject_reason IS NOT NULL AND CHAR_LENGTH(TRIM(reject_reason))>0) OR (audit_status<>'rejected' AND reject_reason IS NULL)",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`sku_id` IS NULL OR REGEXP_LIKE(`sku_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`applicant_user_id` IS NULL OR REGEXP_LIKE(`applicant_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`action_type` IS NULL OR `action_type` IN ('create','update','up','down','disable','restore')",
+        "`before_sku_status` IS NULL OR `before_sku_status` IN ('draft','offline','online','disabled')",
+        "`target_sku_status` IS NULL OR `target_sku_status` IN ('draft','offline','online','disabled')",
+        "`audit_status` IS NULL OR `audit_status` IN ('pending','approved','rejected','cancelled')",
+        "`pending_sku_guard` IS NULL OR REGEXP_LIKE(`pending_sku_guard`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`reviewer_id` IS NULL OR REGEXP_LIKE(`reviewer_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`version`>=0",
+        "`request_id` IS NULL OR REGEXP_LIKE(`request_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "request_hash IS NULL OR REGEXP_LIKE(request_hash,'^[0-9a-f]{64}$','c')",
+        "`previous_audit_id` IS NULL OR REGEXP_LIKE(`previous_audit_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`base_sku_version`>=0"
+      ]
+    },
+    {
+      "name": "prop_sku_style",
+      "source": "v2.0数据库设计/02-道具库存租期模型-数据库设计.md",
+      "sourceHeading": "### 3.4 `prop_sku_style`：SKU 风格关联表",
+      "fields": [
+        {
+          "field": "id",
+          "chinese": "记录 ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "主键",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "sku_id",
+          "chinese": "SKU ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "对应 `prop_sku.id",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_sku",
+            "id"
+          ]
+        },
+        {
+          "field": "style_code",
+          "chinese": "风格编码",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "中文见字典组 `prop_sku_style-style",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "sort_order",
+          "chinese": "排序",
+          "type": "INT",
+          "required": "是",
+          "description": "用于前端展示顺序，最多 3 条",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "created_at",
+          "chinese": "创建时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "code",
+          [
+            "sku_id",
+            "style_code"
+          ]
+        ],
+        [
+          "U",
+          "position",
+          [
+            "sku_id",
+            "sort_order"
+          ]
+        ],
+        [
+          "K",
+          "filter",
+          [
+            "style_code",
+            "sku_id"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "sku_id": [
+          "prop_sku",
+          "id"
+        ]
+      },
+      "checks": [
+        "sort_order BETWEEN 0 AND 2",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`sku_id` IS NULL OR REGEXP_LIKE(`sku_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')"
+      ]
+    },
+    {
+      "name": "prop_sn_instance",
+      "source": "v2.0数据库设计/02-道具库存租期模型-数据库设计.md",
+      "sourceHeading": "### 4.1 `prop_sn_instance`：SN 实物表",
+      "fields": [
+        {
+          "field": "id",
+          "chinese": "SN ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "主键",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "sku_id",
+          "chinese": "所属 SKU ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "对应 `prop_sku.id",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_sku",
+            "id"
+          ]
+        },
+        {
+          "field": "source_adjustment_audit_id",
+          "chinese": "来源实物调整审核 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "A 类增加实物审核通过后生成 SN 时回填，对应 `prop_sn_adjustment_audit.id",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_sn_adjustment_audit",
+            "id"
+          ]
+        },
+        {
+          "field": "sn_code",
+          "chinese": "SN 编号",
+          "type": "VARCHAR(64)",
+          "required": "是",
+          "description": "如 `AXE-MID-RESIN-F001-20250612-0001",
+          "storageType": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "qr_code_id",
+          "chinese": "二维码业务编号",
+          "type": "VARCHAR(64)",
+          "required": "是",
+          "description": "A 类二维码指向 SN",
+          "storageType": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_qr_code",
+            "qr_code_id"
+          ]
+        },
+        {
+          "field": "instance_status",
+          "chinese": "实物状态",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "见状态字典",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "current_order_id",
+          "chinese": "当前关联订单 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "锁定/租赁中时记录",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "status_remark",
+          "chinese": "状态备注",
+          "type": "VARCHAR(255)",
+          "required": "否",
+          "description": "例如维修原因、丢失说明",
+          "storageType": "VARCHAR(255)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "status_changed_at",
+          "chinese": "状态变更时间",
+          "type": "DATETIME(3)",
+          "required": "否",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "status_changed_by",
+          "chinese": "状态变更操作人",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "工厂/管理员/系统",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "sys_user",
+            "id"
+          ]
+        },
+        {
+          "field": "remark",
+          "chinese": "备注",
+          "type": "VARCHAR(255)",
+          "required": "否",
+          "description": "",
+          "storageType": "VARCHAR(255)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "created_at",
+          "chinese": "创建时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "version",
+          "chinese": "SN状态版本",
+          "type": "INT",
+          "required": "是",
+          "description": "默认0；每次状态/当前码引用变化+1，贴标及维修完成CAS",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": "0",
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "updated_at",
+          "chinese": "更新时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "code",
+          [
+            "sn_code"
+          ]
+        ],
+        [
+          "U",
+          "qr",
+          [
+            "qr_code_id"
+          ]
+        ],
+        [
+          "K",
+          "pool",
+          [
+            "sku_id",
+            "instance_status",
+            "id"
+          ]
+        ],
+        [
+          "K",
+          "source",
+          [
+            "source_adjustment_audit_id"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "sku_id": [
+          "prop_sku",
+          "id"
+        ],
+        "status_changed_by": [
+          "sys_user",
+          "id"
+        ],
+        "source_adjustment_audit_id": [
+          "prop_sn_adjustment_audit",
+          "id"
+        ],
+        "qr_code_id": [
+          "prop_qr_code",
+          "qr_code_id"
+        ]
+      },
+      "checks": [
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`sku_id` IS NULL OR REGEXP_LIKE(`sku_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`source_adjustment_audit_id` IS NULL OR REGEXP_LIKE(`source_adjustment_audit_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`instance_status` IS NULL OR `instance_status` IN ('pending_label','idle','locked','renting','repairing','lost','scrapped','retired')",
+        "`current_order_id` IS NULL OR REGEXP_LIKE(`current_order_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`status_changed_by` IS NULL OR REGEXP_LIKE(`status_changed_by`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`version`>=0"
+      ]
+    },
+    {
+      "name": "prop_sn_adjustment_audit",
+      "source": "v2.0数据库设计/02-道具库存租期模型-数据库设计.md",
+      "sourceHeading": "### 4.2 `prop_sn_adjustment_audit`：A 类实物调整审核表",
+      "fields": [
+        {
+          "field": "id",
+          "chinese": "审核 ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "主键",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "sku_id",
+          "chinese": "SKU ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "对应 `prop_sku.id`，必须是 `A_ASSET` A 类资产型",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_sku",
+            "id"
+          ]
+        },
+        {
+          "field": "factory_id",
+          "chinese": "工厂 ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "对应 `prop_sku.factory_id",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "factory_profile",
+            "id"
+          ]
+        },
+        {
+          "field": "adjustment_type",
+          "chinese": "调整类型",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "见调整类型字典",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "increase_scene",
+          "chinese": "增加场景",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "仅 `increase / 增加实物` 使用：`initial` 首次建档初始实物；`additional` 后续新增实物",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "requested_quantity",
+          "chinese": "变化件数",
+          "type": "INT",
+          "required": "是",
+          "description": "增加实物时表示申请生成多少件；减少/维修/异常扣减时应等于明细 SN 数量",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "audit_status",
+          "chinese": "审核状态",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "见审核状态字典",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "applicant_user_id",
+          "chinese": "申请人用户 ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "工厂操作人",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "sys_user",
+            "id"
+          ]
+        },
+        {
+          "field": "reviewer_id",
+          "chinese": "审核管理员 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "管理员审核后写入",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "sys_user",
+            "id"
+          ]
+        },
+        {
+          "field": "apply_remark",
+          "chinese": "申请说明",
+          "type": "VARCHAR(255)",
+          "required": "是",
+          "description": "工厂填写调整原因，例如新增同款道具 3 件、送修原因、盘亏原因",
+          "storageType": "VARCHAR(255)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "audit_remark",
+          "chinese": "审核备注",
+          "type": "VARCHAR(255)",
+          "required": "否",
+          "description": "管理员填写",
+          "storageType": "VARCHAR(255)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "reject_reason",
+          "chinese": "驳回原因",
+          "type": "VARCHAR(255)",
+          "required": "否",
+          "description": "审核驳回时填写",
+          "storageType": "VARCHAR(255)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "submitted_at",
+          "chinese": "提交时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "reviewed_at",
+          "chinese": "审核时间",
+          "type": "DATETIME(3)",
+          "required": "否",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "version",
+          "chinese": "乐观锁版本",
+          "type": "INT",
+          "required": "是",
+          "description": "默认 0，审核并发条件更新",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": "0",
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "created_at",
+          "chinese": "创建时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "request_id",
+          "chinese": "提交请求编号",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "后续人工申请必填；initial使用原SKU审核唯一关联，不伪造客户端请求",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "request_hash",
+          "chinese": "提交摘要",
+          "type": "VARCHAR(64)",
+          "required": "否",
+          "description": "与request_id成对；initial为空",
+          "storageType": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "related_sku_audit_id",
+          "chinese": "首次来源SKU审核",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "initial必填且唯一；additional及其他调整为空",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_sku_audit",
+            "id"
+          ]
+        },
+        {
+          "field": "updated_at",
+          "chinese": "更新时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "request",
+          [
+            "applicant_user_id",
+            "request_id"
+          ]
+        ],
+        [
+          "U",
+          "initial",
+          [
+            "related_sku_audit_id"
+          ]
+        ],
+        [
+          "K",
+          "queue",
+          [
+            "audit_status",
+            "submitted_at",
+            "id"
+          ]
+        ],
+        [
+          "K",
+          "owner",
+          [
+            "sku_id",
+            "audit_status",
+            "id"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "sku_id": [
+          "prop_sku",
+          "id"
+        ],
+        "factory_id": [
+          "factory_profile",
+          "id"
+        ],
+        "applicant_user_id": [
+          "sys_user",
+          "id"
+        ],
+        "reviewer_id": [
+          "sys_user",
+          "id"
+        ],
+        "related_sku_audit_id": [
+          "prop_sku_audit",
+          "id"
+        ]
+      },
+      "checks": [
+        "requested_quantity>0",
+        "(adjustment_type='increase' AND increase_scene IS NOT NULL) OR (adjustment_type<>'increase' AND increase_scene IS NULL)",
+        "(increase_scene='initial' AND related_sku_audit_id IS NOT NULL AND request_id IS NULL AND request_hash IS NULL AND audit_status='approved') OR (COALESCE(increase_scene,'')<>'initial' AND related_sku_audit_id IS NULL AND request_id IS NOT NULL AND request_hash IS NOT NULL)",
+        "(audit_status='pending' AND reviewed_at IS NULL AND reviewer_id IS NULL AND version=0) OR (audit_status<>'pending' AND reviewed_at IS NOT NULL AND reviewer_id IS NOT NULL AND version>=1)",
+        "(audit_status='rejected' AND reject_reason IS NOT NULL AND CHAR_LENGTH(TRIM(reject_reason))>0) OR (audit_status<>'rejected' AND reject_reason IS NULL)",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`sku_id` IS NULL OR REGEXP_LIKE(`sku_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`factory_id` IS NULL OR REGEXP_LIKE(`factory_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`adjustment_type` IS NULL OR `adjustment_type` IN ('increase','decrease','repair','abnormal_decrease')",
+        "`increase_scene` IS NULL OR `increase_scene` IN ('initial','additional')",
+        "`audit_status` IS NULL OR `audit_status` IN ('pending','approved','rejected','cancelled')",
+        "`applicant_user_id` IS NULL OR REGEXP_LIKE(`applicant_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`reviewer_id` IS NULL OR REGEXP_LIKE(`reviewer_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`version`>=0",
+        "`request_id` IS NULL OR REGEXP_LIKE(`request_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "request_hash IS NULL OR REGEXP_LIKE(request_hash,'^[0-9a-f]{64}$','c')",
+        "`related_sku_audit_id` IS NULL OR REGEXP_LIKE(`related_sku_audit_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')"
+      ]
+    },
+    {
+      "name": "prop_sn_adjustment_item",
+      "source": "v2.0数据库设计/02-道具库存租期模型-数据库设计.md",
+      "sourceHeading": "### 4.2.1 `prop_sn_adjustment_item`：A 类实物调整明细表",
+      "fields": [
+        {
+          "field": "id",
+          "chinese": "明细 ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "主键",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "adjustment_audit_id",
+          "chinese": "实物调整审核 ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "外键，对应 `prop_sn_adjustment_audit.id",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_sn_adjustment_audit",
+            "id"
+          ]
+        },
+        {
+          "field": "sku_id",
+          "chinese": "SKU ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "冗余快照，方便查询",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_sku",
+            "id"
+          ]
+        },
+        {
+          "field": "sn_id",
+          "chinese": "SN ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "外键，对应 `prop_sn_instance.id",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_sn_instance",
+            "id"
+          ]
+        },
+        {
+          "field": "sn_code_snapshot",
+          "chinese": "SN 编号快照",
+          "type": "VARCHAR(64)",
+          "required": "是",
+          "description": "提交申请时的 SN 编号",
+          "storageType": "VARCHAR(64)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "before_instance_status",
+          "chinese": "调整前实物状态",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "提交申请时快照",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "target_instance_status",
+          "chinese": "目标实物状态",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "repairing` 维修中；`retired` 已退役；`lost` 已丢失；`scrapped` 已报废",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "item_remark",
+          "chinese": "明细说明",
+          "type": "VARCHAR(255)",
+          "required": "否",
+          "description": "单个 SN 的说明",
+          "storageType": "VARCHAR(255)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "created_at",
+          "chinese": "创建时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "item",
+          [
+            "adjustment_audit_id",
+            "sn_id"
+          ]
+        ],
+        [
+          "K",
+          "conflict",
+          [
+            "sn_id",
+            "adjustment_audit_id"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "sku_id": [
+          "prop_sku",
+          "id"
+        ],
+        "adjustment_audit_id": [
+          "prop_sn_adjustment_audit",
+          "id"
+        ],
+        "sn_id": [
+          "prop_sn_instance",
+          "id"
+        ]
+      },
+      "checks": [
+        "before_instance_status<>target_instance_status",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`adjustment_audit_id` IS NULL OR REGEXP_LIKE(`adjustment_audit_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`sku_id` IS NULL OR REGEXP_LIKE(`sku_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`sn_id` IS NULL OR REGEXP_LIKE(`sn_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`before_instance_status` IS NULL OR `before_instance_status` IN ('pending_label','idle','locked','renting','repairing','lost','scrapped','retired')",
+        "`target_instance_status` IS NULL OR `target_instance_status` IN ('retired','repairing','lost','scrapped')"
+      ]
+    },
+    {
+      "name": "prop_instance_status_log",
+      "source": "v2.0数据库设计/02-道具库存租期模型-数据库设计.md",
+      "sourceHeading": "### 4.3 `prop_instance_status_log`：SN 状态变更日志",
+      "fields": [
+        {
+          "field": "id",
+          "chinese": "日志 ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "主键",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "prop_instance_id",
+          "chinese": "SN ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "对应 `prop_sn_instance.id",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_sn_instance",
+            "id"
+          ]
+        },
+        {
+          "field": "sku_id",
+          "chinese": "SKU ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "冗余快照，方便查询",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_sku",
+            "id"
+          ]
+        },
+        {
+          "field": "sn_code",
+          "chinese": "SN 编号快照",
+          "type": "VARCHAR(64)",
+          "required": "否",
+          "description": "",
+          "storageType": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "qr_code_id",
+          "chinese": "二维码编号快照",
+          "type": "VARCHAR(64)",
+          "required": "否",
+          "description": "",
+          "storageType": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "from_status",
+          "chinese": "变更前状态",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "to_status",
+          "chinese": "变更后状态",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "source_type",
+          "chinese": "变更来源类型",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "见来源类型字典",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "reason",
+          "chinese": "变更原因",
+          "type": "VARCHAR(255)",
+          "required": "否",
+          "description": "",
+          "storageType": "VARCHAR(255)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "operator_user_id",
+          "chinese": "操作人用户 ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "sys_user",
+            "id"
+          ]
+        },
+        {
+          "field": "operator_role",
+          "chinese": "操作人角色",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "factory` 工厂；`admin` 管理员；`system` 系统",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "related_order_id",
+          "chinese": "关联订单 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "related_adjustment_audit_id",
+          "chinese": "关联实物调整审核 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "人工调整触发时对应 `prop_sn_adjustment_audit.id",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_sn_adjustment_audit",
+            "id"
+          ]
+        },
+        {
+          "field": "related_arbitration_id",
+          "chinese": "关联仲裁 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "仲裁表设计确定后对齐",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "business_key",
+          "chinese": "效果唯一键",
+          "type": "VARCHAR(128)",
+          "required": "是",
+          "description": "例如sn-adjust:{auditId}:{snId}、prop-op:{operationId}，唯一",
+          "storageType": "VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "created_at",
+          "chinese": "创建时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "effect",
+          [
+            "business_key"
+          ]
+        ],
+        [
+          "K",
+          "history",
+          [
+            "prop_instance_id",
+            "created_at",
+            "id"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "sku_id": [
+          "prop_sku",
+          "id"
+        ],
+        "operator_user_id": [
+          "sys_user",
+          "id"
+        ],
+        "prop_instance_id": [
+          "prop_sn_instance",
+          "id"
+        ],
+        "related_adjustment_audit_id": [
+          "prop_sn_adjustment_audit",
+          "id"
+        ]
+      },
+      "checks": [
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`prop_instance_id` IS NULL OR REGEXP_LIKE(`prop_instance_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`sku_id` IS NULL OR REGEXP_LIKE(`sku_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`from_status` IS NULL OR `from_status` IN ('pending_label','idle','locked','renting','repairing','lost','scrapped','retired')",
+        "`to_status` IS NULL OR `to_status` IN ('pending_label','idle','locked','renting','repairing','lost','scrapped','retired')",
+        "`source_type` IS NULL OR `source_type` IN ('manual_adjustment','repair_complete','order_fulfillment','arbitration','system_correction','label_confirm')",
+        "`operator_user_id` IS NULL OR REGEXP_LIKE(`operator_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`operator_role` IS NULL OR `operator_role` IN ('factory','admin','system')",
+        "`related_order_id` IS NULL OR REGEXP_LIKE(`related_order_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`related_adjustment_audit_id` IS NULL OR REGEXP_LIKE(`related_adjustment_audit_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`related_arbitration_id` IS NULL OR REGEXP_LIKE(`related_arbitration_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')"
+      ]
+    },
+    {
+      "name": "prop_sku_stock",
+      "source": "v2.0数据库设计/02-道具库存租期模型-数据库设计.md",
+      "sourceHeading": "### 5.1 `prop_sku_stock`：SKU 数量库存表",
+      "fields": [
+        {
+          "field": "id",
+          "chinese": "库存 ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "主键",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "sku_id",
+          "chinese": "SKU ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "对应 `prop_sku.id`，仅 B 类使用",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_sku",
+            "id"
+          ]
+        },
+        {
+          "field": "total_quantity",
+          "chinese": "总数量",
+          "type": "INT",
+          "required": "是",
+          "description": "当前账面总量",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "rentable_base_quantity",
+          "chinese": "可租库存基数",
+          "type": "INT",
+          "required": "是",
+          "description": "本期等于当前存续total_quantity；total已扣永久退出，不再次扣lost/scrapped累计值；不扣租期占用",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "available_quantity",
+          "chinese": "当前可用数量",
+          "type": "INT",
+          "required": "是",
+          "description": "当前时点经营看板值，不作为未来租期公式的基数",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "locked_quantity",
+          "chinese": "已锁定数量",
+          "type": "INT",
+          "required": "是",
+          "description": "已支付或短锁",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "renting_quantity",
+          "chinese": "租赁中数量",
+          "type": "INT",
+          "required": "是",
+          "description": "已出库未归还",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "lost_quantity",
+          "chinese": "丢失数量",
+          "type": "INT",
+          "required": "是",
+          "description": "盘亏/丢失",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "scrapped_quantity",
+          "chinese": "报废数量",
+          "type": "INT",
+          "required": "是",
+          "description": "不再可租",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "last_counted_at",
+          "chinese": "最近盘点时间",
+          "type": "DATETIME(3)",
+          "required": "否",
+          "description": "工厂手动盘点",
+          "storageType": "DATETIME(3)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "last_counted_by",
+          "chinese": "最近盘点人",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "sys_user",
+            "id"
+          ]
+        },
+        {
+          "field": "created_at",
+          "chinese": "创建时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "updated_at",
+          "chinese": "更新时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "sku",
+          [
+            "sku_id"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "sku_id": [
+          "prop_sku",
+          "id"
+        ],
+        "last_counted_by": [
+          "sys_user",
+          "id"
+        ]
+      },
+      "checks": [
+        "total_quantity>=0",
+        "rentable_base_quantity>=0",
+        "available_quantity>=0",
+        "locked_quantity>=0",
+        "renting_quantity>=0",
+        "lost_quantity>=0",
+        "scrapped_quantity>=0",
+        "rentable_base_quantity=total_quantity",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`sku_id` IS NULL OR REGEXP_LIKE(`sku_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`last_counted_by` IS NULL OR REGEXP_LIKE(`last_counted_by`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')"
+      ]
+    },
+    {
+      "name": "prop_stock_adjustment_audit",
+      "source": "v2.0数据库设计/02-道具库存租期模型-数据库设计.md",
+      "sourceHeading": "### 5.2 `prop_stock_adjustment_audit`：人工库存调整审核表",
+      "fields": [
+        {
+          "field": "id",
+          "chinese": "审核 ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "主键",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "sku_id",
+          "chinese": "SKU ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "对应 `prop_sku.id`，通常用于 B 类消耗型",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_sku",
+            "id"
+          ]
+        },
+        {
+          "field": "asset_type",
+          "chinese": "资产类型",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "冗余快照，通常为 `B_CONSUMABLE` B 类消耗型",
+          "storageType": "VARCHAR(32)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "adjustment_type",
+          "chinese": "调整类型",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "见调整类型字典",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "quantity_delta",
+          "chinese": "变化数量",
+          "type": "INT",
+          "required": "是",
+          "description": "正数表示增加，负数表示减少",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "abnormal_result",
+          "chinese": "异常扣减结果",
+          "type": "VARCHAR(32)",
+          "required": "条件必填",
+          "description": "仅abnormal_decrease必填lost（丢失/盘亏）或scrapped（报废）；其他调整为NULL；客户端子选项、审核只读",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "before_total_quantity",
+          "chinese": "调整前总数量",
+          "type": "INT",
+          "required": "是",
+          "description": "提交申请时快照",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "before_available_quantity",
+          "chinese": "调整前可用数量",
+          "type": "INT",
+          "required": "是",
+          "description": "提交申请时快照",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "reason",
+          "chinese": "申请原因",
+          "type": "VARCHAR(255)",
+          "required": "是",
+          "description": "例如盘点新增、破损报废、丢失",
+          "storageType": "VARCHAR(255)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "audit_status",
+          "chinese": "审核状态",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "见审核状态字典",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "applicant_user_id",
+          "chinese": "申请人用户 ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "通常是工厂用户",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "sys_user",
+            "id"
+          ]
+        },
+        {
+          "field": "reviewer_id",
+          "chinese": "审核管理员 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "sys_user",
+            "id"
+          ]
+        },
+        {
+          "field": "audit_remark",
+          "chinese": "审核备注",
+          "type": "VARCHAR(255)",
+          "required": "否",
+          "description": "管理员填写",
+          "storageType": "VARCHAR(255)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "reject_reason",
+          "chinese": "驳回原因",
+          "type": "VARCHAR(255)",
+          "required": "否",
+          "description": "审核驳回时填写",
+          "storageType": "VARCHAR(255)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "related_movement_id",
+          "chinese": "关联库存流水 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "审核通过后写入 `prop_stock_movement`，再回填该字段",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_stock_movement",
+            "id"
+          ]
+        },
+        {
+          "field": "related_sku_audit_id",
+          "chinese": "来源 SKU 审核 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "B 类首次建档由 SKU 审核自动生成已通过追溯记录时填写",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_sku_audit",
+            "id"
+          ]
+        },
+        {
+          "field": "submitted_at",
+          "chinese": "提交时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "reviewed_at",
+          "chinese": "审核时间",
+          "type": "DATETIME(3)",
+          "required": "否",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "version",
+          "chinese": "乐观锁版本",
+          "type": "INT",
+          "required": "是",
+          "description": "默认 0，审核并发条件更新",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": "0",
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "created_at",
+          "chinese": "创建时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "request_id",
+          "chinese": "提交请求编号",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "后续人工申请必填；来源SKU初始入账为空",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "request_hash",
+          "chinese": "提交摘要",
+          "type": "VARCHAR(64)",
+          "required": "否",
+          "description": "与request_id成对；初始入账为空",
+          "storageType": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "updated_at",
+          "chinese": "更新时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "request",
+          [
+            "applicant_user_id",
+            "request_id"
+          ]
+        ],
+        [
+          "U",
+          "initial",
+          [
+            "related_sku_audit_id"
+          ]
+        ],
+        [
+          "K",
+          "queue",
+          [
+            "audit_status",
+            "submitted_at",
+            "id"
+          ]
+        ],
+        [
+          "K",
+          "owner",
+          [
+            "sku_id",
+            "submitted_at",
+            "id"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "sku_id": [
+          "prop_sku",
+          "id"
+        ],
+        "applicant_user_id": [
+          "sys_user",
+          "id"
+        ],
+        "reviewer_id": [
+          "sys_user",
+          "id"
+        ],
+        "related_sku_audit_id": [
+          "prop_sku_audit",
+          "id"
+        ],
+        "related_movement_id": [
+          "prop_stock_movement",
+          "id"
+        ]
+      },
+      "checks": [
+        "(adjustment_type='increase' AND quantity_delta>0) OR (adjustment_type<>'increase' AND quantity_delta<0)",
+        "(adjustment_type='abnormal_decrease' AND abnormal_result IS NOT NULL) OR (adjustment_type<>'abnormal_decrease' AND abnormal_result IS NULL)",
+        "(related_sku_audit_id IS NOT NULL AND adjustment_type='increase' AND audit_status='approved' AND request_id IS NULL AND request_hash IS NULL) OR (related_sku_audit_id IS NULL AND request_id IS NOT NULL AND request_hash IS NOT NULL)",
+        "before_total_quantity>=0 AND before_available_quantity>=0",
+        "(audit_status='pending' AND reviewed_at IS NULL AND reviewer_id IS NULL AND version=0) OR (audit_status<>'pending' AND reviewed_at IS NOT NULL AND reviewer_id IS NOT NULL AND version>=1)",
+        "(audit_status='rejected' AND reject_reason IS NOT NULL AND CHAR_LENGTH(TRIM(reject_reason))>0) OR (audit_status<>'rejected' AND reject_reason IS NULL)",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`sku_id` IS NULL OR REGEXP_LIKE(`sku_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`asset_type` IS NULL OR `asset_type` IN ('B_CONSUMABLE')",
+        "`adjustment_type` IS NULL OR `adjustment_type` IN ('increase','decrease','abnormal_decrease')",
+        "`abnormal_result` IS NULL OR `abnormal_result` IN ('lost','scrapped')",
+        "`audit_status` IS NULL OR `audit_status` IN ('pending','approved','rejected','cancelled')",
+        "`applicant_user_id` IS NULL OR REGEXP_LIKE(`applicant_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`reviewer_id` IS NULL OR REGEXP_LIKE(`reviewer_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`related_movement_id` IS NULL OR REGEXP_LIKE(`related_movement_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`related_sku_audit_id` IS NULL OR REGEXP_LIKE(`related_sku_audit_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`version`>=0",
+        "`request_id` IS NULL OR REGEXP_LIKE(`request_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "request_hash IS NULL OR REGEXP_LIKE(request_hash,'^[0-9a-f]{64}$','c')"
+      ]
+    },
+    {
+      "name": "prop_stock_movement",
+      "source": "v2.0数据库设计/02-道具库存租期模型-数据库设计.md",
+      "sourceHeading": "### 5.3 `prop_stock_movement`：库存流水表",
+      "fields": [
+        {
+          "field": "id",
+          "chinese": "流水 ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "主键",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "sku_id",
+          "chinese": "SKU ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "对应 `prop_sku.id",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_sku",
+            "id"
+          ]
+        },
+        {
+          "field": "movement_type",
+          "chinese": "流水类型",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "见状态字典",
+          "storageType": "VARCHAR(32)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "source_type",
+          "chinese": "来源类型",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "见来源类型字典",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "quantity",
+          "chinese": "变动数量",
+          "type": "INT",
+          "required": "是",
+          "description": "正数表示增加，负数表示减少，或统一按类型解释",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "before_quantity",
+          "chinese": "变动前数量",
+          "type": "INT",
+          "required": "否",
+          "description": "便于审计",
+          "storageType": "INT",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "after_quantity",
+          "chinese": "变动后数量",
+          "type": "INT",
+          "required": "否",
+          "description": "便于审计",
+          "storageType": "INT",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "before_stock_snapshot_json",
+          "chinese": "变动前库存快照",
+          "type": "JSON",
+          "required": "否",
+          "description": "记录各数量维度，避免单个 `before_quantity` 含义不清",
+          "storageType": "JSON",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "after_stock_snapshot_json",
+          "chinese": "变动后库存快照",
+          "type": "JSON",
+          "required": "否",
+          "description": "记录各数量维度",
+          "storageType": "JSON",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "related_audit_id",
+          "chinese": "关联库存调整审核 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "人工审核触发时对应 `prop_stock_adjustment_audit.id",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_stock_adjustment_audit",
+            "id"
+          ]
+        },
+        {
+          "field": "related_order_id",
+          "chinese": "关联订单 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "related_reservation_id",
+          "chinese": "关联库存占用 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "对应 `inventory_reservation.id",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "related_arbitration_id",
+          "chinese": "关联仲裁 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "仲裁表设计确定后对齐",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "operator_user_id",
+          "chinese": "操作人用户 ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "sys_user",
+            "id"
+          ]
+        },
+        {
+          "field": "operator_role",
+          "chinese": "操作人角色",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "工厂/管理员/系统",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "remark",
+          "chinese": "备注",
+          "type": "VARCHAR(255)",
+          "required": "否",
+          "description": "",
+          "storageType": "VARCHAR(255)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "business_key",
+          "chinese": "效果唯一键",
+          "type": "VARCHAR(128)",
+          "required": "是",
+          "description": "例如stock-adjust:{auditId}，唯一",
+          "storageType": "VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "created_at",
+          "chinese": "创建时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "effect",
+          [
+            "business_key"
+          ]
+        ],
+        [
+          "U",
+          "audit",
+          [
+            "related_audit_id"
+          ]
+        ],
+        [
+          "K",
+          "history",
+          [
+            "sku_id",
+            "created_at",
+            "id"
+          ]
+        ],
+        [
+          "K",
+          "reservation",
+          [
+            "related_reservation_id"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "sku_id": [
+          "prop_sku",
+          "id"
+        ],
+        "operator_user_id": [
+          "sys_user",
+          "id"
+        ],
+        "related_audit_id": [
+          "prop_stock_adjustment_audit",
+          "id"
+        ]
+      },
+      "checks": [
+        "quantity<>0",
+        "before_quantity IS NULL OR before_quantity>=0",
+        "after_quantity IS NULL OR after_quantity>=0",
+        "before_stock_snapshot_json IS NOT NULL AND after_stock_snapshot_json IS NOT NULL",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`sku_id` IS NULL OR REGEXP_LIKE(`sku_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`movement_type` IS NULL OR `movement_type` IN ('outbound','return','lock','release','increase','decrease','abnormal_decrease','arbitration_decrease')",
+        "`source_type` IS NULL OR `source_type` IN ('manual_adjustment','order_fulfillment','arbitration','system_correction')",
+        "`related_audit_id` IS NULL OR REGEXP_LIKE(`related_audit_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`related_order_id` IS NULL OR REGEXP_LIKE(`related_order_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`related_reservation_id` IS NULL OR REGEXP_LIKE(`related_reservation_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`related_arbitration_id` IS NULL OR REGEXP_LIKE(`related_arbitration_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`operator_user_id` IS NULL OR REGEXP_LIKE(`operator_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`operator_role` IS NULL OR `operator_role` IN ('factory','admin','system')"
+      ]
+    },
+    {
+      "name": "prop_qr_code",
+      "source": "v2.0数据库设计/02-道具库存租期模型-数据库设计.md",
+      "sourceHeading": "### 6.1 `prop_qr_code`：通用二维码表",
+      "fields": [
+        {
+          "field": "id",
+          "chinese": "二维码记录 ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "主键",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "qr_code_id",
+          "chinese": "二维码业务编号",
+          "type": "VARCHAR(64)",
+          "required": "是",
+          "description": "唯一",
+          "storageType": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "code_type",
+          "chinese": "码类型",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "wechat_mini_code` 微信小程序码；`standard_qr` 普通二维码/通用码，本期固定wechat_mini_code，standard_qr不开放写入",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "target_type",
+          "chinese": "指向类型",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "SN`、`SKU`、`PENDING",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "target_id",
+          "chinese": "指向对象 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "SN ID 或 SKU ID",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "sku_id",
+          "chinese": "SKU ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "冗余字段，方便查询",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_sku",
+            "id"
+          ]
+        },
+        {
+          "field": "supersedes_qr_code_id",
+          "chinese": "替代的旧二维码 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "管理员补发时新码指向被替代旧码；普通重打为空",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_qr_code",
+            "id"
+          ]
+        },
+        {
+          "field": "qr_scene",
+          "chinese": "小程序码 scene",
+          "type": "VARCHAR(128)",
+          "required": "否",
+          "description": "微信小程序码使用；建议只放 `qr_code_id`，不要塞复杂业务参数",
+          "storageType": "VARCHAR(128)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "qr_page",
+          "chinese": "小程序码页面",
+          "type": "VARCHAR(128)",
+          "required": "否",
+          "description": "微信小程序入口",
+          "storageType": "VARCHAR(128)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "qr_content",
+          "chinese": "二维码内容",
+          "type": "VARCHAR(512)",
+          "required": "否",
+          "description": "选择二使用普通二维码时保存完整 URL；小程序码时可保存 scene",
+          "storageType": "VARCHAR(512)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "resolve_url",
+          "chinese": "平台统一解析地址",
+          "type": "VARCHAR(512)",
+          "required": "否",
+          "description": "选择二候选字段，例如 `https://qr.muhou.cn/q/{qr_code_id}",
+          "storageType": "VARCHAR(512)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "qr_image_url",
+          "chinese": "二维码图片 URL",
+          "type": "VARCHAR(512)",
+          "required": "否",
+          "description": "",
+          "storageType": "VARCHAR(512)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "qr_image_storage_key",
+          "chinese": "二维码图片存储 key",
+          "type": "VARCHAR(512)",
+          "required": "否",
+          "description": "",
+          "storageType": "VARCHAR(512)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "image_sha256",
+          "chinese": "图片 SHA256",
+          "type": "VARCHAR(64)",
+          "required": "否",
+          "description": "防重复/校验",
+          "storageType": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "status",
+          "chinese": "二维码状态",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "见状态字典",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "active_sku_guard",
+          "chinese": "B类活动码唯一保护",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "生成列：bound且target_type=SKU时为target_id，否则NULL",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": "CASE WHEN status='bound' AND target_type='SKU' THEN target_id ELSE NULL END",
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "active_sn_guard",
+          "chinese": "A 类活动二维码守卫",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "生成列；仅已绑定且指向 SN 时取 `target_id",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": "CASE WHEN status='bound' AND target_type='SN' THEN target_id ELSE NULL END",
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "created_by_admin_user_id",
+          "chinese": "创建管理员 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "sys_user",
+            "id"
+          ]
+        },
+        {
+          "field": "used_by_factory_user_id",
+          "chinese": "使用工厂用户 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "sys_user",
+            "id"
+          ]
+        },
+        {
+          "field": "used_at",
+          "chinese": "使用时间",
+          "type": "DATETIME(3)",
+          "required": "否",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "revoked_by_admin_user_id",
+          "chinese": "作废管理员 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "sys_user",
+            "id"
+          ]
+        },
+        {
+          "field": "revoked_at",
+          "chinese": "作废时间",
+          "type": "DATETIME(3)",
+          "required": "否",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "version",
+          "chinese": "乐观锁版本",
+          "type": "INT",
+          "required": "是",
+          "description": "默认 0，异常停用并发条件更新",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": "0",
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "created_at",
+          "chinese": "创建时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "image_generation_status",
+          "chinese": "码图片生成状态",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "pending/generating/ready/failed，默认pending；与码绑定status独立",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": "'pending'",
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "image_attempts",
+          "chinese": "自动生成尝试次数",
+          "type": "INT",
+          "required": "是",
+          "description": "默认0，最大自动5次；人工重试重置，非业务审批重做",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": "0",
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "image_lease_until",
+          "chinese": "生成租约截止",
+          "type": "DATETIME(3)",
+          "required": "否",
+          "description": "短事务领任务，外部调用不持业务行锁；超时可重领",
+          "storageType": "DATETIME(3)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "image_next_retry_at",
+          "chinese": "下次生成时间",
+          "type": "DATETIME(3)",
+          "required": "否",
+          "description": "pending/failed自动重试候选时间",
+          "storageType": "DATETIME(3)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "image_error_code",
+          "chinese": "脱敏生成错误码",
+          "type": "VARCHAR(64)",
+          "required": "否",
+          "description": "不存渠道敏感响应/凭据/签名链接",
+          "storageType": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "updated_at",
+          "chinese": "更新时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "code",
+          [
+            "qr_code_id"
+          ]
+        ],
+        [
+          "U",
+          "sku",
+          [
+            "active_sku_guard"
+          ]
+        ],
+        [
+          "U",
+          "sn",
+          [
+            "active_sn_guard"
+          ]
+        ],
+        [
+          "U",
+          "replacement",
+          [
+            "supersedes_qr_code_id"
+          ]
+        ],
+        [
+          "K",
+          "generation",
+          [
+            "image_generation_status",
+            "image_next_retry_at",
+            "image_lease_until"
+          ]
+        ],
+        [
+          "K",
+          "owner",
+          [
+            "sku_id",
+            "status",
+            "id"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "sku_id": [
+          "prop_sku",
+          "id"
+        ],
+        "created_by_admin_user_id": [
+          "sys_user",
+          "id"
+        ],
+        "used_by_factory_user_id": [
+          "sys_user",
+          "id"
+        ],
+        "revoked_by_admin_user_id": [
+          "sys_user",
+          "id"
+        ],
+        "supersedes_qr_code_id": [
+          "prop_qr_code",
+          "id"
+        ]
+      },
+      "checks": [
+        "(status='bound' AND target_type IN ('SN','SKU') AND target_id IS NOT NULL AND sku_id IS NOT NULL) OR status<>'bound'",
+        "(image_generation_status='ready' AND qr_image_storage_key IS NOT NULL AND image_sha256 IS NOT NULL) OR image_generation_status<>'ready'",
+        "(image_generation_status='generating' AND image_lease_until IS NOT NULL) OR (image_generation_status<>'generating' AND image_lease_until IS NULL)",
+        "image_attempts>=0",
+        "qr_image_url IS NULL",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`code_type` IS NULL OR `code_type` IN ('wechat_mini_code','standard_qr')",
+        "`target_type` IS NULL OR `target_type` IN ('SN','SKU','PENDING')",
+        "`target_id` IS NULL OR REGEXP_LIKE(`target_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`sku_id` IS NULL OR REGEXP_LIKE(`sku_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`supersedes_qr_code_id` IS NULL OR REGEXP_LIKE(`supersedes_qr_code_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`status` IS NULL OR `status` IN ('unbound','bound','revoked')",
+        "`active_sku_guard` IS NULL OR REGEXP_LIKE(`active_sku_guard`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`active_sn_guard` IS NULL OR REGEXP_LIKE(`active_sn_guard`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`created_by_admin_user_id` IS NULL OR REGEXP_LIKE(`created_by_admin_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`used_by_factory_user_id` IS NULL OR REGEXP_LIKE(`used_by_factory_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`revoked_by_admin_user_id` IS NULL OR REGEXP_LIKE(`revoked_by_admin_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`version`>=0",
+        "`image_generation_status` IS NULL OR `image_generation_status` IN ('pending','generating','ready','failed')"
+      ]
+    },
+    {
+      "name": "prop_qr_exception_record",
+      "source": "v2.0数据库设计/02-道具库存租期模型-数据库设计.md",
+      "sourceHeading": "### 6.2 `prop_qr_exception_record`：二维码异常来源与处理结果表",
+      "fields": [
+        {
+          "field": "id",
+          "chinese": "异常记录 ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "主键",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "exception_no",
+          "chinese": "异常编号",
+          "type": "VARCHAR(64)",
+          "required": "是",
+          "description": "平台唯一",
+          "storageType": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "factory_id",
+          "chinese": "工厂 ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "原码所属工厂",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "factory_profile",
+            "id"
+          ]
+        },
+        {
+          "field": "sku_id",
+          "chinese": "SKU ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "便于查询",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_sku",
+            "id"
+          ]
+        },
+        {
+          "field": "sn_id",
+          "chinese": "SN ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "A 类有值，B 类为空",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_sn_instance",
+            "id"
+          ]
+        },
+        {
+          "field": "original_qr_code_id",
+          "chinese": "原二维码记录 ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "对应 `prop_qr_code.id",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_qr_code",
+            "id"
+          ]
+        },
+        {
+          "field": "reported_by_user_id",
+          "chinese": "报告人用户 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "工厂或管理员；系统发现可为空",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "sys_user",
+            "id"
+          ]
+        },
+        {
+          "field": "exception_type",
+          "chinese": "异常类型",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "suspected_leak`、`wrong_binding`、`unreadable_untrusted`、`other",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "description",
+          "chinese": "异常说明",
+          "type": "VARCHAR(500)",
+          "required": "是",
+          "description": "说明为何不能仅重新打印",
+          "storageType": "VARCHAR(500)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "evidence_urls_json",
+          "chinese": "证据对象键",
+          "type": "JSON",
+          "required": "否",
+          "description": "图片或其他必要证据",
+          "storageType": "JSON",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "exception_status",
+          "chinese": "异常状态",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "reported`、`resolved`、`cancelled",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "active_original_qr_guard",
+          "chinese": "活动异常原码守卫",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "生成列；仅 `reported` 时取原二维码 ID",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": "CASE WHEN exception_status='reported' THEN original_qr_code_id ELSE NULL END",
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "resolution_type",
+          "chinese": "处理类型",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "当前同意仅写 `disable_only`；驳回为空；`confirmed_normal`、`reissue` 仅兼容历史记录",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "replacement_qr_code_id",
+          "chinese": "补发二维码 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "仅历史 `reissue` 结果；当前异常审核不写新码 ID",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_qr_code",
+            "id"
+          ]
+        },
+        {
+          "field": "resolved_by_admin_user_id",
+          "chinese": "处理管理员用户 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "08 动作操作人",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "sys_user",
+            "id"
+          ]
+        },
+        {
+          "field": "resolution_reason",
+          "chinese": "处理理由",
+          "type": "VARCHAR(500)",
+          "required": "否",
+          "description": "接收审核备注；驳回必填，08 表单统一限制 255 字，服务端同样校验",
+          "storageType": "VARCHAR(500)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "resolved_at",
+          "chinese": "处理时间",
+          "type": "DATETIME(3)",
+          "required": "否",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "version",
+          "chinese": "乐观锁版本",
+          "type": "INT",
+          "required": "是",
+          "description": "默认 0",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": "0",
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "created_at",
+          "chinese": "创建时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "request_id",
+          "chinese": "登记请求编号",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "报告人+请求编号唯一",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "request_hash",
+          "chinese": "登记摘要",
+          "type": "VARCHAR(64)",
+          "required": "是",
+          "description": "规范化请求SHA256",
+          "storageType": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "updated_at",
+          "chinese": "更新时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "number",
+          [
+            "exception_no"
+          ]
+        ],
+        [
+          "U",
+          "request",
+          [
+            "reported_by_user_id",
+            "request_id"
+          ]
+        ],
+        [
+          "U",
+          "active",
+          [
+            "active_original_qr_guard"
+          ]
+        ],
+        [
+          "K",
+          "queue",
+          [
+            "exception_status",
+            "created_at",
+            "id"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "factory_id": [
+          "factory_profile",
+          "id"
+        ],
+        "sku_id": [
+          "prop_sku",
+          "id"
+        ],
+        "reported_by_user_id": [
+          "sys_user",
+          "id"
+        ],
+        "resolved_by_admin_user_id": [
+          "sys_user",
+          "id"
+        ],
+        "sn_id": [
+          "prop_sn_instance",
+          "id"
+        ],
+        "original_qr_code_id": [
+          "prop_qr_code",
+          "id"
+        ],
+        "replacement_qr_code_id": [
+          "prop_qr_code",
+          "id"
+        ]
+      },
+      "checks": [
+        "(exception_status='reported' AND resolved_at IS NULL AND resolution_type IS NULL) OR (exception_status='resolved' AND resolved_at IS NOT NULL AND resolved_by_admin_user_id IS NOT NULL AND resolution_type IS NOT NULL) OR (exception_status='cancelled' AND resolved_at IS NOT NULL AND resolved_by_admin_user_id IS NOT NULL AND resolution_type IS NULL)",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`factory_id` IS NULL OR REGEXP_LIKE(`factory_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`sku_id` IS NULL OR REGEXP_LIKE(`sku_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`sn_id` IS NULL OR REGEXP_LIKE(`sn_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`original_qr_code_id` IS NULL OR REGEXP_LIKE(`original_qr_code_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`reported_by_user_id` IS NULL OR REGEXP_LIKE(`reported_by_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`exception_type` IS NULL OR `exception_type` IN ('suspected_leak','wrong_binding','unreadable_untrusted','other')",
+        "`exception_status` IS NULL OR `exception_status` IN ('reported','resolved','cancelled')",
+        "`active_original_qr_guard` IS NULL OR REGEXP_LIKE(`active_original_qr_guard`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`resolution_type` IS NULL OR `resolution_type` IN ('disable_only','confirmed_normal','reissue')",
+        "`replacement_qr_code_id` IS NULL OR REGEXP_LIKE(`replacement_qr_code_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`resolved_by_admin_user_id` IS NULL OR REGEXP_LIKE(`resolved_by_admin_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`version`>=0",
+        "`request_id` IS NULL OR REGEXP_LIKE(`request_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "request_hash IS NULL OR REGEXP_LIKE(request_hash,'^[0-9a-f]{64}$','c')"
+      ]
+    },
+    {
+      "name": "prop_operation_record",
+      "source": "v2.0数据库设计/02-道具库存租期模型-数据库设计.md",
+      "sourceHeading": "### 6.3 `prop_operation_record`：道具直接操作记录",
+      "fields": [
+        {
+          "field": "id",
+          "chinese": "操作ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "主键",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "actor_user_id",
+          "chinese": "操作人",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "sys_user真实操作者；不伪造管理员",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "sys_user",
+            "id"
+          ]
+        },
+        {
+          "field": "request_id",
+          "chinese": "请求编号",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "actor+request唯一，不同操作/目标混用拒绝",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "request_hash",
+          "chinese": "请求摘要",
+          "type": "VARCHAR(64)",
+          "required": "是",
+          "description": "规范化请求摘要",
+          "storageType": "VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "operation_code",
+          "chinese": "操作类型",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "仅上述五种",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "sku_id",
+          "chinese": "SKU",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "FK；用于归属定位",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_sku",
+            "id"
+          ]
+        },
+        {
+          "field": "target_type",
+          "chinese": "目标类型",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "sku/sn/sku_audit/sn_adjustment/stock_adjustment/qr",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "target_id",
+          "chinese": "目标ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "多态引用，按operation校验同SKU同归属",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "before_snapshot_json",
+          "chinese": "操作前事实",
+          "type": "JSON",
+          "required": "是",
+          "description": "schema_version=1，字段按操作约束；不保存材料凭据",
+          "storageType": "JSON",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "after_snapshot_json",
+          "chinese": "操作后事实",
+          "type": "JSON",
+          "required": "是",
+          "description": "schema_version=1，同事务快照",
+          "storageType": "JSON",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "result_json",
+          "chinese": "原命令返回结果",
+          "type": "JSON",
+          "required": "是",
+          "description": "CommandResult.data，不含traceId、签名URL",
+          "storageType": "JSON",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "created_at",
+          "chinese": "成功提交时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "只存成功事实；业务失败整事务回滚",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "request",
+          [
+            "actor_user_id",
+            "request_id"
+          ]
+        ],
+        [
+          "K",
+          "sku",
+          [
+            "sku_id",
+            "created_at",
+            "id"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "actor_user_id": [
+          "sys_user",
+          "id"
+        ],
+        "sku_id": [
+          "prop_sku",
+          "id"
+        ]
+      },
+      "checks": [
+        "JSON_TYPE(before_snapshot_json)='OBJECT' AND JSON_TYPE(after_snapshot_json)='OBJECT' AND JSON_TYPE(result_json)='OBJECT'",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`actor_user_id` IS NULL OR REGEXP_LIKE(`actor_user_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`request_id` IS NULL OR REGEXP_LIKE(`request_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "request_hash IS NULL OR REGEXP_LIKE(request_hash,'^[0-9a-f]{64}$','c')",
+        "`operation_code` IS NULL OR `operation_code` IN ('edit_sku_options','label_confirm','repair_complete','cancel_application','issue_qr')",
+        "`sku_id` IS NULL OR REGEXP_LIKE(`sku_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`target_type` IS NULL OR `target_type` IN ('sku','sn','sku_audit','sn_adjustment','stock_adjustment','qr')",
+        "`target_id` IS NULL OR REGEXP_LIKE(`target_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')"
+      ]
+    },
+    {
+      "name": "inventory_reservation",
+      "source": "v2.0数据库设计/02-道具库存租期模型-数据库设计.md",
+      "sourceHeading": "### 7.1 `inventory_reservation`：库存租期占用表",
+      "fields": [
+        {
+          "field": "id",
+          "chinese": "占用 ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "主键",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "sku_id",
+          "chinese": "SKU ID",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "对应 `prop_sku.id",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_sku",
+            "id"
+          ]
+        },
+        {
+          "field": "sn_id",
+          "chinese": "SN ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "A 类有值；B 类为空",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": [
+            "prop_sn_instance",
+            "id"
+          ]
+        },
+        {
+          "field": "quantity",
+          "chinese": "占用数量",
+          "type": "INT",
+          "required": "是",
+          "description": "A 类通常为 1；B 类为数量",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "checkout_batch_id",
+          "chinese": "来源结算批次 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "支付前短锁来源；对应 04 `checkout_batch.id",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "checkout_batch_item_snapshot_id",
+          "chinese": "来源结算明细快照 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "支付前短锁明细来源；对应 04 `checkout_batch_item_snapshot.id",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "rental_order_id",
+          "chinese": "租赁订单 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "支付成功后补充；对应 04 `rental_order.id",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "rental_order_item_id",
+          "chinese": "租赁订单明细 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "支付成功后补充；对应 04 `rental_order_item.id",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "source_type",
+          "chinese": "通用来源类型",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "辅助字段，可用于系统迁移或特殊修正；主链路优先使用上方明确字段",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "source_id",
+          "chinese": "通用来源 ID",
+          "type": "VARCHAR(32)",
+          "required": "否",
+          "description": "与 `source_type` 配套使用",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "rental_start_date",
+          "chinese": "租期开始日期",
+          "type": "DATE",
+          "required": "是",
+          "description": "",
+          "storageType": "DATE",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "rental_end_date",
+          "chinese": "租期结束日期",
+          "type": "DATE",
+          "required": "是",
+          "description": "",
+          "storageType": "DATE",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "occupy_start_date",
+          "chinese": "实际占用开始日期",
+          "type": "DATE",
+          "required": "是",
+          "description": "库存查询使用；通常等于租期开始日期",
+          "storageType": "DATE",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "occupy_end_date",
+          "chinese": "实际占用结束日期",
+          "type": "DATE",
+          "required": "是",
+          "description": "库存查询使用；不延期时等于租期结束日期，延期后更新为当前有效归还日期",
+          "storageType": "DATE",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "reservation_status",
+          "chinese": "占用状态",
+          "type": "VARCHAR(32)",
+          "required": "是",
+          "description": "见状态字典",
+          "storageType": "VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "expires_at",
+          "chinese": "过期时间",
+          "type": "DATETIME(3)",
+          "required": "否",
+          "description": "短锁时使用",
+          "storageType": "DATETIME(3)",
+          "nullable": true,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "idempotency_key",
+          "chinese": "占用幂等键",
+          "type": "VARCHAR(128)",
+          "required": "是",
+          "description": "同一结算快照/SN 创建与状态迁移可重放",
+          "storageType": "VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "version",
+          "chinese": "乐观锁版本",
+          "type": "INT",
+          "required": "是",
+          "description": "默认 0，状态迁移条件更新",
+          "storageType": "INT",
+          "nullable": false,
+          "defaultSql": "0",
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "created_at",
+          "chinese": "创建时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        },
+        {
+          "field": "updated_at",
+          "chinese": "更新时间",
+          "type": "DATETIME(3)",
+          "required": "是",
+          "description": "",
+          "storageType": "DATETIME(3)",
+          "nullable": false,
+          "defaultSql": null,
+          "generatedSql": null,
+          "writeRule": "C-25 §2/§4；服务端生成/受控提交，禁止CRUD直写",
+          "foreignKey": null
+        }
+      ],
+      "indexes": [
+        [
+          "U",
+          "effect",
+          [
+            "idempotency_key"
+          ]
+        ],
+        [
+          "K",
+          "range",
+          [
+            "sku_id",
+            "reservation_status",
+            "occupy_start_date",
+            "occupy_end_date"
+          ]
+        ],
+        [
+          "K",
+          "sn",
+          [
+            "sn_id",
+            "reservation_status",
+            "occupy_start_date",
+            "occupy_end_date"
+          ]
+        ]
+      ],
+      "foreignKeys": {
+        "sku_id": [
+          "prop_sku",
+          "id"
+        ],
+        "sn_id": [
+          "prop_sn_instance",
+          "id"
+        ]
+      },
+      "checks": [
+        "quantity>0",
+        "sn_id IS NULL OR quantity=1",
+        "rental_start_date<=rental_end_date AND occupy_start_date<=occupy_end_date",
+        "(source_type IS NULL AND source_id IS NULL) OR (source_type IS NOT NULL AND source_id IS NOT NULL)",
+        "`id` IS NULL OR REGEXP_LIKE(`id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`sku_id` IS NULL OR REGEXP_LIKE(`sku_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`sn_id` IS NULL OR REGEXP_LIKE(`sn_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`checkout_batch_id` IS NULL OR REGEXP_LIKE(`checkout_batch_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`checkout_batch_item_snapshot_id` IS NULL OR REGEXP_LIKE(`checkout_batch_item_snapshot_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`rental_order_id` IS NULL OR REGEXP_LIKE(`rental_order_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`rental_order_item_id` IS NULL OR REGEXP_LIKE(`rental_order_item_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`source_type` IS NULL OR `source_type` IN ('checkout_batch','checkout_batch_item_snapshot','order','order_item','extension_request','system')",
+        "`source_id` IS NULL OR REGEXP_LIKE(`source_id`,'^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$','c')",
+        "`reservation_status` IS NULL OR `reservation_status` IN ('held','paid_locked','renting','overdue_holding','disputed_holding','released','cancelled','expired','completed')",
+        "`version`>=0"
+      ]
+    }
+  ],
+  "tableCount": 15,
+  "columnCount": 255,
+  "dictionarySeeds": [
+    {
+      "id": "3b61e27d4ff842b09ac571453da28624",
+      "group": "prop_sku_style-style",
+      "code": "chinese_classical",
+      "label": "中式/古典"
+    },
+    {
+      "id": "9a436c1f84694606bf23a7c4375e1099",
+      "group": "prop_sku_style-style",
+      "code": "western_classical",
+      "label": "西洋/古典"
+    },
+    {
+      "id": "67fed139dd5a4e97b4eec938be95f062",
+      "group": "prop_sku_style-style",
+      "code": "retro",
+      "label": "复古"
+    },
+    {
+      "id": "30b48157fae34f35a08871d08d54e58a",
+      "group": "prop_sku_style-style",
+      "code": "modern",
+      "label": "现代"
+    },
+    {
+      "id": "1273b34ea6424e05a663a41497fde424",
+      "group": "prop_sku_style-style",
+      "code": "industrial_ruins",
+      "label": "工业/废墟"
+    },
+    {
+      "id": "4881bad503b9407e95a16467ec2018ab",
+      "group": "prop_sku_style-style",
+      "code": "ins_healing",
+      "label": "网红/治愈"
+    },
+    {
+      "id": "ff847d73114a426e8cad504bcb89f510",
+      "group": "prop_sku_style-style",
+      "code": "childlike_dreamy",
+      "label": "童趣/梦幻"
+    },
+    {
+      "id": "c51e82dfce2c43a492cc6e3627885052",
+      "group": "prop_sku_style-style",
+      "code": "sci_fi_avant_garde",
+      "label": "科幻/先锋"
+    },
+    {
+      "id": "e0211248e6244ba9bd09b963a0bd26c5",
+      "group": "prop_sku_style-style",
+      "code": "natural_exotic",
+      "label": "自然原野/异域"
+    },
+    {
+      "id": "5c857426ae5741f799c6fef4c2010e59",
+      "group": "prop_sku_style-style",
+      "code": "special_asset",
+      "label": "特殊资产"
+    },
+    {
+      "id": "6620fc08998942dfb2c842c6058901b1",
+      "group": "prop_sku-fire_resistant",
+      "code": "yes",
+      "label": "是"
+    },
+    {
+      "id": "5faa978a143f4d65aeabb9420718920c",
+      "group": "prop_sku-fire_resistant",
+      "code": "no",
+      "label": "否"
+    },
+    {
+      "id": "d9e95e40ccc3485e8d45a653f62b4956",
+      "group": "prop_sku-fire_resistant",
+      "code": "sprayable",
+      "label": "可喷阻燃液"
+    }
+  ],
+  "menuSeeds": [
+    {
+      "id": "0ccee910e32f42ef8bd9688029a67b68",
+      "parentId": null,
+      "name": "道具与库存",
+      "kind": "directory",
+      "permission": null,
+      "route": "/props",
+      "component": null,
+      "sort": 70
+    },
+    {
+      "id": "6ec658581e43482db1b0d8d15125de4f",
+      "parentId": "0ccee910e32f42ef8bd9688029a67b68",
+      "name": "道具与库存审核",
+      "kind": "menu",
+      "permission": "admin:prop-review:read",
+      "route": "/props/reviews",
+      "component": "props/PropReviews",
+      "sort": 1
+    },
+    {
+      "id": "ba7ce6acad564dd29d94ddd8d6c63926",
+      "parentId": "6ec658581e43482db1b0d8d15125de4f",
+      "name": "道具与库存审核 review",
+      "kind": "button",
+      "permission": "admin:prop-review:review",
+      "route": null,
+      "component": null,
+      "sort": 2
+    },
+    {
+      "id": "3add6f88cf5c41de9dd6598cb6f44ac7",
+      "parentId": "6ec658581e43482db1b0d8d15125de4f",
+      "name": "道具与库存审核 sensitive",
+      "kind": "button",
+      "permission": "admin:prop-review:sensitive",
+      "route": null,
+      "component": null,
+      "sort": 3
+    },
+    {
+      "id": "49e1029e58ba4b10ba4a28e3f5ed38e9",
+      "parentId": "0ccee910e32f42ef8bd9688029a67b68",
+      "name": "道具资产与租期",
+      "kind": "menu",
+      "permission": "admin:prop-asset:read",
+      "route": "/props/assets",
+      "component": "props/PropAssets",
+      "sort": 11
+    },
+    {
+      "id": "b00756de0369487ba8ab6661e0e6bd83",
+      "parentId": "49e1029e58ba4b10ba4a28e3f5ed38e9",
+      "name": "道具资产与租期 sensitive",
+      "kind": "button",
+      "permission": "admin:prop-asset:sensitive",
+      "route": null,
+      "component": null,
+      "sort": 12
+    },
+    {
+      "id": "b03340d8be624fdd90277d0fa556c4fc",
+      "parentId": "0ccee910e32f42ef8bd9688029a67b68",
+      "name": "二维码异常",
+      "kind": "menu",
+      "permission": "admin:prop-qr:read",
+      "route": "/props/qr-exceptions",
+      "component": "props/QrExceptions",
+      "sort": 21
+    },
+    {
+      "id": "42e44a9eb8d94c9fa961cec1bdad8d59",
+      "parentId": "b03340d8be624fdd90277d0fa556c4fc",
+      "name": "二维码异常 manage",
+      "kind": "button",
+      "permission": "admin:prop-qr:manage",
+      "route": null,
+      "component": null,
+      "sort": 22
+    },
+    {
+      "id": "92cfb8f75004467ab1bae51567fede32",
+      "parentId": "b03340d8be624fdd90277d0fa556c4fc",
+      "name": "二维码异常 review",
+      "kind": "button",
+      "permission": "admin:prop-qr:review",
+      "route": null,
+      "component": null,
+      "sort": 23
+    },
+    {
+      "id": "cabe4b7fdd204a67a95643743a1e1bef",
+      "parentId": "b03340d8be624fdd90277d0fa556c4fc",
+      "name": "二维码异常 sensitive",
+      "kind": "button",
+      "permission": "admin:prop-qr:sensitive",
+      "route": null,
+      "component": null,
+      "sort": 24
+    }
+  ],
+  "sourceSha256": "f5c9f50915975ea1711b1f7da546fc457c07bc3ac08e4f146d086e653afd46b1",
+  "logicalReferences": {
+    "dictCodes": "固定group+code受控引用，不加单code FK",
+    "qrTarget": "target_type+target_id按SN/SKU及归属校验",
+    "operationTarget": "operation_code+target_type+target_id逐项校验",
+    "reservationArchive": "movement.related_reservation_id仅逻辑热/历史解析，已获批准",
+    "futureParents": "current_order/related_order/arbitration以及reservation.checkout/order父表尚未建立；C写入为NULL，D3/D5首次写前加对应FK；不视为永久豁免"
+  },
+  "existingTableChanges": [
+    "admin_case_relation.prop_source_guard及唯一",
+    "admin_case C来源条件CHECK",
+    "admin_case_action C动作条件CHECK"
+  ],
+  "api": {
+    "operations": 55,
+    "get": 33,
+    "post": 22
+  }
+}

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC '-//mybatis.org//DTD Mapper 3.0//EN'
+  'https://mybatis.org/dtd/mybatis-3-mapper.dtd'>
+<mapper namespace="com.mujian.backend.material.mapper.MaterialReferenceMapper">
+  <select id="countPriorMaterialReferences" resultType="int">
+    SELECT (SELECT COUNT(*) FROM user_realname_verification WHERE user_id=#{owner} AND (id_card_front_object_key=#{key} OR id_card_back_object_key=#{key})) + (SELECT COUNT(*) FROM user_student_verification WHERE user_id=#{owner} AND JSON_CONTAINS(student_card_urls,JSON_QUOTE(#{key}))) + (SELECT COUNT(*) FROM factory_onboarding_audit WHERE applicant_user_id=#{owner} AND (factory_avatar_url=#{key} OR business_license_url=#{key} OR JSON_CONTAINS(factory_photo_urls,JSON_QUOTE(#{key})) OR JSON_SEARCH(case_materials_json,'one',#{key}) IS NOT NULL)) + (SELECT COUNT(*) FROM factory_profile WHERE owner_user_id=#{owner} AND (factory_avatar_url=#{key} OR business_license_url=#{key} OR JSON_CONTAINS(factory_photo_urls,JSON_QUOTE(#{key})) OR JSON_SEARCH(case_materials_json,'one',#{key}) IS NOT NULL)) + (SELECT COUNT(*) FROM factory_profile_change_audit WHERE applicant_user_id=#{owner} AND (JSON_SEARCH(change_payload_json,'one',#{key},NULL,'$.before','$.proposed') IS NOT NULL)) + (SELECT COUNT(*) FROM prop_image WHERE image_url=#{key}) + (SELECT COUNT(*) FROM prop_sku WHERE image_url=#{key}) + (SELECT COUNT(*) FROM prop_sku_audit WHERE JSON_SEARCH(before_snapshot_json,'one',#{key}) IS NOT NULL OR JSON_SEARCH(proposed_snapshot_json,'one',#{key}) IS NOT NULL) + (SELECT COUNT(*) FROM prop_qr_exception_record WHERE JSON_CONTAINS(evidence_urls_json,JSON_QUOTE(#{key})))
+  </select>
+  <select id="countOrderEvidenceReferences" resultType="int">SELECT COUNT(*) FROM order_evidence_record WHERE uploaded_by_user_id=#{owner} AND file_storage_key=#{key} AND draft_removed_at IS NULL</select>
+  <select id="hasExpenseStatements" resultType="boolean">SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='order_transport_expense_statement')</select>
+  <select id="countReusedExpenseReferences" resultType="int">SELECT COUNT(*) FROM order_evidence_record e WHERE e.uploaded_by_user_id=#{owner} AND e.file_storage_key=#{key}
+    AND EXISTS(SELECT 1 FROM order_transport_expense_statement s WHERE s.rental_order_id=e.rental_order_id AND JSON_CONTAINS(s.extra_fee_detail_json,JSON_QUOTE(e.id),'$.reusedEvidenceIds'))</select>
+  <select id="countCustomReferences" resultType="int">SELECT EXISTS(SELECT 1 FROM custom_material m WHERE m.owner_user_id=#{owner} AND m.storage_key=#{key} AND (
+    EXISTS(SELECT 1 FROM custom_requirement_attachment a WHERE a.material_id=m.id AND a.requirement_id=m.requirement_id)
+    OR EXISTS(SELECT 1 FROM custom_delivery_record d WHERE d.custom_order_id=m.custom_order_id AND JSON_CONTAINS(d.evidence_json,JSON_QUOTE(m.storage_key)))
+    OR EXISTS(SELECT 1 FROM custom_order_extension_request e WHERE e.custom_order_id=m.custom_order_id AND JSON_CONTAINS(e.evidence_json,JSON_QUOTE(m.storage_key)))
+    OR EXISTS(SELECT 1 FROM custom_after_sale_request a WHERE a.custom_order_id=m.custom_order_id AND JSON_CONTAINS(a.evidence_json,JSON_QUOTE(m.storage_key)))
+    OR EXISTS(SELECT 1 FROM custom_after_sale_factory_statement s JOIN custom_after_sale_request a ON a.id=s.after_sale_id WHERE a.custom_order_id=m.custom_order_id AND JSON_CONTAINS(s.evidence_json,JSON_QUOTE(m.storage_key)))))</select>
+</mapper>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mujian.backend.custom.mapper.CustomContextMapper">
+  <sql id="eligible">FROM factory_profile f JOIN sys_user u ON u.id=f.owner_user_id WHERE f.factory_status='active' AND u.user_status='active'</sql>
+  <select id="selectCustomContextFactories" resultType="com.mujian.backend.custom.mapper.CustomContextMapper$Factory">SELECT f.id,f.factory_name name,f.main_business <include refid="eligible"/> ORDER BY f.factory_name,f.id LIMIT #{page.pageSize} OFFSET #{page.offset}</select>
+  <select id="factoryCount" resultType="long">SELECT COUNT(*) <include refid="eligible"/></select>
+  <select id="selectCustomContextFactory" resultType="com.mujian.backend.custom.mapper.CustomContextMapper$Factory">SELECT f.id,f.factory_name name,f.main_business <include refid="eligible"/> AND f.id=#{id}</select>
+  <select id="caseById" resultType="com.mujian.backend.custom.mapper.CustomContextMapper$Case">SELECT id,version,case_status state FROM admin_case WHERE id=#{id}</select>
+  <select id="selectNotesByCase" resultType="com.mujian.backend.custom.mapper.CustomContextMapper$Note">SELECT id,contact_channel channel,note_content summary,CONCAT(LEFT(DATE_FORMAT(created_at,'%Y-%m-%dT%H:%i:%s.%f'),23),'+08:00') at FROM admin_case_note WHERE admin_case_id=#{id} AND note_type='contact_record' ORDER BY created_at DESC,id</select>
+  <select id="selectCustomRefundsByOrderId" resultType="com.mujian.backend.payment.domain.RefundOrderDO">SELECT <include refid="com.mujian.backend.payment.mapper.RefundMapper.columns"/> FROM refund_order r WHERE r.biz_order_type='custom_order' AND r.biz_order_id=#{order} ORDER BY r.created_at DESC,r.id</select>
+  <select id="selectFactoryStatementsByAfterSale" resultType="com.mujian.backend.custom.mapper.CustomContextMapper$Statement">SELECT id,summary,evidence_json evidence,CONCAT(LEFT(DATE_FORMAT(created_at,'%Y-%m-%dT%H:%i:%s.%f'),23),'+08:00') at FROM custom_after_sale_factory_statement WHERE after_sale_id=#{sale} ORDER BY created_at,id</select>
+  <insert id="insertCustomAfterSaleFactoryStatement">INSERT INTO custom_after_sale_factory_statement(id,after_sale_id,operator_user_id,summary,evidence_json,created_at) VALUES(#{id},#{sale},#{actor},#{summary},#{evidence},#{at})</insert>
+  <update id="advanceSale">UPDATE custom_after_sale_request SET version=version+1,updated_at=#{at} WHERE id=#{sale}</update>
+</mapper>
