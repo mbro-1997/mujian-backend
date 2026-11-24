@@ -36,7 +36,11 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
-        <configuration><profiles>${app.profiles}</profiles></configuration>
+        <configuration>
+          <profiles>${app.profiles}</profiles>
+          <!-- 仅 Maven 启动的应用进程收到此标志；测试、打包和独立 JAR 不继承。 -->
+          <systemPropertyVariables><mj.mini-debug.maven>true</mj.mini-debug.maven></systemPropertyVariables>
+        </configuration>
       </plugin>
     </plugins>
   </build>

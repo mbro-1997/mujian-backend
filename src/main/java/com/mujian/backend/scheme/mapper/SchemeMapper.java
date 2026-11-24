@@ -54,6 +54,18 @@ public interface SchemeMapper {
   /** 仅删除本方案指定成员。 */
   int deleteSchemeItemBySchemeAndId(@Param("schemeId") String schemeId, @Param("id") String id);
 
+  /** 在删除快照前解除该方案的所有匿名链接。 */
+  int deleteShareLinksByScheme(@Param("id") String id);
+
+  /** 物理删除该方案的不可变分享快照。 */
+  int deleteShareSnapshotsByScheme(@Param("id") String id);
+
+  /** 一次移除本方案的所有道具。 */
+  int deleteItemsByScheme(@Param("id") String id);
+
+  /** 在同一根锁内删除本人方案。 */
+  int deleteOwnedScheme(@Param("actor") String actor, @Param("id") String id);
+
   /** 读取方案最近一次签发的链接。 */
   SchemeShareDO selectSchemeShareBySchemeId(@Param("id") String id);
 

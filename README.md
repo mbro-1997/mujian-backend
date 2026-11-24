@@ -24,6 +24,8 @@
 mvn spring-boot:run
 ```
 
+同一工作区的小程序配置为局域网模式时，本地共享后端就绪后会检查并复用／启动手机测试账号服务，见[开发版测试账号](../../开发交接/切换身份脚本.md)。
+
 Maven 默认启用 `local`，自动加载 `application.yml`、`application-local.yml` 以及 `.local/runtime.properties`，不用重复输入配置路径。若先前在终端导出过 `SPRING_CONFIG_ADDITIONAL_LOCATION`，可执行 `unset SPRING_CONFIG_ADDITIONAL_LOCATION`，避免旧设置干扰环境切换。
 
 | 文件 | 用途 |
@@ -85,7 +87,7 @@ python3 deploy/verify-local.py -Dmj.build.directory=target/d2a \
 
 V4为12表完整结构，V5为五规则正文，V6为账号资质菜单与六权限。正常启动不迁移；今后迁移必须先隔离验证，再显式 `python3 deploy/run-cli.py migrate .local/migration.properties --build-dir target/d2a`。本轮开发库已是V6，无需重复初始化。
 
-微信与COS密钥仅填本机 `.local/runtime.properties` 或生产秘密管理。示例键见 deploy/runtime.example.properties；COS桶/地域/前缀在适配器固定。清理开关保持false、cloud-policy-verified保持false。版本开启或策略未知时拒绝删除；逐版本物理回收尚未实现。实际云CL与匿名/签名检查通过前，不开启删除。AES密钥为独立32字节随机值，版本是AAD的一部分，不可丢弃仍被历史密文引用的旧版本。
+微信与COS密钥仅填本机 `.local/runtime.properties` 或生产秘密管理。示例键见 deploy/runtime.example.properties；COS桶和地域由环境配置提供（见下方“COS 跨环境部署”）；既有对象前缀保持不变。清理开关保持false、cloud-policy-verified保持false。版本开启或策略未知时拒绝删除；逐版本物理回收尚未实现。实际云CL与匿名/签名检查通过前，不开启删除。AES密钥为独立32字节随机值，版本是AAD的一部分，不可丢弃仍被历史密文引用的旧版本。
 
 本批可选隔离浏览器夹具位于 `src/test/java/com/mujian/backend/d2a/D2VisualFixturesCli.java`，只存在测试classpath，启动前必须设置MJ_TEST_CONFIG；使用真实测试库/Redis、虚构微信/COS与固定测试时钟。凭据写入700/600的.local/test目录，不进JAR。浏览器夹具的Vite代理需独立端口设置MJ_TEST_API_TARGET；原生可在停止正式18080后传入参数18080（其余固定端口拒绝），由受保护visual-runtime.json提供测试会话。完成后退出测试会话、关闭夹具并恢复正式JAR/5173→18080；不改小程序业务源码注入身份。
 
@@ -185,3 +187,41 @@ D3独立HTML只读分享源文件位于兄弟前端仓库`../mujian-frontend/sha
 
 
 D3-A R1—R4当前运行补充（2026-11-06）：新产物在`target/d3a-r1-r4/mujian-backend-0.1.0.jar`，PID98872/18080，沿既有local配置与darkmujian；上文target/d3a为前轮已保留产物。为排除移动record后的旧class残留，本轮使用全新构建目录；后续构建/启动命令须使用该当前目录。原启动信息在`.local/d3-runtime-switch-before-r1-r4.json`，当前信息在`.local/d3-runtime-switch.json`，均600权限。源码中方案/地址专属DTO/VO已归所属模块；PDF外部读取由`infrastructure/storage/BoundedMaterialReader`承接，仍复用PrivateMaterialStore签名，限时限量/HTTPS/禁重定向保持。R1前端公共流程和受影响验证结果见原C-02/U-01，不重跑无关验收。
+
+
+## COS 跨环境部署（2026-11-24）
+
+统一使用腾讯云 Java SDK 与默认 HTTPS 桶域名，当前为 `https://cct1-1429809468.cos.ap-shanghai.myqcloud.com`。不固定 IP、不关闭 TLS 校验，上传继续指定私有 ACL，桶保持私有。对象路径、接口和签名期限不变；换服务器或桶只需改外部配置并重启同一 JAR，不重新打包。
+
+| 配置键 | 环境变量 | 默认／说明 |
+| --- | --- | --- |
+| `mj.cos.bucket` | `MJ_COS_BUCKET` | `cct1-1429809468`，包含 APPID 后缀 |
+| `mj.cos.region` | `MJ_COS_REGION` | `ap-shanghai` |
+| `mj.cos.secret-id` / `mj.cos.secret-key` | `MJ_COS_SECRET_ID` / `MJ_COS_SECRET_KEY` | 无默认凭据，由各环境秘密管理注入 |
+| `mj.cos.proxy.host` / `mj.cos.proxy.port` | `MJ_COS_PROXY_HOST` / `MJ_COS_PROXY_PORT` | 空／0，不主动配置 SDK 代理；host 为出口代理域名或地址，不带协议 |
+| `mj.cos.proxy.username` / `mj.cos.proxy.password` | `MJ_COS_PROXY_USERNAME` / `MJ_COS_PROXY_PASSWORD` | 可选代理认证，同样安全注入 |
+
+**Mac 本地：** 保持 Clash 开启，使用 `local`。桶、地域及凭据放 `.local/runtime.properties`（权限 600，忽略且不打包），示例见 [runtime.example.properties](deploy/runtime.example.properties)。`LocalCosNetworkConfiguration` 仅在 Mac、local 且未显式配置 SDK 代理时，在客户端创建前向 JVM 的 `http.nonProxyHosts`、`socksNonProxyHosts` 追加当前桶域名，保留并去重原有例外，不改变系统代理或 JVM 代理地址。域名随 bucket/region 配置计算。无需把本机 Clash 地址写入业务代码或云端配置。
+
+**管理端道具图片：** 审核资料、资产详情及二维码异常证据使用同源 `GET /api/admin/prop-materials/content`。浏览器携带管理端会话，后端按材料所属业务校验读取及敏感权限，记录查看审计，再通过同一 COS SDK 返回私有 PNG／JPEG，响应禁止缓存。管理端部署须将站点的 `/api` 转发到后端。只要浏览器能访问管理端站点，图片读取便使用同一入口，COS 网络配置由后端所在环境管理。
+
+**云端直连：** 使用 `prod`，不携带 Mac 的 JVM 代理参数、`JAVA_TOOL_OPTIONS`／`JDK_JAVA_OPTIONS` 中的代理设置或本机 local 配置。通过秘密管理挂载只读配置文件，例如 `/etc/mujian/runtime.properties`，保留服务器本身所需的数据库等配置，并加入：
+
+```properties
+mj.cos.bucket=cct1-1429809468
+mj.cos.region=ap-shanghai
+mj.cos.proxy.host=
+mj.cos.proxy.port=0
+# secret-id、secret-key 由秘密管理写入，禁止提交真实值。
+```
+
+```sh
+java -jar mujian-backend-0.1.0.jar --spring.profiles.active=prod \
+  --spring.config.additional-location=file:/etc/mujian/runtime.properties
+```
+
+也可由部署环境安全注入上表环境变量；不要把密钥放启动命令或公开日志。`prod` 的数据库、安全等既有启动要求仍须满足。
+
+**云端需出口代理时：** 只在该环境外部配置中设置，例如 `mj.cos.proxy.host=egress.internal.example`、`mj.cos.proxy.port=3128`，可选填写代理认证。SDK 使用该 HTTP 出口代理访问 HTTPS COS；默认桶域名和手机拿到的 HTTPS 签名 URL 不变。本项不是 SOCKS 代理配置。不要复制 Mac 的 `127.0.0.1:7897`。
+
+**验收边界：** 必须经过原上传接口实际写入，再验证签名图片可读取、手机可重新打开；匿名 403 仅作私有访问限制的辅助检查。当前云端未部署，云端直连／出口代理实网结果均待验；本地结果见 [03 执行记录末节](../../开发交接/03-Agent执行规范与验收清单.md)。

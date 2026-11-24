@@ -25,6 +25,35 @@
     FROM rental_checklist
     WHERE owner_user_id=#{actor}
       AND id=#{id}
+      AND checklist_status&lt;&gt;'deleted'
+    <if test="lock">
+      FOR UPDATE
+    </if>
+  </select>
+
+  <select id="selectOwnedChecklistIncludingDeletedById" resultType="com.mujian.backend.planning.domain.RentalChecklistDO" useCache="false" flushCache="true">
+    SELECT
+      id,
+      owner_user_id,
+      checklist_name,
+      rental_start_date,
+      rental_end_date,
+      rental_days,
+      checklist_status,
+      active_slot_no,
+      current_owner_guard,
+      current_checkout_batch_id,
+      source_type,
+      source_scheme_id,
+      activated_at,
+      checkout_processing_at,
+      converted_order_at,
+      version,
+      created_at,
+      updated_at
+    FROM rental_checklist
+    WHERE owner_user_id=#{actor}
+      AND id=#{id}
     <if test="lock">
       FOR UPDATE
     </if>
@@ -60,6 +89,7 @@
   </select>
   <sql id="filter">
     owner_user_id=#{query.actor}
+    AND checklist_status&lt;&gt;'deleted'
     <if test="query.scope == 'active'">
         AND active_slot_no IS NOT NULL
     </if>
@@ -141,6 +171,14 @@
       #{row.createdAt},
       #{row.updatedAt})
   </insert>
+
+  <update id="markOwnedChecklistDeleted">
+    UPDATE rental_checklist
+    SET checklist_status='deleted', active_slot_no=NULL, version=#{updatedVersion}, updated_at=#{now}
+    WHERE owner_user_id=#{actor} AND id=#{id} AND version=#{expectedVersion}
+      AND checklist_status IN ('selecting','suspended')
+      AND current_checkout_batch_id IS NULL AND converted_order_at IS NULL
+  </update>
 
   <update id="updateChecklist">
     UPDATE rental_checklist

@@ -12,6 +12,7 @@ import com.mujian.backend.planning.service.*;
 import com.mujian.backend.scheme.domain.*;
 import com.mujian.backend.scheme.dto.SchemeDtos.ExportPdf;
 import com.mujian.backend.scheme.mapper.*;
+import java.io.IOException;
 import java.time.*;
 import java.util.*;
 import org.springframework.stereotype.Service;
@@ -32,8 +33,7 @@ public class PdfReservationService {
   private final ObjectMapper objectMapper;
   private final Clock clock;
 
-  public record Reservation(
-      String exportId, boolean generate, String cacheKey, PdfFileMetadata cachedFile) {}
+  public record Reservation(String exportId, SchemeExportService.Result cachedResult) {}
 
   /** 复用本批根锁及私有容量。 */
   public PdfReservationService(
@@ -67,7 +67,15 @@ public class PdfReservationService {
     String cacheKey =
         schemePdfCache.key(schemeId, schemeDOInitial.contentVersion(), exportPdf.hidePrice());
     PdfFileMetadata cached = schemePdfCache.get(cacheKey);
-    if (cached != null) return new Reservation(cached.id(), false, cacheKey, cached);
+    if (cached != null) {
+      try {
+        return new Reservation(cached.id(), open(cached, true));
+      } catch (IOException | ApiFailure failure) {
+        if (failure instanceof ApiFailure api
+            && !PlanningReason.PDF_CACHE_EXPIRED.name().equals(api.reason)) throw api;
+        schemePdfCache.remove(cacheKey, cached.id());
+      }
+    }
     planningOperations.writable(actor);
     if (schemeExportMapper.selectProcessingExportBySchemeId(schemeId) != null)
       throw conflict(PlanningReason.PDF_PROCESSING.name());
@@ -148,6 +156,51 @@ public class PdfReservationService {
             actor,
             now,
             now));
-    return new Reservation(id, true, cacheKey, null);
+    return new Reservation(id, null);
+  }
+
+  /** 在仍然存在的本人方案上取共享锁，打开原文件后才结束鉴权事务。 */
+  @Transactional(isolation = Isolation.READ_COMMITTED)
+  public SchemeExportService.Result openReady(String actor, String exportId, boolean previousFile) {
+    SchemeExportDO row = schemeExportMapper.selectDownloadableExportById(actor, exportId);
+    if (row == null) throw missing();
+    if (SchemeExportStatus.processing.name().equals(row.exportStatus()))
+      throw conflict(PlanningReason.PDF_PROCESSING.name());
+    if (SchemeExportStatus.failed.name().equals(row.exportStatus()))
+      throw unavailable(row.errorMessage());
+    if (!previousFile) schemePdfCache.put(row);
+    try {
+      return open(new PdfFileMetadata(row.id(), row.fileExpireAt()), previousFile);
+    } catch (IOException | ApiFailure failure) {
+      if (failure instanceof ApiFailure api
+          && !PlanningReason.PDF_CACHE_EXPIRED.name().equals(api.reason)) throw api;
+      schemePdfCache.remove(
+          schemePdfCache.key(row.schemeId(), row.sourceContentVersion(), row.hidePrice()),
+          row.id());
+      throw conflict(PlanningReason.PDF_CACHE_EXPIRED.name()).causedBy(failure);
+    }
+  }
+
+  /** 成功提交后把读租约交给 HTTP；提交失败时没有调用方接手租约。 */
+  private SchemeExportService.Result open(PdfFileMetadata file, boolean cacheHit)
+      throws IOException {
+    PdfFiles.Lease lease = pdfFiles.open(file);
+    if (TransactionSynchronizationManager.isSynchronizationActive()) {
+      TransactionSynchronizationManager.registerSynchronization(
+          new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+              if (status != STATUS_COMMITTED) {
+                try {
+                  lease.close();
+                } catch (IOException failure) {
+                  org.slf4j.LoggerFactory.getLogger(PdfReservationService.class)
+                      .warn("event=pdf_lease_close_failed", failure);
+                }
+              }
+            }
+          });
+    }
+    return new SchemeExportService.Result(file, cacheHit, lease);
   }
 }

@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "幕间 D3-A 方案清单地址契约",
-    "version": "2026-11-18.1",
-    "description": "2026-11-18确认稿：动作数组增量保存，PDF单POST/Redis3分钟/文件5分钟，独立7天分享链接及不可变快照；保留未受影响入口。跨字段/事务约束见C-03/C-04。"
+    "version": "2026-11-24.2",
+    "description": "新增物理删除整份方案，保留整张清单删除及既有契约：动作数组增量保存，PDF单POST/Redis3分钟/文件5分钟，独立7天分享链接及不可变快照；保留未受影响入口。跨字段/事务约束见C-03/C-04。"
   },
   "servers": [
     {
@@ -1826,6 +1826,377 @@
             }
           }
         }
+      }
+    },
+    "/api/me/schemes/{id}/delete": {
+      "post": {
+        "operationId": "deleteScheme",
+        "summary": "deleteScheme",
+        "tags": [
+          "03"
+        ],
+        "security": [
+          {
+            "MiniBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/RequestId"
+            }
+          }
+        ],
+        "x-errors": [
+          {
+            "http": 403,
+            "code": "FORBIDDEN",
+            "reasonCode": "ACCOUNT_ACTION_RESTRICTED"
+          },
+          {
+            "http": 500,
+            "code": "DATA_INTEGRITY_ERROR",
+            "reasonCode": "ACCOUNT_CONTEXT_INCONSISTENT"
+          },
+          {
+            "http": 403,
+            "code": "FORBIDDEN",
+            "reasonCode": "CLIENT_TYPE_MISMATCH"
+          },
+          {
+            "http": 415,
+            "code": "INVALID_ARGUMENT",
+            "reasonCode": "CONTENT_TYPE_UNSUPPORTED"
+          },
+          {
+            "http": 503,
+            "code": "SERVICE_UNAVAILABLE",
+            "reasonCode": "DATABASE_UNAVAILABLE"
+          },
+          {
+            "http": 403,
+            "code": "FORBIDDEN",
+            "reasonCode": "DEMANDER_ROLE_REQUIRED"
+          },
+          {
+            "http": 409,
+            "code": "STATE_CONFLICT",
+            "reasonCode": "IDEMPOTENCY_KEY_REUSED"
+          },
+          {
+            "http": 401,
+            "code": "UNAUTHORIZED",
+            "reasonCode": "LOGIN_REQUIRED"
+          },
+          {
+            "http": 405,
+            "code": "METHOD_NOT_ALLOWED",
+            "reasonCode": "METHOD_NOT_ALLOWED"
+          },
+          {
+            "http": 413,
+            "code": "INVALID_ARGUMENT",
+            "reasonCode": "PAYLOAD_TOO_LARGE"
+          },
+          {
+            "http": 500,
+            "code": "DATA_INTEGRITY_ERROR",
+            "reasonCode": "PLANNING_DATA_INCONSISTENT"
+          },
+          {
+            "http": 400,
+            "code": "INVALID_ARGUMENT",
+            "reasonCode": "REQUEST_INVALID"
+          },
+          {
+            "http": 404,
+            "code": "NOT_FOUND",
+            "reasonCode": "RESOURCE_NOT_FOUND"
+          },
+          {
+            "http": 503,
+            "code": "SERVICE_UNAVAILABLE",
+            "reasonCode": "SESSION_STORE_UNAVAILABLE"
+          },
+          {
+            "http": 429,
+            "code": "RATE_LIMITED",
+            "reasonCode": "TOO_MANY_REQUESTS"
+          },
+          {
+            "http": 500,
+            "code": "INTERNAL_ERROR",
+            "reasonCode": "UNEXPECTED_ERROR"
+          },
+          {
+            "http": 409,
+            "code": "STATE_CONFLICT",
+            "reasonCode": "VERSION_CONFLICT"
+          }
+        ],
+        "x-source": "03",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Reply_Receipt"
+                },
+                "examples": {
+                  "applied": {
+                    "value": {
+                      "code": "OK",
+                      "message": "成功",
+                      "data": {
+                        "requestId": "10000000-0000-4000-8000-000000000001",
+                        "operation": "deleteScheme",
+                        "resourceType": "scheme",
+                        "resourceId": "10000000000040008000000000000001",
+                        "resourceVersion": null,
+                        "outcome": "applied",
+                        "appliedAt": "2026-11-18T10:00:00.000+08:00"
+                      },
+                      "traceId": "trace-example"
+                    }
+                  },
+                  "replayed": {
+                    "value": {
+                      "code": "OK",
+                      "message": "成功",
+                      "data": {
+                        "requestId": "10000000-0000-4000-8000-000000000001",
+                        "operation": "deleteScheme",
+                        "resourceType": "scheme",
+                        "resourceId": "10000000000040008000000000000001",
+                        "resourceVersion": null,
+                        "outcome": "replayed",
+                        "appliedAt": "2026-11-18T10:00:00.000+08:00"
+                      },
+                      "traceId": "trace-example"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "错误；data=null，精确原因决定恢复，不证明事务已回滚",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error_REQUEST_INVALID"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "错误；data=null，精确原因决定恢复，不证明事务已回滚",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error_LOGIN_REQUIRED"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "错误；data=null，精确原因决定恢复，不证明事务已回滚",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error_ACCOUNT_ACTION_RESTRICTED"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error_CLIENT_TYPE_MISMATCH"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error_DEMANDER_ROLE_REQUIRED"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "错误；data=null，精确原因决定恢复，不证明事务已回滚",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error_RESOURCE_NOT_FOUND"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "错误；data=null，精确原因决定恢复，不证明事务已回滚",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error_METHOD_NOT_ALLOWED"
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "Allow": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 30
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "错误；data=null，精确原因决定恢复，不证明事务已回滚",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error_IDEMPOTENCY_KEY_REUSED"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error_VERSION_CONFLICT"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "错误；data=null，精确原因决定恢复，不证明事务已回滚",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error_PAYLOAD_TOO_LARGE"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "错误；data=null，精确原因决定恢复，不证明事务已回滚",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error_CONTENT_TYPE_UNSUPPORTED"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "错误；data=null，精确原因决定恢复，不证明事务已回滚",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error_TOO_MANY_REQUESTS"
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*$"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "错误；data=null，精确原因决定恢复，不证明事务已回滚",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error_ACCOUNT_CONTEXT_INCONSISTENT"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error_PLANNING_DATA_INCONSISTENT"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error_UNEXPECTED_ERROR"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "错误；data=null，精确原因决定恢复，不证明事务已回滚",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error_DATABASE_UNAVAILABLE"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error_SESSION_STORE_UNAVAILABLE"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpectedVersion"
+              },
+              "example": {
+                "expectedVersion": 7
+              }
+            }
+          }
+        },
+        "description": "本人编辑中和已归档方案均可直接永久删除。expectedVersion 为列表或详情的 version。同键、同路径、同体重试回原成功回执。旧详情、分享与 PDF 停止提供，来源清单和导出历史保留。"
       }
     },
     "/api/me/schemes/{id}/items": {
@@ -5894,6 +6265,356 @@
             }
           }
         }
+      }
+    },
+    "/api/me/checklists/{id}/delete": {
+      "post": {
+        "operationId": "deleteChecklist",
+        "summary": "deleteChecklist",
+        "tags": [
+          "03"
+        ],
+        "security": [
+          {
+            "MiniBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/RequestId"
+            }
+          }
+        ],
+        "x-errors": [
+          {
+            "http": 403,
+            "code": "FORBIDDEN",
+            "reasonCode": "ACCOUNT_ACTION_RESTRICTED"
+          },
+          {
+            "http": 500,
+            "code": "DATA_INTEGRITY_ERROR",
+            "reasonCode": "ACCOUNT_CONTEXT_INCONSISTENT"
+          },
+          {
+            "http": 409,
+            "code": "STATE_CONFLICT",
+            "reasonCode": "CHECKLIST_PAYMENT_IN_PROGRESS"
+          },
+          {
+            "http": 409,
+            "code": "STATE_CONFLICT",
+            "reasonCode": "CHECKLIST_READ_ONLY"
+          },
+          {
+            "http": 403,
+            "code": "FORBIDDEN",
+            "reasonCode": "CLIENT_TYPE_MISMATCH"
+          },
+          {
+            "http": 415,
+            "code": "INVALID_ARGUMENT",
+            "reasonCode": "CONTENT_TYPE_UNSUPPORTED"
+          },
+          {
+            "http": 503,
+            "code": "SERVICE_UNAVAILABLE",
+            "reasonCode": "DATABASE_UNAVAILABLE"
+          },
+          {
+            "http": 403,
+            "code": "FORBIDDEN",
+            "reasonCode": "DEMANDER_ROLE_REQUIRED"
+          },
+          {
+            "http": 409,
+            "code": "STATE_CONFLICT",
+            "reasonCode": "IDEMPOTENCY_KEY_REUSED"
+          },
+          {
+            "http": 401,
+            "code": "UNAUTHORIZED",
+            "reasonCode": "LOGIN_REQUIRED"
+          },
+          {
+            "http": 405,
+            "code": "METHOD_NOT_ALLOWED",
+            "reasonCode": "METHOD_NOT_ALLOWED"
+          },
+          {
+            "http": 413,
+            "code": "INVALID_ARGUMENT",
+            "reasonCode": "PAYLOAD_TOO_LARGE"
+          },
+          {
+            "http": 500,
+            "code": "DATA_INTEGRITY_ERROR",
+            "reasonCode": "PLANNING_DATA_INCONSISTENT"
+          },
+          {
+            "http": 400,
+            "code": "INVALID_ARGUMENT",
+            "reasonCode": "REQUEST_INVALID"
+          },
+          {
+            "http": 404,
+            "code": "NOT_FOUND",
+            "reasonCode": "RESOURCE_NOT_FOUND"
+          },
+          {
+            "http": 503,
+            "code": "SERVICE_UNAVAILABLE",
+            "reasonCode": "SESSION_STORE_UNAVAILABLE"
+          },
+          {
+            "http": 429,
+            "code": "RATE_LIMITED",
+            "reasonCode": "TOO_MANY_REQUESTS"
+          },
+          {
+            "http": 500,
+            "code": "INTERNAL_ERROR",
+            "reasonCode": "UNEXPECTED_ERROR"
+          },
+          {
+            "http": 409,
+            "code": "STATE_CONFLICT",
+            "reasonCode": "VERSION_CONFLICT"
+          }
+        ],
+        "x-source": "03",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Reply_Receipt"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "错误；data=null，精确原因决定恢复，不证明事务已回滚",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error_REQUEST_INVALID"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "错误；data=null，精确原因决定恢复，不证明事务已回滚",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error_LOGIN_REQUIRED"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "错误；data=null，精确原因决定恢复，不证明事务已回滚",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error_ACCOUNT_ACTION_RESTRICTED"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error_CLIENT_TYPE_MISMATCH"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error_DEMANDER_ROLE_REQUIRED"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "错误；data=null，精确原因决定恢复，不证明事务已回滚",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error_RESOURCE_NOT_FOUND"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "错误；data=null，精确原因决定恢复，不证明事务已回滚",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error_METHOD_NOT_ALLOWED"
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "Allow": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 30
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "错误；data=null，精确原因决定恢复，不证明事务已回滚",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error_CHECKLIST_PAYMENT_IN_PROGRESS"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error_CHECKLIST_READ_ONLY"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error_IDEMPOTENCY_KEY_REUSED"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error_VERSION_CONFLICT"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "错误；data=null，精确原因决定恢复，不证明事务已回滚",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error_PAYLOAD_TOO_LARGE"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "错误；data=null，精确原因决定恢复，不证明事务已回滚",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error_CONTENT_TYPE_UNSUPPORTED"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "错误；data=null，精确原因决定恢复，不证明事务已回滚",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error_TOO_MANY_REQUESTS"
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*$"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "错误；data=null，精确原因决定恢复，不证明事务已回滚",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error_ACCOUNT_CONTEXT_INCONSISTENT"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error_PLANNING_DATA_INCONSISTENT"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error_UNEXPECTED_ERROR"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "错误；data=null，精确原因决定恢复，不证明事务已回滚",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error_DATABASE_UNAVAILABLE"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error_SESSION_STORE_UNAVAILABLE"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpectedVersion"
+              }
+            }
+          }
+        },
+        "description": "本人选品中或挂起清单可逻辑删除并清空名额；同键重放原回执。支付中及已转订单禁止。成功后活动、历史、全部列表与详情均不可见。"
       }
     },
     "/api/me/checklists/{id}/activate": {
@@ -11693,6 +12414,7 @@
               "createScheme",
               "updateScheme",
               "archiveScheme",
+              "deleteScheme",
               "setSchemeItem",
               "removeSchemeItem",
               "reorderSchemeItems",
@@ -11700,6 +12422,7 @@
               "disableSchemeShare",
               "exportSchemePdf",
               "createChecklist",
+              "deleteChecklist",
               "activateChecklist",
               "setChecklistItem",
               "updateChecklistItem",

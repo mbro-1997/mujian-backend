@@ -6,7 +6,6 @@ import com.mujian.backend.common.api.ApiResponse;
 import com.mujian.backend.common.base.BaseController;
 import com.mujian.backend.planning.service.PlanningHttp;
 import com.mujian.backend.scheme.domain.PdfFileMetadata;
-import com.mujian.backend.scheme.domain.SchemeExportDO;
 import com.mujian.backend.scheme.dto.SchemeDtos.ExportPdf;
 import com.mujian.backend.scheme.service.*;
 import com.mujian.backend.scheme.vo.SchemeViews.ExportStatus;
@@ -18,14 +17,12 @@ import org.springframework.web.bind.annotation.*;
 public class SchemeExportController extends BaseController {
   private final SchemeExportService schemeExportService;
   private final PlanningHttp planningHttp;
-  private final PdfFiles pdfFiles;
 
   /** 文件输出复用统一身份及契约过滤器。 */
   public SchemeExportController(
-      SchemeExportService schemeExportService, PlanningHttp planningHttp, PdfFiles pdfFiles) {
+      SchemeExportService schemeExportService, PlanningHttp planningHttp) {
     this.schemeExportService = schemeExportService;
     this.planningHttp = planningHttp;
-    this.pdfFiles = pdfFiles;
   }
 
   /** 接纳或恢复生成，完成后同步有界传输。 */
@@ -59,24 +56,10 @@ public class SchemeExportController extends BaseController {
       HttpServletResponse httpServletResponseResponse,
       @PathVariable String id)
       throws IOException {
-    download(
-        httpServletResponseResponse,
-        schemeExportService.file(planningHttp.actor(httpServletRequestRequest), id),
-        true);
-  }
-
-  /** 打开租约后再提交PDF响应，传输过程中不会被清理删除。 */
-  private void download(
-      HttpServletResponse httpServletResponseResponse,
-      SchemeExportDO schemeExportDO,
-      boolean cacheHit)
-      throws IOException {
-    try (PdfFiles.Lease lease = pdfFiles.open(schemeExportDO)) {
-      stream(
-          httpServletResponseResponse,
-          new PdfFileMetadata(schemeExportDO.id(), schemeExportDO.fileExpireAt()),
-          cacheHit,
-          lease);
+    SchemeExportService.Result result =
+        schemeExportService.file(planningHttp.actor(httpServletRequestRequest), id);
+    try (PdfFiles.Lease lease = result.lease()) {
+      stream(httpServletResponseResponse, result.file(), result.cacheHit(), lease);
     }
   }
 

@@ -29,7 +29,7 @@ class D4CosEvidenceTest {
       properties.load(in);
     }
     MockEnvironment env = new MockEnvironment();
-    for (String k : List.of("mj.cos.secret-id", "mj.cos.secret-key"))
+    for (String k : List.of("mj.cos.secret-id", "mj.cos.secret-key", "mj.cos.bucket", "mj.cos.region"))
       env.setProperty(k, properties.getProperty(k));
     env.setProperty("mj.verification.cleanup.cloud-policy-verified", "true");
     CosMaterialStore store = new CosMaterialStore(env);

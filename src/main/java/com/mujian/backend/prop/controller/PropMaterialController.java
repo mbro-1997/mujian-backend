@@ -5,15 +5,19 @@ import static com.mujian.backend.common.support.D2Codes.*;
 import com.mujian.backend.common.api.ApiFailure;
 import com.mujian.backend.common.api.ApiResponse;
 import com.mujian.backend.common.security.SessionService;
+import com.mujian.backend.infrastructure.storage.PrivateMaterialStore.ImageContent;
 import com.mujian.backend.prop.dto.*;
 import com.mujian.backend.prop.dto.ImageLocatorDTO;
 import com.mujian.backend.prop.service.PropMaterialService;
 import com.mujian.backend.prop.vo.ImageViewVO;
 import com.mujian.backend.prop.vo.UploadResultVO;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Part;
 import java.util.*;
 import java.util.HashSet;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -84,5 +88,25 @@ public class PropMaterialController extends PropEndpointController {
         httpServletRequest,
         propMaterialService.viewImage(
             actor(httpServletRequest), imageLocatorDTO, true, trace(httpServletRequest)));
+  }
+
+  /** 对同源管理端返回已授权的私有图片字节。 */
+  @GetMapping("/api/admin/prop-materials/content")
+  public ResponseEntity<byte[]> readAdminPropImage(
+      HttpServletRequest httpServletRequest,
+      HttpServletResponse httpServletResponse,
+      @RequestParam String sourceType,
+      @RequestParam String sourceId,
+      @RequestParam String section,
+      @RequestParam int index) {
+    ImageContent imageContent = propMaterialService.readAdminImage(
+        actor(httpServletRequest),
+        new ImageLocatorDTO(sourceType, sourceId, section, index),
+        trace(httpServletRequest));
+    httpServletResponse.setCharacterEncoding((String) null);
+    return ResponseEntity.ok()
+        .header("X-Content-Type-Options", "nosniff")
+        .contentType(MediaType.parseMediaType(imageContent.contentType()))
+        .body(imageContent.bytes());
   }
 }

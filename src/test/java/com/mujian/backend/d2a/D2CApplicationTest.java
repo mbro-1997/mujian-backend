@@ -1877,6 +1877,12 @@ class D2CApplicationTest {
     JsonNode detail = call("GET", path, null, null, null, 200);
     JsonNode locator = detail.path("proposed").path("images").get(0).path("locator");
     call("POST", "/api/me/prop-materials/view", locator, other, null, 404);
+    java.net.URI imageUri = java.net.URI.create(
+        f.base + "/api/admin/prop-materials/content?sourceType=sku_audit&sourceId="
+            + aid + "&section=proposed&index=0");
+    assertEquals(401, f.http.send(
+        java.net.http.HttpRequest.newBuilder(imageUri).build(),
+        java.net.http.HttpResponse.BodyHandlers.discarding()).statusCode());
     List<Map<String, Object>> grants =
         f.db.queryForList(
             "SELECT * FROM admin_role_menu WHERE admin_menu_id IN (SELECT id FROM admin_menu WHERE"
@@ -1908,6 +1914,15 @@ class D2CApplicationTest {
             null,
             null,
             (mask & 3) == 3 ? 200 : 403);
+        java.net.http.HttpResponse<byte[]> image = f.http.send(
+            java.net.http.HttpRequest.newBuilder(imageUri).header("Cookie", f.adminCookie).build(),
+            java.net.http.HttpResponse.BodyHandlers.ofByteArray());
+        assertEquals((mask & 3) == 3 ? 200 : 403, image.statusCode());
+        if (image.statusCode() == 200) {
+          assertEquals("image/png", image.headers().firstValue("Content-Type").orElseThrow());
+          assertEquals("no-store", image.headers().firstValue("Cache-Control").orElseThrow());
+          assertArrayEquals(D2ApplicationTest.png(), image.body());
+        }
         call(
             "POST",
             path + "/reject",

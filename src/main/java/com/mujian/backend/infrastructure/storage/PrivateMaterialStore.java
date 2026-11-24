@@ -8,6 +8,8 @@ public interface PrivateMaterialStore {
 
   record Page(List<Stored> objects, String nextMarker) {}
 
+  record ImageContent(String contentType, byte[] bytes) {}
+
   /** 将已校验的对象内容写入指定路径。 */
   void put(String key, byte[] bytes, String contentType, Map<String, String> metadata);
 
@@ -16,6 +18,9 @@ public interface PrivateMaterialStore {
 
   /** 为已授权的对象生成限时访问地址。 */
   String sign(String key, Instant expiresAt);
+
+  /** 读取经过归属校验的私有图片，限制下载大小和图片类型。 */
+  ImageContent readImage(String key);
 
   /** 读取下一批可供核对的对象及游标。 */
   Page list(String marker);

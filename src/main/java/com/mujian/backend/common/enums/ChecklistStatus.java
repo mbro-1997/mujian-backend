@@ -5,5 +5,6 @@ public enum ChecklistStatus {
   selecting,
   suspended,
   checkout_processing,
-  converted_to_order
+  converted_to_order,
+  deleted
 }

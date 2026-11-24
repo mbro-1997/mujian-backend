@@ -2,6 +2,7 @@ package com.mujian.backend.prop.service;
 
 import static com.mujian.backend.common.support.D2Values.*;
 
+import com.mujian.backend.infrastructure.storage.PrivateMaterialStore.ImageContent;
 import com.mujian.backend.prop.dto.ImageInputDTO;
 import com.mujian.backend.prop.dto.ImageLocatorDTO;
 import com.mujian.backend.prop.vo.ImageReadVO;
@@ -36,6 +37,9 @@ public interface PropMaterialService {
 
   /** 验证私有材料权限并记录查看审计，再签发短时链接。 */
   ImageViewVO viewImage(String actor, ImageLocatorDTO imageLocatorDTO, boolean admin, String trace);
+
+  /** 校验并审计管理员图片访问，由后端读取私有图片内容。 */
+  ImageContent readAdminImage(String actor, ImageLocatorDTO imageLocatorDTO, String trace);
 
   /** 按原顺序组装材料定位信息及获授权的预览链接。 */
   List<ImageReadVO> images(

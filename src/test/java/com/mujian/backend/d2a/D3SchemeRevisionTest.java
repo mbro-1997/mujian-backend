@@ -191,6 +191,220 @@ class D3SchemeRevisionTest {
     }
   }
 
+  /** 覆盖整份方案的引用、名额和失效入口。保留实际导出任务及来源清单。 */
+  @Test
+  void physicalDeleteKeepsHistoryAndReplay() throws Exception {
+    actor = f.user();
+    String id = scheme(actor), path = "/api/me/schemes/" + id;
+    save(id, List.of(addItem(sku, 2, 1)));
+    int version = detail(id).path("version").asInt();
+    String day = now(f.clock).toLocalDate().plusDays(5).toString(), copyKey = key();
+    var source =
+        view(
+            "sourceType",
+            "scheme",
+            "schemeId",
+            id,
+            "expectedSchemeVersion",
+            version,
+            "startDate",
+            day,
+            "endDate",
+            day);
+    String list =
+        call("POST", "/api/me/checklists", source, actor, copyKey, 200)
+            .path("resourceId")
+            .asString();
+    String listPath = "/api/me/checklists/" + list;
+    JsonNode listBefore = call("GET", listPath, null, actor, null, 200);
+    var shareBody = view("expectedVersion", version, "hidePrice", true);
+    String shareKey = key();
+    JsonNode link = call("POST", path + "/share", shareBody, actor, shareKey, 200);
+    String publicPath = "/api/public/scheme-shares/" + link.path("share").path("token").asString();
+    call("GET", publicPath, null, null, null, 200);
+    version = detail(id).path("version").asInt();
+    var pdf = pdf(id, false, actor);
+    assertEquals(200, pdf.statusCode());
+    String exportId = pdf.headers().firstValue("X-Export-Id").orElseThrow();
+    String exportPath = "/api/me/scheme-exports/" + exportId;
+    assertTrue(call("GET", exportPath, null, actor, null, 200).path("canDownload").asBoolean());
+    var history = f.db.queryForMap("SELECT * FROM scheme_export WHERE id=?", exportId);
+    String deleteKey = key();
+    var body = view("expectedVersion", version);
+    call("POST", path + "/delete", body, other, key(), 404);
+    call("POST", path + "/delete", view("expectedVersion", version - 1), actor, key(), 409);
+    int slots = activeSchemeCount();
+    JsonNode receipt = call("POST", path + "/delete", body, actor, deleteKey, 200);
+    assertEquals("deleteScheme", receipt.path("operation").asString());
+    assertTrue(receipt.path("resourceVersion").isNull());
+    assertEquals("applied", receipt.path("outcome").asString());
+    JsonNode replay = call("POST", path + "/delete", body, actor, deleteKey, 200);
+    assertEquals("replayed", replay.path("outcome").asString());
+    assertEquals(receipt.path("appliedAt"), replay.path("appliedAt"));
+    call("POST", path + "/delete", body, actor, key(), 404);
+    call("POST", path + "/delete", view("expectedVersion", version + 1), actor, deleteKey, 409);
+    assertEquals("IDEMPOTENCY_KEY_REUSED", f.lastReason);
+    assertEquals(slots - 1, activeSchemeCount());
+    for (String table : List.of("scheme_item", "scheme_share", "scheme_share_snapshot"))
+      assertEquals(
+          0,
+          f.db.queryForObject(
+              "SELECT COUNT(*) FROM " + table + " WHERE scheme_id=?", Integer.class, id));
+    assertEquals(
+        0, f.db.queryForObject("SELECT COUNT(*) FROM scheme WHERE id=?", Integer.class, id));
+    call("GET", path, null, actor, null, 404);
+    call("GET", publicPath, null, null, null, 404);
+    call("POST", path + "/share", shareBody, actor, shareKey, 404);
+    call("POST", path + "/update", view("actions", List.of()), actor, key(), 404);
+    assertEquals(listBefore, call("GET", listPath, null, actor, null, 200));
+    assertEquals(
+        list,
+        call("POST", "/api/me/checklists", source, actor, copyKey, 200)
+            .path("resourceId")
+            .asString());
+    call("POST", "/api/me/checklists", source, actor, key(), 404);
+    assertEquals(history, f.db.queryForMap("SELECT * FROM scheme_export WHERE id=?", exportId));
+    assertFalse(call("GET", exportPath, null, actor, null, 200).path("canDownload").asBoolean());
+    call("GET", exportPath + "/file", null, actor, null, 404);
+    assertEquals(404, pdf(id, false, actor).statusCode());
+    // 再建四份并各导出一次，已删除方案仍占当天第一次。
+    for (int attempt = 0; attempt < 4; attempt++)
+      assertEquals(200, pdf(scheme(actor), false, actor).statusCode());
+    assertEquals("PDF_DAILY_LIMIT", reason(pdf(scheme(actor), false, actor)));
+  }
+
+  private int activeSchemeCount() {
+    return f.db.queryForObject(
+        "SELECT COUNT(*) FROM scheme WHERE owner_user_id=? AND active_slot_no IS NOT NULL",
+        Integer.class,
+        actor.id());
+  }
+
+  /** 归档仍可分享和导出，删除已归档方案不再次释放名额。 */
+  @Test
+  void archivedSchemeCanBeDeletedDirectly() throws Exception {
+    actor = f.user();
+    String id = scheme(actor), path = "/api/me/schemes/" + id;
+    save(id, List.of(addItem(sku, 1, 0)));
+    call(
+        "POST",
+        path + "/archive",
+        view("expectedVersion", detail(id).path("version").asInt()),
+        actor,
+        key(),
+        200);
+    assertEquals("archived", detail(id).path("status").asString());
+    call(
+        "POST",
+        path + "/share",
+        view("expectedVersion", detail(id).path("version").asInt(), "hidePrice", false),
+        actor,
+        key(),
+        200);
+    assertEquals(200, pdf(id, false, actor).statusCode());
+    int slots = activeSchemeCount();
+    call(
+        "POST",
+        path + "/delete",
+        view("expectedVersion", detail(id).path("version").asInt()),
+        actor,
+        key(),
+        200);
+    assertEquals(slots, activeSchemeCount());
+    call("GET", path, null, actor, null, 404);
+  }
+
+  /** 生成已经预留后删除先提交，渲染完成只能保留导出历史，不能发布下载或缓存。 */
+  @Test
+  void deleteWhileRenderingRevokesGrant() throws Exception {
+    User buyer = f.user();
+    String id = scheme(buyer), path = "/api/me/schemes/" + id;
+    int version = call("GET", path, null, buyer, null, 200).path("version").asInt();
+    renderer.entered = new CountDownLatch(1);
+    renderer.release = new CountDownLatch(1);
+    ExecutorService executor = Executors.newSingleThreadExecutor();
+    try {
+      var pending = executor.submit(() -> pdf(id, false, buyer));
+      assertTrue(renderer.entered.await(10, TimeUnit.SECONDS));
+      call("POST", path + "/delete", view("expectedVersion", version), buyer, key(), 200);
+      renderer.release.countDown();
+      assertEquals(404, pending.get(20, TimeUnit.SECONDS).statusCode());
+      String export =
+          f.db.queryForObject("SELECT id FROM scheme_export WHERE scheme_id=?", String.class, id);
+      call("GET", "/api/me/scheme-exports/" + export + "/file", null, buyer, null, 404);
+      SchemePdfCache cache = f.app.getBean(SchemePdfCache.class);
+      assertNull(cache.get(cache.key(id, 1, false)));
+    } finally {
+      renderer.release.countDown();
+      renderer.entered = null;
+      renderer.release = null;
+      executor.shutdownNow();
+    }
+  }
+
+  /** 用同一版本同时提交删除与保存／签发。先成功的请求决定另一个请求见到的根状态。 */
+  @Test
+  void deleteRacesWithSaveAndShare() throws Exception {
+    User buyer = f.user();
+    ExecutorService pool = Executors.newFixedThreadPool(2);
+    try {
+      for (boolean share : List.of(false, true)) {
+        String id = scheme(buyer), path = "/api/me/schemes/" + id;
+        int version = call("GET", path, null, buyer, null, 200).path("version").asInt();
+        var guard = view("expectedVersion", version);
+        var change =
+            share
+                ? view("expectedVersion", version, "hidePrice", true)
+                : view(
+                    "actions",
+                    List.of(
+                        view("action", "updateSchemeInfo", "name", "并发保存", "description", null)));
+        CyclicBarrier gate = new CyclicBarrier(2);
+        Future<HttpResponse<String>> deleting =
+            pool.submit(() -> concurrentPost(gate, buyer, path + "/delete", guard));
+        Future<HttpResponse<String>> editing =
+            pool.submit(
+                () -> concurrentPost(gate, buyer, path + (share ? "/share" : "/update"), change));
+        var deleted = deleting.get(15, TimeUnit.SECONDS);
+        var edited = editing.get(15, TimeUnit.SECONDS);
+        if (deleted.statusCode() == 200) {
+          assertEquals(404, edited.statusCode());
+        } else {
+          assertEquals(409, deleted.statusCode());
+          assertEquals(
+              "VERSION_CONFLICT", f.json.readTree(deleted.body()).path("reasonCode").asString());
+          assertEquals(200, edited.statusCode());
+          call("POST", path + "/delete", view("expectedVersion", version + 1), buyer, key(), 200);
+          if (share) {
+            String token = f.json.readTree(edited.body()).at("/data/share/token").asString();
+            call("GET", "/api/public/scheme-shares/" + token, null, null, null, 404);
+          }
+        }
+        for (String scope : List.of("all", "editing", "archived")) {
+          var page = call("GET", "/api/me/schemes?status=" + scope, null, buyer, null, 200);
+          assertEquals(0, page.path("items").size());
+          assertEquals("0", page.path("total").asString());
+        }
+      }
+    } finally {
+      pool.shutdownNow();
+    }
+  }
+
+  private HttpResponse<String> concurrentPost(
+      CyclicBarrier gate, User user, String path, Object body) throws Exception {
+    var request =
+        HttpRequest.newBuilder(URI.create(f.base + path))
+            .timeout(Duration.ofSeconds(12))
+            .header("Authorization", "Bearer " + user.token())
+            .header("Idempotency-Key", key())
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(f.json.writeValueAsString(body)))
+            .build();
+    gate.await(5, TimeUnit.SECONDS);
+    return f.http.send(request, HttpResponse.BodyHandlers.ofString());
+  }
+
   /** HTTP返回验证同一运行契约并登记无凭据证据。 */
   JsonNode call(String method, String path, Object body, User user, String key, int status)
       throws Exception {
@@ -199,7 +413,7 @@ class D3SchemeRevisionTest {
       D2Contract contract = f.app.getBean(D2Contract.class);
       contract.validate(
           contract
-              .route(path, "" + method)
+              .route(path.split("\\?", 2)[0], method)
               .operation()
               .path("responses")
               .path("200")

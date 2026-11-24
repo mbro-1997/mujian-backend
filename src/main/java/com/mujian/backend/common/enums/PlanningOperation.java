@@ -4,6 +4,7 @@ package com.mujian.backend.common.enums;
 public enum PlanningOperation {
   createScheme,
   updateScheme,
+  deleteScheme,
   archiveScheme,
   setSchemeItem,
   removeSchemeItem,
@@ -17,6 +18,7 @@ public enum PlanningOperation {
   updateChecklistItem,
   saveChecklist,
   removeChecklistItem,
+  deleteChecklist,
   createAddress,
   updateAddress,
   setDefaultAddress,

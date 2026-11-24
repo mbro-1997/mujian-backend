@@ -9,6 +9,7 @@ import com.mujian.backend.common.enums.PropReasonCode;
 import com.mujian.backend.factory.dto.FactoryDtos.UploadResult;
 import com.mujian.backend.factory.service.FactoryMaterials;
 import com.mujian.backend.infrastructure.storage.PrivateMaterialStore;
+import com.mujian.backend.infrastructure.storage.PrivateMaterialStore.ImageContent;
 import com.mujian.backend.material.service.VerificationMaterials;
 import com.mujian.backend.material.service.VerificationMaterials.Receipt;
 import com.mujian.backend.prop.domain.PropImageDO;
@@ -224,25 +225,37 @@ public class PropMaterialServiceImpl implements PropMaterialService {
   public ImageViewVO viewImage(
       String actor, ImageLocatorDTO imageLocatorDTO, boolean admin, String trace) {
     String key = key(actor, imageLocatorDTO, admin);
-    if (admin)
-      propAudit.record(
-          actor,
-          imageLocatorDTO.sourceType(),
-          imageLocatorDTO.sourceId(),
-          "prop_material_view",
-          "admin:"
-              + (imageLocatorDTO.sourceType().equals("sku")
-                  ? "prop-asset"
-                  : imageLocatorDTO.sourceType().equals(SKU_AUDIT) ? "prop-review" : "prop-qr")
-              + ":sensitive",
-          trace,
-          null,
-          null,
-          null,
-          null,
-          null,
-          imageLocatorDTO);
+    if (admin) auditAdminImageView(actor, imageLocatorDTO, trace);
     return sign(key);
+  }
+
+  /** 使用原材料定位、权限和查看审计，随后从存储读取图片。 */
+  @Override
+  public ImageContent readAdminImage(String actor, ImageLocatorDTO imageLocatorDTO, String trace) {
+    String key = key(actor, imageLocatorDTO, true);
+    auditAdminImageView(actor, imageLocatorDTO, trace);
+    return privateMaterialStore.readImage(key);
+  }
+
+  /** 统一记录签名查看和图片内容读取的授权审计。 */
+  private void auditAdminImageView(String actor, ImageLocatorDTO imageLocatorDTO, String trace) {
+    propAudit.record(
+        actor,
+        imageLocatorDTO.sourceType(),
+        imageLocatorDTO.sourceId(),
+        "prop_material_view",
+        "admin:"
+            + (imageLocatorDTO.sourceType().equals("sku")
+                ? "prop-asset"
+                : imageLocatorDTO.sourceType().equals(SKU_AUDIT) ? "prop-review" : "prop-qr")
+            + ":sensitive",
+        trace,
+        null,
+        null,
+        null,
+        null,
+        null,
+        imageLocatorDTO);
   }
 
   /** 按原顺序组装材料定位信息及获授权的预览链接。 */

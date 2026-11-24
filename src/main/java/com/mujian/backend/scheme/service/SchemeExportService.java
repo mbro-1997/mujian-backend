@@ -1,7 +1,6 @@
 package com.mujian.backend.scheme.service;
 
 import com.mujian.backend.scheme.domain.PdfFileMetadata;
-import com.mujian.backend.scheme.domain.SchemeExportDO;
 import com.mujian.backend.scheme.dto.SchemeDtos.ExportPdf;
 import com.mujian.backend.scheme.vo.SchemeViews.ExportStatus;
 
@@ -15,7 +14,7 @@ public interface SchemeExportService {
   ExportStatus status(String actor, String id);
 
   /** 鉴权原文件，绝不自动生成。 */
-  SchemeExportDO file(String actor, String id);
+  Result file(String actor, String id);
 
   /** 有限批处理超时和私有缓存。 */
   void cleanup();

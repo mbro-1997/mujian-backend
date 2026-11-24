@@ -117,6 +117,20 @@ public class ChecklistController extends BaseController {
             saveChecklistInput));
   }
 
+  /** 删除整张清单，同键恢复原回执，不切换其他清单。 */
+  @PostMapping("/api/me/checklists/{id}/delete")
+  public ApiResponse<Receipt> deleteChecklist(
+      HttpServletRequest httpServletRequest,
+      @PathVariable String id,
+      @RequestBody ExpectedVersion expectedVersion) {
+    return success(
+        httpServletRequest,
+        checklistService.delete(
+            planningHttp.command(httpServletRequest, PlanningOperation.deleteChecklist),
+            id,
+            expectedVersion));
+  }
+
   /** 移除清单指定明细，不触发库存占用写入。 */
   @PostMapping("/api/me/checklists/{id}/items/{itemId}/remove")
   public ApiResponse<Receipt> removeChecklistItem(

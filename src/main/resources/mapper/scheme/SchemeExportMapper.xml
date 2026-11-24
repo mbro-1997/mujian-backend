@@ -28,6 +28,33 @@
       AND created_by=#{actor}
   </select>
 
+  <select id="selectDownloadableExportById" resultType="com.mujian.backend.scheme.domain.SchemeExportDO" useCache="false" flushCache="true">
+    SELECT
+      e.id,
+      e.scheme_id,
+      e.export_status,
+      e.source_content_version,
+      e.template_version,
+      e.hide_price,
+      e.watermark_enabled,
+      e.watermark_text,
+      e.file_expire_at,
+      e.local_file_key,
+      e.processing_deadline_at,
+      e.processing_scheme_guard,
+      e.record_expire_at,
+      e.generated_at,
+      e.error_message,
+      e.snapshot_json,
+      e.created_by,
+      e.created_at,
+      e.updated_at
+    FROM scheme_export e
+    JOIN scheme s ON s.id=e.scheme_id AND s.owner_user_id=e.created_by
+    WHERE e.id=#{id} AND e.created_by=#{actor}
+    FOR SHARE OF s
+  </select>
+
   <select id="selectExportById" resultType="com.mujian.backend.scheme.domain.SchemeExportDO" useCache="false" flushCache="true">
     SELECT
       id,

@@ -287,6 +287,22 @@ public class SchemeServiceImpl implements SchemeService {
         planningCommand, PlanningResource.scheme, id, schemeDOUpdated.version());
   }
 
+  /** 按本人、方法、路径和请求体回放；成功回执可独立于已删除的方案存在。 */
+  public Receipt delete(PlanningCommand command, String id, ExpectedVersion input) {
+    planningOperations.lock(command.actor());
+    Receipt previous = planningOperations.replay(command);
+    if (previous != null) return previous;
+    SchemeDO scheme = schemeMapper.selectOwnedSchemeById(command.actor(), id, true);
+    if (scheme == null) throw missing();
+    planningOperations.writable(command.actor());
+    version(scheme.version(), input.expectedVersion());
+    schemeMapper.deleteShareLinksByScheme(id);
+    schemeMapper.deleteShareSnapshotsByScheme(id);
+    schemeMapper.deleteItemsByScheme(id);
+    if (schemeMapper.deleteOwnedScheme(command.actor(), id) != 1) throw inconsistent();
+    return planningOperations.record(command, PlanningResource.scheme, id, null);
+  }
+
   /** 加入方案使用最终总量，事务中合并已有项；不检查租期库存。 */
   public Receipt setItem(PlanningCommand planningCommand, String id, ItemSet itemSet) {
     planningOperations.lock(planningCommand.actor());

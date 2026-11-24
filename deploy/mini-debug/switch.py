@@ -10,6 +10,7 @@ import secrets
 import shutil
 import socket
 import subprocess
+import sys
 import time
 import urllib.error
 import urllib.request
@@ -114,16 +115,22 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('role', choices=ROLES, nargs='?')
     parser.add_argument('--phone', action='store_true', help='开启本机手机调试服务，首次从原开发工具核对开发者微信身份')
+    parser.add_argument('--ensure-phone', type=int, metavar='API_PORT',
+                        help='开发环境启动时调用，仅处理与当前后端端口匹配的局域网预览')
     args = parser.parse_args()
+    if args.ensure_phone is not None and (args.role or args.phone):
+        parser.error('--ensure-phone 不能与账号或 --phone 同用')
     network = json.loads(subprocess.check_output([
         'node', '-pe', 'JSON.stringify(require(process.argv[1]))', PROJECT / 'config/development.js'
     ], text=True))
     for field in ['apiPort', 'debugPort']:
         if type(network[field]) is not int or not 1 <= network[field] <= 65535:
             parser.error(field + ' 端口无效')
+    if args.ensure_phone is not None and (network['mode'] != 'lan' or args.ensure_phone != network['apiPort']):
+        return
     os.umask(0o077)
     PRIVATE.mkdir(mode=0o700, parents=True, exist_ok=True)
-    if args.phone:
+    if args.phone or args.ensure_phone is not None:
         if args.role:
             parser.error('手机在小程序中选择身份')
         with (PRIVATE / 'switch.lock').open('a') as lock:
@@ -139,6 +146,11 @@ def main():
         if not KEY.exists():
             KEY.write_text(secrets.token_hex(32))
         start_service('127.0.0.1', network['debugPort'], KEY)
+        if network['mode'] == 'lan':
+            try:
+                enable_phone(network)
+            except (SystemExit, OSError, ValueError, subprocess.SubprocessError) as error:
+                print(f'手机调试未就绪：{error}；继续使用本机模拟器。', file=sys.stderr)
         simulator(ROLES[role])
 
 

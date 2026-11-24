@@ -43,18 +43,36 @@ public class CosMaterialStore implements PrivateMaterialStore {
     String id = env.getProperty("mj.cos.secret-id", ""),
         key = env.getProperty("mj.cos.secret-key", "");
     if (id.isBlank() || key.isBlank()) throw unavailable(D2Codes.CODE_OBJECT_STORAGE_UNAVAILABLE);
-    ClientConfig cfg = new ClientConfig(new Region("ap-shanghai"));
-    cfg.setHttpProtocol(HttpProtocol.https);
-    cfg.setConnectionTimeout(3000);
-    cfg.setSocketTimeout(15000);
-    cfg.setMaxErrorRetry(0);
+    ClientConfig cfg = clientConfig();
     client = new COSClient(new BasicCOSCredentials(id, key), cfg);
     return client;
   }
 
+  /** 使用默认 HTTPS 桶域名，出口代理只取本环境的显式配置。 */
+  ClientConfig clientConfig() {
+    ClientConfig cfg = new ClientConfig(new Region(env.getRequiredProperty("mj.cos.region")));
+    cfg.setHttpProtocol(HttpProtocol.https);
+    cfg.setConnectionTimeout(3000);
+    cfg.setSocketTimeout(15000);
+    cfg.setMaxErrorRetry(0);
+    String proxyHost = env.getProperty("mj.cos.proxy.host", "").trim();
+    Integer proxyPort = env.getProperty("mj.cos.proxy.port", Integer.class, 0);
+    if (!proxyHost.isEmpty()) {
+      if (proxyHost.contains("://") || proxyPort < 1 || proxyPort > 65535)
+        throw new IllegalArgumentException("COS proxy requires a host and port 1..65535");
+      cfg.setHttpProxyIp(proxyHost);
+      cfg.setHttpProxyPort(proxyPort);
+      cfg.setProxyUsername(env.getProperty("mj.cos.proxy.username", ""));
+      cfg.setProxyPassword(env.getProperty("mj.cos.proxy.password", ""));
+    } else if (proxyPort != 0) {
+      throw new IllegalArgumentException("COS proxy port requires a host");
+    }
+    return cfg;
+  }
+
   /** 读取本环境配置的存储桶。 */
   private String bucket() {
-    return "cct1-1429809468";
+    return env.getRequiredProperty("mj.cos.bucket");
   }
 
   /** 验证受保护对象的路径和访问范围。 */
@@ -103,6 +121,28 @@ public class CosMaterialStore implements PrivateMaterialStore {
       return client().generatePresignedUrl(bucket(), key, Date.from(expires)).toString();
     } catch (Exception e) {
       throw unavailable(D2Codes.CODE_OBJECT_STORAGE_UNAVAILABLE, e);
+    }
+  }
+
+  /** 使用本环境 COS 客户端读取已校验对象，最多接收一次图片上传的大小。 */
+  @Override
+  public ImageContent readImage(String key) {
+    check(key);
+    int maxBytes = 5 * 1024 * 1024;
+    try (COSObject object = client().getObject(bucket(), key)) {
+      ObjectMetadata metadata = object.getObjectMetadata();
+      String contentType = metadata.getContentType();
+      if (!(D2Codes.CODE_IMAGE_PNG.equals(contentType) || D2Codes.CODE_IMAGE_JPEG.equals(contentType))
+          || metadata.getContentLength() <= 0 || metadata.getContentLength() > maxBytes) {
+        throw unavailable(D2Codes.CODE_OBJECT_STORAGE_UNAVAILABLE);
+      }
+      byte[] bytes = object.getObjectContent().readNBytes(maxBytes + 1);
+      if (bytes.length != metadata.getContentLength() || bytes.length > maxBytes) {
+        throw unavailable(D2Codes.CODE_OBJECT_STORAGE_UNAVAILABLE);
+      }
+      return new ImageContent(contentType, bytes);
+    } catch (IOException | com.qcloud.cos.exception.CosClientException exception) {
+      throw unavailable(D2Codes.CODE_OBJECT_STORAGE_UNAVAILABLE, exception);
     }
   }
 

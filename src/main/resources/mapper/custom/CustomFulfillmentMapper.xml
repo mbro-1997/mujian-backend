@@ -11,7 +11,7 @@
     INSERT INTO custom_delivery_record(id,custom_order_id,delivery_version,delivery_request_id,delivery_mode,delivery_status,pickup_registered_at,delivered_at,acceptance_deadline_at,
  delivery_address_snapshot,evidence_json,order_item_ids_json,remark,operator_user_id,version,created_at,updated_at)
  SELECT #{id},o.id,COALESCE(old.delivery_version,0)+1,#{key},o.delivery_mode,IF(#{pickup},'awaiting_pickup_confirmation','delivered'),IF(#{pickup},#{occurred},NULL),
- IF(#{pickup},NULL,#{occurred}),IF(#{pickup},NULL,DATE_ADD(CAST(#{occurred} AS DATETIME(3)),INTERVAL 48 HOUR)),o.delivery_address_snapshot,#{evidence},#{items},#{remark},#{actor},0,#{at},#{at}
+ IF(#{pickup},NULL,#{occurred}),IF(#{pickup},NULL,DATE_ADD(CAST(#{at} AS DATETIME(3)),INTERVAL 48 HOUR)),o.delivery_address_snapshot,#{evidence},#{items},#{remark},#{actor},0,#{at},#{at}
  FROM custom_order o LEFT JOIN custom_delivery_record old ON old.id=o.current_delivery_record_id WHERE o.id=#{order}
   </insert>
   <update id="activateDelivery">
@@ -105,8 +105,8 @@
   </update>
   <update id="resumeCustomOrderAcceptance">
     UPDATE custom_order o JOIN custom_delivery_record d ON d.id=o.current_delivery_record_id SET o.order_status='pending_acceptance',o.acceptance_status='running',
- d.acceptance_deadline_at=IF(#{replacement},DATE_ADD(d.delivered_at,INTERVAL 48 HOUR),TIMESTAMPADD(SECOND,o.acceptance_remaining_seconds,#{at})),
- o.acceptance_deadline_at=IF(#{replacement},DATE_ADD(d.delivered_at,INTERVAL 48 HOUR),TIMESTAMPADD(SECOND,o.acceptance_remaining_seconds,#{at})),
+ d.acceptance_deadline_at=IF(#{replacement},d.acceptance_deadline_at,TIMESTAMPADD(SECOND,o.acceptance_remaining_seconds,#{at})),
+ o.acceptance_deadline_at=IF(#{replacement},d.acceptance_deadline_at,TIMESTAMPADD(SECOND,o.acceptance_remaining_seconds,#{at})),
  o.acceptance_paused_at=NULL,o.acceptance_remaining_seconds=NULL,o.updated_at=#{at},o.version=o.version+1,d.updated_at=#{at},d.version=d.version+1 WHERE o.id=#{id}
   </update>
   <update id="waitForRefund">

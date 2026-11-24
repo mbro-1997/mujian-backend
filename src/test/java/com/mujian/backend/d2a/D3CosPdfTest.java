@@ -34,7 +34,7 @@ class D3CosPdfTest {
       secrets.load(input);
     }
     Properties cosOnly = new Properties();
-    for (String name : List.of("mj.cos.secret-id", "mj.cos.secret-key")) {
+    for (String name : List.of("mj.cos.secret-id", "mj.cos.secret-key", "mj.cos.bucket", "mj.cos.region")) {
       assertNotNull(secrets.getProperty(name), "existing COS configuration required");
       cosOnly.setProperty(name, secrets.getProperty(name));
     }

@@ -34,6 +34,9 @@ public interface ChecklistService {
   /** 原子保存完整保留项。 */
   Receipt save(PlanningCommand planningCommand, String id, SaveChecklist saveChecklist);
 
+  /** 逻辑删除本人选品中或挂起的整张清单，释放名额且保留明细。 */
+  Receipt delete(PlanningCommand planningCommand, String id, ExpectedVersion expectedVersion);
+
   /** 删除一个已有项。 */
   Receipt removeItem(
       PlanningCommand planningCommand, String id, String itemId, ExpectedVersion expectedVersion);

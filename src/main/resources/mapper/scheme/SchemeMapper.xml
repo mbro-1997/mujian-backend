@@ -346,4 +346,8 @@
       AND share_token=#{token}
       AND share_status='active'
   </update>
+  <delete id="deleteShareLinksByScheme">DELETE FROM scheme_share WHERE scheme_id=#{id}</delete>
+  <delete id="deleteShareSnapshotsByScheme">DELETE FROM scheme_share_snapshot WHERE scheme_id=#{id}</delete>
+  <delete id="deleteItemsByScheme">DELETE FROM scheme_item WHERE scheme_id=#{id}</delete>
+  <delete id="deleteOwnedScheme">DELETE FROM scheme WHERE owner_user_id=#{actor} AND id=#{id}</delete>
 </mapper>

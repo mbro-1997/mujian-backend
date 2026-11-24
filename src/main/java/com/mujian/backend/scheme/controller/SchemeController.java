@@ -88,6 +88,16 @@ public class SchemeController extends BaseController {
             expectedVersion));
   }
 
+  /** 物理删除本人编辑中或已归档的方案。 */
+  @PostMapping("/api/me/schemes/{id}/delete")
+  public ApiResponse<Receipt> deleteScheme(
+      HttpServletRequest request, @PathVariable String id, @RequestBody ExpectedVersion input) {
+    return success(
+        request,
+        schemeService.delete(
+            planningHttp.command(request, PlanningOperation.deleteScheme), id, input));
+  }
+
   /** 将道具加入方案或设置其数量与备注。 */
   @PostMapping("/api/me/schemes/{id}/items")
   public ApiResponse<Receipt> setSchemeItem(

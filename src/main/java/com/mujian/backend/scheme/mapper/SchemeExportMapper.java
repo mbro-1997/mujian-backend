@@ -11,6 +11,9 @@ public interface SchemeExportMapper {
   /** 读取本人导出状态。 */
   SchemeExportDO selectOwnedExportById(@Param("actor") String actor, @Param("id") String id);
 
+  /** 只有源方案仍存在才允许打开；共享锁保护到文件句柄打开。 */
+  SchemeExportDO selectDownloadableExportById(@Param("actor") String actor, @Param("id") String id);
+
   /** 读取指定导出供生成完成CAS。 */
   SchemeExportDO selectExportById(@Param("id") String id);
 

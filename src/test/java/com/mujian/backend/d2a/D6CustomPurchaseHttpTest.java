@@ -791,6 +791,214 @@ class D6CustomPurchaseHttpTest {
     assertEquals(1, get(deliverySample.buyerPath(), false).get("afterSales").size());
   }
 
+  /** 晚登记的配送和返工均按本次成功受理计时，异步退款也不能改写截止。 */
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+  void lateDeliveryAndReworkKeepFirstSubmissionDeadline(boolean withRefund) throws Exception {
+    JsonNode launch = accept(quoted("factory_delivery"), "factory_delivery");
+    String id = launch.get("orderId").asString(),
+        payment = launch.get("payment").get("id").asString();
+    paid(payment, f.f.clock.at);
+    String buyerPath = "/api/custom-orders/" + id,
+        factoryPath = "/api/me/factory/custom-orders/" + id;
+    for (String action : List.of("start-production", "ready", "dispatch"))
+      post(
+          factoryPath + "/" + action,
+          view("expectedVersion", version(factoryPath, true)),
+          true,
+          200);
+    Instant occurred = f.f.clock.at;
+    at(occurred.plus(Duration.ofHours(73)));
+    String file = upload(f, factoryPath, "delivery", f.supplier, 200);
+    JsonNode before = get(buyerPath, false);
+    assertTrue(before.get("acceptanceDeadlineAt").isNull());
+    List<String> items = new ArrayList<>();
+    for (JsonNode item : before.get("items")) items.add(item.get("id").asString());
+    Map<String, Object> input =
+        view(
+            "expectedVersion",
+            version(factoryPath, true),
+            "orderItemIds",
+            items,
+            "materialIds",
+            List.of(file),
+            "remark",
+            "实际送达已超过48小时，今天首次登记",
+            "occurredAt",
+            time(LocalDateTime.ofInstant(occurred, ZONE)));
+    String path = factoryPath + "/deliver", key = f.key();
+    D2ApplicationTest.Fault fault = f.f.app.getBean(D2ApplicationTest.Fault.class);
+    fault.table = "custom_delivery_record";
+    try {
+      f.call("POST", path, input, f.supplier, key, 500);
+    } finally {
+      fault.table = null;
+    }
+    assertTrue(get(buyerPath, false).get("acceptanceDeadlineAt").isNull());
+    assertEquals(
+        0,
+        f.f.db.queryForObject(
+            "SELECT COUNT(*) FROM custom_delivery_record WHERE custom_order_id=?",
+            Integer.class,
+            id));
+    at(f.f.clock.at.plusSeconds(120));
+    Instant submitted = f.f.clock.at, deadline = submitted.plus(Duration.ofHours(48));
+    JsonNode receipt = f.call("POST", path, input, f.supplier, key, 200);
+    String first = receipt.get("resourceId").asString();
+    assertDeliveryClock(id, first, occurred, submitted, deadline);
+    at(f.f.clock.at.plusSeconds(30));
+    assertEquals(
+        first, f.call("POST", path, input, f.supplier, key, 200).get("resourceId").asString());
+    post(path, input, true, 409);
+    assertDeliveryClock(id, first, occurred, submitted, deadline);
+    assertTrue(canReport(get(buyerPath, false)));
+    CustomFulfillment flow = f.f.app.getBean(CustomFulfillment.class);
+    assertFalse(flow.automatic(new CustomFulfillmentMapper.Due(id, first, 1)));
+    DeliverySample sample =
+        new DeliverySample(id, buyerPath, factoryPath, first, file, items, null, null);
+    JsonNode sale =
+        post(
+            buyerPath + "/after-sales",
+            issueInput(sample, first, upload(f, buyerPath, "after_sale", f.buyer, 200)),
+            false,
+            200);
+    String admin = "/api/admin/custom-after-sales/" + sale.get("resourceId").asString();
+    f.call(
+        "POST",
+        admin + "/resolution",
+        view(
+            "expectedVersion",
+            0,
+            "resolutionType",
+            "rework",
+            "goodsRefundFen",
+            withRefund ? 20000 : 0,
+            "freightRefundFen",
+            0,
+            "reason",
+            "返工交付与补退分开完成"),
+        null,
+        f.key(),
+        200);
+    at(f.f.clock.at.plus(Duration.ofHours(73)));
+    Instant replacementOccurred = submitted.plusSeconds(60), replacementSubmitted = f.f.clock.at;
+    Instant replacementDeadline = replacementSubmitted.plus(Duration.ofHours(48));
+    String nextFile = upload(f, factoryPath, "delivery", f.supplier, 200);
+    input.put("expectedVersion", version(factoryPath, true));
+    input.put("occurredAt", time(LocalDateTime.ofInstant(replacementOccurred, ZONE)));
+    input.put("materialIds", List.of(nextFile));
+    String replacementKey = f.key();
+    String next =
+        f.call("POST", path, input, f.supplier, replacementKey, 200).get("resourceId").asString();
+    assertEquals(
+        replacementDeadline,
+        f.f
+            .db
+            .queryForObject(
+                "SELECT acceptance_deadline_at FROM custom_delivery_record WHERE id=?",
+                java.sql.Timestamp.class,
+                next)
+            .toLocalDateTime()
+            .atZone(ZONE)
+            .toInstant());
+    assertFalse(flow.automatic(new CustomFulfillmentMapper.Due(id, first, 1)));
+    at(replacementSubmitted.plus(Duration.ofHours(2)));
+    if (withRefund) {
+      ChannelSuborderDO sub =
+          f.f.app.getBean(PaymentOrderMapper.class).selectSubordersByPayment(payment, false).get(0);
+      String refund = f.call("GET", admin, null, null, null, 200).get("refundId").asString();
+      PaymentGateway.RefundFact fact =
+          new PaymentGateway.RefundFact(
+              "test-platform",
+              sub.subMchidSnapshot(),
+              sub.id(),
+              sub.channelSubTransactionId(),
+              refund,
+              "TEST" + Ids.next(),
+              "SUCCESS",
+              sub.paidAmountFen(),
+              20000,
+              "CNY",
+              f.f.clock.at,
+              false);
+      f.f.app.getBean(RefundWorkTransaction.class).observe(refund, fact);
+      f.f.app.getBean(RefundWorkTransaction.class).observe(refund, fact);
+    }
+    assertDeliveryClock(id, next, replacementOccurred, replacementSubmitted, replacementDeadline);
+    assertEquals(
+        next,
+        f.call("POST", path, input, f.supplier, replacementKey, 200).get("resourceId").asString());
+    assertDeliveryClock(id, next, replacementOccurred, replacementSubmitted, replacementDeadline);
+    at(replacementDeadline.minusMillis(1));
+    assertTrue(canReport(get(buyerPath, false)));
+    assertFalse(flow.automatic(new CustomFulfillmentMapper.Due(id, next, 2)));
+    at(replacementDeadline);
+    assertFalse(canReport(get(buyerPath, false)));
+    assertTrue(flow.automatic(new CustomFulfillmentMapper.Due(id, next, 2)));
+    assertEquals(
+        next,
+        f.call("POST", path, input, f.supplier, replacementKey, 200).get("resourceId").asString());
+    assertEquals("completed", get(buyerPath, false).get("state").asString());
+    System.out.println(
+        "D6 delivery clock withRefund="
+            + withRefund
+            + " occurred="
+            + occurred
+            + " submitted="
+            + submitted
+            + " deadline="
+            + deadline
+            + " replacementDeadline="
+            + replacementDeadline);
+  }
+
+  /** 同时核对履约事实、首次入库时刻、版本截止和原单投影。 */
+  void assertDeliveryClock(
+      String order, String delivery, Instant occurred, Instant submitted, Instant deadline)
+      throws Exception {
+    Map<String, Object> row =
+        f.f.db.queryForMap(
+            "SELECT delivered_at,created_at,acceptance_deadline_at FROM custom_delivery_record"
+                + " WHERE id=?",
+            delivery);
+    assertEquals(LocalDateTime.ofInstant(occurred, ZONE), row.get("delivered_at"));
+    assertEquals(LocalDateTime.ofInstant(submitted, ZONE), row.get("created_at"));
+    assertEquals(LocalDateTime.ofInstant(deadline, ZONE), row.get("acceptance_deadline_at"));
+    assertEquals(
+        deadline,
+        OffsetDateTime.parse(
+                get("/api/custom-orders/" + order, false).get("acceptanceDeadlineAt").asString())
+            .toInstant());
+  }
+
+  /** 旧交付已保存的截止照旧读取和到期执行，重试不会重开完成订单。 */
+  @Test
+  void historicalDeadlineRemainsEffective() throws Exception {
+    DeliverySample sample = delivered(false, false, 0);
+    LocalDateTime historical = now(f.f.clock).plusHours(6);
+    f.f.db.update(
+        "UPDATE custom_delivery_record SET acceptance_deadline_at=? WHERE id=?",
+        historical,
+        sample.delivery());
+    f.f.db.update(
+        "UPDATE custom_order SET acceptance_deadline_at=? WHERE id=?", historical, sample.order());
+    assertEquals(
+        time(historical), get(sample.buyerPath(), false).get("acceptanceDeadlineAt").asString());
+    at(historical.atZone(ZONE).toInstant());
+    assertTrue(
+        f.f
+            .app
+            .getBean(CustomFulfillment.class)
+            .automatic(new CustomFulfillmentMapper.Due(sample.order(), sample.delivery(), 1)));
+    assertEquals("completed", get(sample.buyerPath(), false).get("state").asString());
+    assertEquals(
+        historical,
+        f.f.db.queryForObject(
+            "SELECT acceptance_deadline_at FROM custom_delivery_record WHERE id=?",
+            LocalDateTime.class,
+            sample.delivery()));
+  }
+
   record PageSample(String saleFile, String extFile, int goods, int freight) {}
 
   /** 核对列表返回与预期摘要。 */

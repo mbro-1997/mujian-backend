@@ -42,6 +42,16 @@ mybatis:
     map-underscore-to-camel-case: true
     arg-name-based-constructor-auto-mapping: true
 mj:
+  cos:
+    bucket: ${MJ_COS_BUCKET:cct1-1429809468}
+    region: ${MJ_COS_REGION:ap-shanghai}
+    secret-id: ${MJ_COS_SECRET_ID:}
+    secret-key: ${MJ_COS_SECRET_KEY:}
+    proxy:
+      host: ${MJ_COS_PROXY_HOST:}
+      port: ${MJ_COS_PROXY_PORT:0}
+      username: ${MJ_COS_PROXY_USERNAME:}
+      password: ${MJ_COS_PROXY_PASSWORD:}
   reward:
     recovery-enabled: ${MJ_REWARD_RECOVERY_ENABLED:false}
   factory-phone:

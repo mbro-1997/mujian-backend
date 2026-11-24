@@ -47,7 +47,7 @@ public final class D2RemainingCloudCli {
     Properties runtime=new Properties(); Path secrets=Path.of(".local/runtime.properties");
     if(!Files.getPosixFilePermissions(secrets).equals(PosixFilePermissions.fromString("rw-------")))throw new IllegalStateException("runtime must be 600");
     try(InputStream in=Files.newInputStream(secrets)){runtime.load(in);}
-    for(String k:List.of("mj.cos.secret-id","mj.cos.secret-key")){
+    for(String k:List.of("mj.cos.secret-id","mj.cos.secret-key","mj.cos.bucket","mj.cos.region")){
       String v=runtime.getProperty(k);if(v==null||v.isBlank())throw new IllegalStateException("missing local COS credential");test.setProperty(k,v);
     }
     test.setProperty("mj.environment","test");test.setProperty("server.port","0");test.setProperty("server.address","127.0.0.1");

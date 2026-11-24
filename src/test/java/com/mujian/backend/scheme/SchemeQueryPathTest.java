@@ -180,7 +180,7 @@ class SchemeQueryPathTest {
     SchemePdfRenderer renderer = mock(SchemePdfRenderer.class);
     var service =
         new SchemeExportServiceImpl(
-            reservation, exports, files, cache, renderer, operations, new ObjectMapper(), clock);
+            reservation, exports, files, renderer, operations, new ObjectMapper(), clock);
     var result = service.export(actor, sid, new ExportPdf(false));
     assertTrue(result.cacheHit());
     assertEquals(metadata, result.file());
@@ -226,7 +226,6 @@ class SchemeQueryPathTest {
             reservation,
             exports,
             files,
-            cache,
             mock(SchemePdfRenderer.class),
             operations,
             new ObjectMapper(),

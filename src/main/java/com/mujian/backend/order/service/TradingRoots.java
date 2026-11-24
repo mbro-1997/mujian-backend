@@ -108,7 +108,7 @@ public class TradingRoots {
         throw new IllegalStateException("trade factory source changed");
     }
     RentalChecklistDO rentalChecklistDOChecklist =
-        checklistMapper.selectOwnedChecklistById(
+        checklistMapper.selectOwnedChecklistIncludingDeletedById(
             checkoutBatchDOHint.buyerUserId(), checkoutBatchDOHint.sourceChecklistId(), true);
     CheckoutBatchDO checkoutBatchDOBatch = checkoutBatchMapper.selectBatchById(batchId, true);
     if (rentalChecklistDOChecklist == null

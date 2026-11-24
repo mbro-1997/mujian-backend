@@ -270,6 +270,8 @@ public class ChecklistServiceImpl implements ChecklistService {
   /** 用户→来源方案→清单根顺序，先校验后挂起原当前清单。 */
   public Receipt create(PlanningCommand planningCommand, CreateChecklist createChecklist) {
     planningOperations.lock(planningCommand.actor());
+    Receipt receiptReplay = planningOperations.replay(planningCommand);
+    if (receiptReplay != null) return receiptReplay;
     SchemeDO schemeDOSource = null;
     if (ChecklistSource.scheme.name().equals(createChecklist.sourceType())) {
       schemeDOSource =
@@ -278,8 +280,6 @@ public class ChecklistServiceImpl implements ChecklistService {
       if (schemeDOSource == null) throw missing();
     } else if (!ChecklistSource.manual.name().equals(createChecklist.sourceType()))
       throw ApiFailure.invalid();
-    Receipt receiptReplay = planningOperations.replay(planningCommand);
-    if (receiptReplay != null) return receiptReplay;
     planningOperations.writable(planningCommand.actor());
     if (schemeDOSource != null)
       version(schemeDOSource.version(), createChecklist.expectedSchemeVersion());
@@ -658,6 +658,32 @@ public class ChecklistServiceImpl implements ChecklistService {
             now));
     return planningOperations.record(
         planningCommand, PlanningResource.checklist, id, next(rentalChecklistDOInitial.version()));
+  }
+
+  /** 在共享用户锁内删除目标根，回执与名额释放同事务，支付提交按相同锁序互斥。 */
+  public Receipt delete(
+      PlanningCommand planningCommand, String id, ExpectedVersion expectedVersion) {
+    planningOperations.lock(planningCommand.actor());
+    RentalChecklistDO rentalChecklistDO =
+        checklistMapper.selectOwnedChecklistIncludingDeletedById(planningCommand.actor(), id, true);
+    if (rentalChecklistDO == null) throw missing();
+    Receipt receipt = planningOperations.replay(planningCommand);
+    if (receipt != null) return receipt;
+    if (ChecklistStatus.deleted.name().equals(rentalChecklistDO.checklistStatus())) throw missing();
+    planningOperations.writable(planningCommand.actor());
+    version(rentalChecklistDO.version(), expectedVersion.expectedVersion());
+    if (ChecklistStatus.checkout_processing.name().equals(rentalChecklistDO.checklistStatus())
+        || rentalChecklistDO.currentCheckoutBatchId() != null)
+      throw conflict(PlanningReason.CHECKLIST_PAYMENT_IN_PROGRESS.name());
+    if (!ChecklistStatus.selecting.name().equals(rentalChecklistDO.checklistStatus())
+        && !ChecklistStatus.suspended.name().equals(rentalChecklistDO.checklistStatus()))
+      throw conflict(PlanningReason.CHECKLIST_READ_ONLY.name());
+    int updatedVersion = next(rentalChecklistDO.version());
+    if (checklistMapper.markOwnedChecklistDeleted(
+            planningCommand.actor(), id, rentalChecklistDO.version(), updatedVersion, now(clock))
+        != 1) throw inconsistent();
+    return planningOperations.record(
+        planningCommand, PlanningResource.checklist, id, updatedVersion);
   }
 
   /** 删项不释放根槽位，失效商品也可整理。 */

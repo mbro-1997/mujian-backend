@@ -104,8 +104,10 @@ public class D2Contract {
 
   /** 根据成功媒体类型识别无需整份缓存的文件操作。 */
   public boolean binary(Route route) {
-    return route != null
-        && (route.operation().path("responses").path("200").path("content").has("application/pdf") || route.operation().path("responses").path("200").path("content").has("text/csv"));
+    if (route == null) return false;
+    JsonNode content = route.operation().path("responses").path("200").path("content");
+    return content.has("application/pdf") || content.has("text/csv")
+        || content.has("image/png") || content.has("image/jpeg");
   }
 
   /** 判断响应组合或输入值是否在契约范围内。 */

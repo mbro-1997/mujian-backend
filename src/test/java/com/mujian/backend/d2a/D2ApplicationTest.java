@@ -162,6 +162,13 @@ class D2ApplicationTest {
           : visualSigner.apply(key, expires);
     }
 
+    /** 从隔离夹具读取已上传的私有图片。 */
+    public ImageContent readImage(String key) {
+      byte[] bytes = payloads.get(key);
+      if (bytes == null) throw unavailable("OBJECT_STORAGE_UNAVAILABLE");
+      return new ImageContent(VerificationMaterials.imageType(bytes), bytes.clone());
+    }
+
     /** 列出本用例可访问的对象。 */
     public Page list(String marker) {
       List<Stored> rows =

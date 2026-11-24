@@ -12,6 +12,18 @@ public interface ChecklistMapper {
   RentalChecklistDO selectOwnedChecklistById(
       @Param("actor") String actor, @Param("id") String id, @Param("lock") boolean lock);
 
+  /** 删除重放及历史支付根定位保留逻辑删除行，仍限定本人归属。 */
+  RentalChecklistDO selectOwnedChecklistIncludingDeletedById(
+      @Param("actor") String actor, @Param("id") String id, @Param("lock") boolean lock);
+
+  /** 原子删除可整理清单，支付在途、转单及版本变化均不得越过条件更新。 */
+  int markOwnedChecklistDeleted(
+      @Param("actor") String actor,
+      @Param("id") String id,
+      @Param("expectedVersion") int expectedVersion,
+      @Param("updatedVersion") int updatedVersion,
+      @Param("now") java.time.LocalDateTime now);
+
   /** 读取未转单根，按ID加锁以保证切换锁序。 */
   List<RentalChecklistDO> selectActiveChecklistsByActor(
       @Param("actor") String actor, @Param("lock") boolean lock);

@@ -23,6 +23,9 @@ public interface SchemeService {
   /** 归档不可逆。 */
   Receipt archive(PlanningCommand planningCommand, String id, ExpectedVersion expectedVersion);
 
+  /** 删除方案，原键可在主记录删除后恢复成功回执。 */
+  Receipt delete(PlanningCommand command, String id, ExpectedVersion input);
+
   /** 将SKU设置为最终数量。 */
   Receipt setItem(PlanningCommand planningCommand, String id, ItemSet itemSet);
 
