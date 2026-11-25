@@ -52,6 +52,12 @@
 <sql id="skuFilters">
     <if test="ownedQueryDTO.typeCode != null"> AND s.type_code=#{ownedQueryDTO.typeCode}</if>
     <if test="ownedQueryDTO.assetType != null"> AND s.asset_type=#{ownedQueryDTO.assetType}</if>
+    <if test="!ownedQueryDTO.admin and ownedQueryDTO.hasPendingLabel">
+      AND EXISTS (
+        SELECT 1 FROM prop_sn_instance sn
+        WHERE sn.sku_id = s.id AND sn.instance_status = 'pending_label'
+      )
+    </if>
     <if test="ownedQueryDTO.styleCodes != null">
        AND EXISTS(SELECT 1 FROM prop_sku_style st WHERE st.sku_id=s.id AND st.style_code IN 
       <foreach collection="ownedQueryDTO.styleCodes" item="style" open="(" separator="," close=")">#{style}</foreach>

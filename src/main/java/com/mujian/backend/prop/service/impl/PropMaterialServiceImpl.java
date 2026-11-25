@@ -231,9 +231,9 @@ public class PropMaterialServiceImpl implements PropMaterialService {
 
   /** 使用原材料定位、权限和查看审计，随后从存储读取图片。 */
   @Override
-  public ImageContent readAdminImage(String actor, ImageLocatorDTO imageLocatorDTO, String trace) {
-    String key = key(actor, imageLocatorDTO, true);
-    auditAdminImageView(actor, imageLocatorDTO, trace);
+  public ImageContent readImage(String actor, ImageLocatorDTO imageLocatorDTO, boolean admin, String trace) {
+    String key = key(actor, imageLocatorDTO, admin);
+    if (admin) auditAdminImageView(actor, imageLocatorDTO, trace);
     return privateMaterialStore.readImage(key);
   }
 

@@ -21,7 +21,8 @@ BUILD = BACKEND / 'target/local-mini-debug'
 PRIVATE = BACKEND / '.local/mini-debug'
 PROJECT = BACKEND.parent / 'mujian-frontend/miniprogram'
 KEY = PRIVATE / 'pair.key'
-ROLES = {'租赁方': 'demander', '工厂': 'supplier'}
+ACCOUNTS = {'租赁方1': 'demander', '工厂1': 'supplier', '租赁方2': 'demander2', '工厂2': 'supplier2'}
+ALIASES = {'租赁方': '租赁方1', '工厂': '工厂1'}
 LOCAL = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
 
@@ -113,7 +114,7 @@ def enable_phone(network):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('role', choices=ROLES, nargs='?')
+    parser.add_argument('role', choices=[*ACCOUNTS, *ALIASES], nargs='?')
     parser.add_argument('--phone', action='store_true', help='开启本机手机调试服务，首次从原开发工具核对开发者微信身份')
     parser.add_argument('--ensure-phone', type=int, metavar='API_PORT',
                         help='开发环境启动时调用，仅处理与当前后端端口匹配的局域网预览')
@@ -137,10 +138,11 @@ def main():
             fcntl.flock(lock, fcntl.LOCK_EX)
             enable_phone(network)
         return
-    role = args.role or input('请选择测试账号（1 租赁方，2 工厂） ').strip()
-    role = {'1': '租赁方', '2': '工厂'}.get(role, role)
-    if role not in ROLES:
-        parser.error('请选择租赁方或工厂')
+    name = args.role or input('请选择测试账号（1 租赁方1，2 工厂1，3 租赁方2，4 工厂2） ').strip()
+    names = {str(i): key for i, key in enumerate(ACCOUNTS, 1)}
+    name = ALIASES.get(name, names.get(name, name))
+    if name not in ACCOUNTS:
+        parser.error('请选择上述四个固定账号之一')
     with (PRIVATE / 'switch.lock').open('a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         if not KEY.exists():
@@ -151,7 +153,7 @@ def main():
                 enable_phone(network)
             except (SystemExit, OSError, ValueError, subprocess.SubprocessError) as error:
                 print(f'手机调试未就绪：{error}；继续使用本机模拟器。', file=sys.stderr)
-        simulator(ROLES[role])
+        simulator(ACCOUNTS[name])
 
 
 if __name__ == '__main__':

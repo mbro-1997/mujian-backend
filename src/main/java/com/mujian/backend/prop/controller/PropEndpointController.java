@@ -2,9 +2,13 @@ package com.mujian.backend.prop.controller;
 
 import com.mujian.backend.common.base.BaseController;
 import com.mujian.backend.common.security.SessionService;
+import com.mujian.backend.infrastructure.storage.PrivateMaterialStore.ImageContent;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 import org.springframework.beans.propertyeditors.CustomCollectionEditor;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.InitBinder;
 
@@ -27,6 +31,16 @@ public abstract class PropEndpointController extends BaseController {
     return (String) request.getAttribute("traceId");
   }
 
+  /** 将业务已授权的图片以原媒体类型返回。 */
+  protected ResponseEntity<byte[]> imageResponse(
+      HttpServletResponse response, ImageContent image) {
+    response.setCharacterEncoding((String) null);
+    return ResponseEntity.ok()
+        .header("X-Content-Type-Options", "nosniff")
+        .contentType(MediaType.parseMediaType(image.contentType()))
+        .body(image.bytes());
+  }
+
   /** 仅允许HTTP查询字段绑定，内部权限/SQL派生条件由服务端赋值。 */
   @InitBinder
   public void bindQuery(WebDataBinder webDataBinder) {
@@ -40,6 +54,7 @@ public abstract class PropEndpointController extends BaseController {
         "keyword",
         "factoryKeyword",
         "auditing",
+        "hasPendingLabel",
         "status",
         "sourceType",
         "movementType",

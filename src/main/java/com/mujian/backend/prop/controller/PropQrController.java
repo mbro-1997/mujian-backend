@@ -18,7 +18,9 @@ import com.mujian.backend.prop.vo.QrExceptionVO;
 import com.mujian.backend.prop.vo.QrVO;
 import com.mujian.backend.prop.vo.ReviewResultVO;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.*;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -55,6 +57,13 @@ public class PropQrController extends PropEndpointController {
     return success(httpServletRequest, propQrService.read(actor(httpServletRequest), id, false));
   }
 
+  /** 读取本厂当前可用的标签原图。 */
+  @GetMapping("/api/me/prop-qr/{id}/image")
+  public ResponseEntity<byte[]> ownPropQrImage(
+      HttpServletRequest request, HttpServletResponse response, @PathVariable String id) {
+    return imageResponse(response, propQrService.readImage(actor(request), id, false));
+  }
+
   /** 重试当前工厂可恢复的码图生成任务。 */
   @PostMapping("/api/me/prop-qr/{id}/retry-image")
   public ApiResponse<QrVO> retryOwnQrImage(
@@ -67,6 +76,13 @@ public class PropQrController extends PropEndpointController {
   public ApiResponse<QrVO> adminPropQr(
       HttpServletRequest httpServletRequest, @PathVariable String id) {
     return success(httpServletRequest, propQrService.read(actor(httpServletRequest), id, true));
+  }
+
+  /** 供管理端预览或下载当前可用的标签原图。 */
+  @GetMapping("/api/admin/prop-qr/{id}/image")
+  public ResponseEntity<byte[]> adminPropQrImage(
+      HttpServletRequest request, HttpServletResponse response, @PathVariable String id) {
+    return imageResponse(response, propQrService.readImage(actor(request), id, true));
   }
 
   /** 提交管理员替换二维码操作。 */

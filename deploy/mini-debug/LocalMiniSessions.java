@@ -34,9 +34,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 @ImportAutoConfiguration({DataSourceAutoConfiguration.class, JdbcTemplateAutoConfiguration.class,
     DataRedisAutoConfiguration.class})
 public class LocalMiniSessions {
-  private static final Map<String,String> USERS = Map.of(
-      "demander", "c98593fa57de414899a803765679bca6",
-      "supplier", "4abdbdde15d34eebbe3b9cecfe9247a2");
+  private record Account(String role, String userId) {}
+  private static final Map<String,Account> USERS = Map.of(
+      "demander", new Account("demander", "c98593fa57de414899a803765679bca6"),
+      "demander2", new Account("demander", "5e009b8edac64396b872095023b6a25d"),
+      "supplier", new Account("supplier", "4abdbdde15d34eebbe3b9cecfe9247a2"),
+      "supplier2", new Account("supplier", "0b57131a14a94037b709f15cb443c3db"));
 
   public static void main(String[] args) throws Exception {
     String pairing = Files.readString(Path.of(args[0])).trim();
@@ -76,9 +79,9 @@ public class LocalMiniSessions {
         if ("/ready".equals(path) && "GET".equals(x.getRequestMethod())) {
           reply(x, localKey ? 200 : 403, localKey ? "{\"ready\":true}" : "{}"); return;
         }
-        String role = path.startsWith("/sessions/") ? path.substring(10) : "";
-        String user = USERS.get(role);
-        if (user == null || !"POST".equals(x.getRequestMethod())) { reply(x,404,"{}"); return; }
+        String accountKey = path.startsWith("/sessions/") ? path.substring(10) : "";
+        Account account = USERS.get(accountKey);
+        if (account == null || !"POST".equals(x.getRequestMethod())) { reply(x,404,"{}"); return; }
         try {
           if (mobile) {
             if (auth == null || !auth.matches("WeChat [A-Za-z0-9_-]{8,256}")) { reply(x,403,"{}"); return; }
@@ -86,6 +89,8 @@ public class LocalMiniSessions {
             String subject = fingerprint(appId, wechat.exchangeOpenId(auth.substring(7)));
             if (!MessageDigest.isEqual(bytes(approved), bytes(subject))) { reply(x,403,"{}"); return; }
           } else if (!localKey) { reply(x,403,"{}"); return; }
+          String role = account.role();
+          String user = account.userId();
           String stage = role.equals("supplier") ? "factory_bound" : "demander_bound";
           Integer matches = db.queryForObject("""
               SELECT COUNT(*) FROM sys_user u JOIN sys_user_role r ON r.user_id=u.id AND r.enabled=1

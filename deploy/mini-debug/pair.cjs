@@ -57,7 +57,8 @@ async function main() {
     }
     const pair = { origin: info.origin, secret: fs.readFileSync(keyFile,'utf8').trim() };
     await mini.evaluate(pair => { wx.setStorageSync('mj.localDebugPair', pair); }, pair);
-    const user = await mini.evaluate(role => require('services/local-debug-accounts.js').switchAccount(role), role);
+    const expectedRole = role.endsWith("2") ? role.slice(0,-1) : role;
+    const user = await mini.evaluate((role, slot) => require('services/local-debug-accounts.js').switchAccount(role, { slot }), expectedRole, role.endsWith('2') ? 2 : 1);
     for (let n = 0; n < 35; n++) {
       const home = await mini.evaluate(() => {
         const p = getCurrentPages().pop();
@@ -65,7 +66,7 @@ async function main() {
         return { user: p.data.factoryContext?.userId, role: p.data.factoryContext?.roleCode,
           factory: p.data.factoryProfile?.id, tabs: p.getTabBar().data.items.map(i=>i.text) };
       });
-      if (home?.user === user && home.role === role && (role !== 'supplier' || home.factory)) {
+      if (home?.user === user && home.role === expectedRole && (expectedRole !== 'supplier' || home.factory)) {
         console.log(user + '  ' + home.tabs.join(' / ') + (home.factory ? '  工厂 ' + home.factory : ''));
         return;
       }

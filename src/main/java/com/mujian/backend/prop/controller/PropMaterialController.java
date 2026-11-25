@@ -5,7 +5,6 @@ import static com.mujian.backend.common.support.D2Codes.*;
 import com.mujian.backend.common.api.ApiFailure;
 import com.mujian.backend.common.api.ApiResponse;
 import com.mujian.backend.common.security.SessionService;
-import com.mujian.backend.infrastructure.storage.PrivateMaterialStore.ImageContent;
 import com.mujian.backend.prop.dto.*;
 import com.mujian.backend.prop.dto.ImageLocatorDTO;
 import com.mujian.backend.prop.service.PropMaterialService;
@@ -16,7 +15,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Part;
 import java.util.*;
 import java.util.HashSet;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -70,6 +68,20 @@ public class PropMaterialController extends PropEndpointController {
             actor(httpServletRequest), imageLocatorDTO, false, trace(httpServletRequest)));
   }
 
+  /** 对当前工厂返回已授权的道具照片。 */
+  @GetMapping("/api/me/prop-materials/content")
+  public ResponseEntity<byte[]> readOwnPropImage(
+      HttpServletRequest request,
+      HttpServletResponse response,
+      @RequestParam String sourceType,
+      @RequestParam String sourceId,
+      @RequestParam String section,
+      @RequestParam int index) {
+    return imageResponse(response, propMaterialService.readImage(
+        actor(request), new ImageLocatorDTO(sourceType, sourceId, section, index),
+        false, trace(request)));
+  }
+
   /** 接收管理员上传的二维码异常证据。 */
   @PostMapping("/api/admin/prop-materials")
   public ApiResponse<UploadResultVO> uploadAdminPropMaterial(
@@ -99,14 +111,9 @@ public class PropMaterialController extends PropEndpointController {
       @RequestParam String sourceId,
       @RequestParam String section,
       @RequestParam int index) {
-    ImageContent imageContent = propMaterialService.readAdminImage(
+    return imageResponse(httpServletResponse, propMaterialService.readImage(
         actor(httpServletRequest),
         new ImageLocatorDTO(sourceType, sourceId, section, index),
-        trace(httpServletRequest));
-    httpServletResponse.setCharacterEncoding((String) null);
-    return ResponseEntity.ok()
-        .header("X-Content-Type-Options", "nosniff")
-        .contentType(MediaType.parseMediaType(imageContent.contentType()))
-        .body(imageContent.bytes());
+        true, trace(httpServletRequest)));
   }
 }

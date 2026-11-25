@@ -24,6 +24,17 @@ public class OwnedQueryDTO extends PropPageFilterDTO {
 
   private Boolean auditing;
 
+  private boolean hasPendingLabel;
+
+  /** 是否只查存在待贴标实物的道具。 */
+  public boolean isHasPendingLabel() {
+    return hasPendingLabel;
+  }
+
+  public void setHasPendingLabel(boolean value) {
+    hasPendingLabel = value;
+  }
+
   /** 读取当前工厂数据范围，供请求绑定或查询条件传递使用。 */
   public String getOwnerFactory() {
     return ownerFactory;

@@ -18,6 +18,8 @@ import com.mujian.backend.prop.domain.PropSnInstanceDO;
 import com.mujian.backend.prop.dto.LabelConfirmDTO;
 import com.mujian.backend.prop.dto.QrExceptionCreateDTO;
 import com.mujian.backend.prop.dto.QrIssueDTO;
+import com.mujian.backend.infrastructure.storage.PrivateMaterialStore;
+import com.mujian.backend.infrastructure.storage.PrivateMaterialStore.ImageContent;
 import com.mujian.backend.prop.mapper.PropQrCodeMapper;
 import com.mujian.backend.prop.mapper.PropQrExceptionRecordMapper;
 import com.mujian.backend.prop.mapper.PropSnInstanceMapper;
@@ -49,6 +51,7 @@ public class PropQrServiceImpl implements PropQrService {
   private final PropInventory propInventory;
   private final PropRequests propRequests;
   private final PropMaterialService propMaterialService;
+  private final PrivateMaterialStore privateMaterialStore;
   private final PropCasework propCasework;
   private final PropAudit propAudit;
   private final PropJson propJson;
@@ -70,7 +73,8 @@ public class PropQrServiceImpl implements PropQrService {
       PropJson propJson,
       Clock clock,
       org.springframework.transaction.PlatformTransactionManager platformTransactionManager,
-      PropQrLookup propQrLookup) {
+      PropQrLookup propQrLookup,
+      PrivateMaterialStore privateMaterialStore) {
     this.propQrLookup = propQrLookup;
     transactionTemplate =
         new org.springframework.transaction.support.TransactionTemplate(platformTransactionManager);
@@ -83,6 +87,7 @@ public class PropQrServiceImpl implements PropQrService {
     this.propInventory = propInventory;
     this.propRequests = propRequests;
     this.propMaterialService = propMaterialService;
+    this.privateMaterialStore = privateMaterialStore;
     this.propCasework = propCasework;
     this.propAudit = propAudit;
     this.propJson = propJson;
@@ -144,11 +149,7 @@ public class PropQrServiceImpl implements PropQrService {
 
   /** 核对查看权限后返回二维码详情。 */
   public QrVO read(String actor, String id, boolean admin) {
-
-    PropQrCodeDO propQrCodeDO = propQrCodeMapper.selectPropQrCode(id(id), false);
-    if (propQrCodeDO == null) throw missing();
-    if (admin) propAccess.admin(actor, "prop-qr", "read");
-    else propAccess.own(actor, propQrCodeDO.getSkuId());
+    PropQrCodeDO propQrCodeDO = readableRow(actor, id, admin);
 
     PropSnInstanceDO propSnInstanceDO =
         propQrCodeDO.getTargetType().equals(PropQrTargetType.SN.name())
@@ -192,6 +193,23 @@ public class PropQrServiceImpl implements PropQrService {
                 && propSnInstanceDO.getInstanceStatus().equals("pending_label"))
         .snVersion(propSnInstanceDO == null ? null : propSnInstanceDO.getVersion())
         .supersedesQrId(propQrCodeDO.getSupersedesQrCodeId());
+  }
+
+  /** 只从已授权且仍可使用的标签记录定位私有 COS 对象。 */
+  @Override
+  public ImageContent readImage(String actor, String id, boolean admin) {
+    PropQrCodeDO qr = readableRow(actor, id, admin);
+    if (!"bound".equals(qr.getStatus()) || !"ready".equals(qr.getImageGenerationStatus())
+        || qr.getQrImageStorageKey() == null) throw missing();
+    return privateMaterialStore.readImage(qr.getQrImageStorageKey());
+  }
+
+  /** 二维码资料和原图共享同一读取授权。 */
+  private PropQrCodeDO readableRow(String actor, String id, boolean admin) {
+    PropQrCodeDO qr = row(id);
+    if (admin) propAccess.admin(actor, "prop-qr", "read");
+    else propAccess.own(actor, qr.getSkuId());
+    return qr;
   }
 
   /** 根据扫码内容校验绑定状态并返回可访问的业务二维码。 */

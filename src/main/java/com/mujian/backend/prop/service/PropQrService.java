@@ -2,6 +2,7 @@ package com.mujian.backend.prop.service;
 
 import static com.mujian.backend.common.support.D2Values.*;
 
+import com.mujian.backend.infrastructure.storage.PrivateMaterialStore.ImageContent;
 import com.mujian.backend.prop.domain.PropQrCodeDO;
 import com.mujian.backend.prop.dto.LabelConfirmDTO;
 import com.mujian.backend.prop.dto.QrExceptionCreateDTO;
@@ -20,6 +21,9 @@ public interface PropQrService {
 
   /** 核对查看权限后返回二维码详情。 */
   QrVO read(String actor, String id, boolean admin);
+
+  /** 读取已绑定且生成完成的标签图片。 */
+  ImageContent readImage(String actor, String id, boolean admin);
 
   /** 根据扫码内容校验绑定状态并返回可访问的业务二维码。 */
   QrVO resolve(String actor, String code);

@@ -143,4 +143,38 @@ class D2COwnedAssetFilterTest {
             "skuRowsUnchanged", true, "httpBase", f.base,
             "boundary", "real HTTP/MySQL/Redis; existing test-only material adapter; no frontend/native/phone")) + "\n");
   }
+
+  /** 核对待贴标存在性、本厂范围以及与其他条件组合后的分页。 */
+  @Test
+  void pendingLabelFiltersBeforeTotalAndPagination() throws Exception {
+    User user = supplier();
+    User other = supplier();
+    JsonNode first = fixture.create(user, "A_ASSET", 2);
+    JsonNode second = fixture.create(user, "A_ASSET", 1);
+    JsonNode hasOnlyIdle = fixture.create(user, "A_ASSET", 1);
+    JsonNode consumable = fixture.create(user, "B_CONSUMABLE", 2);
+    JsonNode foreign = fixture.create(other, "A_ASSET", 1);
+    for (JsonNode sku : List.of(first, second, hasOnlyIdle, consumable, foreign)) {
+      fixture.approve("sku_audit", sku.get("targetId").asString(), 0);
+    }
+    String firstId = first.get("skuId").asString();
+    String secondId = second.get("skuId").asString();
+    assertEquals(1, f.db.update("UPDATE prop_sn_instance SET instance_status='idle' WHERE sku_id=?",
+        hasOnlyIdle.get("skuId").asString()));
+    String factory = f.db.queryForObject(
+        "SELECT id FROM factory_profile WHERE owner_user_id=?", String.class, user.id());
+    check(user, factory, "&hasPendingLabel=true", "AND s.id IN (?,?)", firstId, secondId);
+    check(user, factory, "&hasPendingLabel=true&assetType=A_ASSET&skuStatus=online",
+        "AND s.id IN (?,?)", firstId, secondId);
+    String skuCode = f.db.queryForObject("SELECT sku_code FROM prop_sku WHERE id=?", String.class, firstId);
+    check(user, factory, "&hasPendingLabel=true&skuStatus=online&keyword=" + skuCode,
+        "AND s.id=?", firstId);
+    check(user, factory, "&hasPendingLabel=true&assetType=B_CONSUMABLE", "AND 1=0");
+    check(user, factory, "&hasPendingLabel=false", "");
+    check(user, factory, "", "");
+    assertEquals("4", get(user, "", 200).path("total").asString());
+    assertFalse(get(user, "?hasPendingLabel=true", 200).path("items").get(0)
+        .path("inventorySummary").has("pendingLabel"));
+    get(user, "?hasPendingLabel=1", 400);
+  }
 }

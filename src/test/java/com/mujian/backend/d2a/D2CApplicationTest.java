@@ -20,7 +20,10 @@ import com.mujian.backend.prop.service.PropQrImages;
 import com.mujian.backend.prop.service.PropReviewService;
 import com.mujian.backend.prop.utils.*;
 import java.io.ByteArrayOutputStream;
+import java.net.URI;
+import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.Builder;
+import java.net.http.HttpResponse;
 import java.time.*;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -60,6 +63,14 @@ class D2CApplicationTest {
     User user = b.user();
     b.approve(user, b.onboard(user));
     return user;
+  }
+
+  /** 请求私有图片原始响应，用于核对字节和授权结果。 */
+  private HttpResponse<byte[]> imageResponse(String path, User owner, boolean admin) throws Exception {
+    Builder request = HttpRequest.newBuilder(URI.create(f.base + path));
+    if (admin) request.header("Cookie", f.adminCookie);
+    else if (owner != null) request.header("Authorization", "Bearer " + owner.token());
+    return f.http.send(request.build(), HttpResponse.BodyHandlers.ofByteArray());
   }
 
   /** 执行请求并检查预期响应。 */
@@ -818,6 +829,9 @@ class D2CApplicationTest {
     JsonNode sku = call("GET", "/api/me/factory-props/" + sid, null, user, null, 200);
     String first = sku.path("currentQrId").asString(), factory = sku.path("factoryId").asString();
     assertEquals(first, sku.path("latestQrId").asString());
+    String factoryImage = "/api/me/prop-qr/" + first + "/image";
+    String adminImage = "/api/admin/prop-qr/" + first + "/image";
+    assertEquals(404, imageResponse(factoryImage, user, false).statusCode());
     f.wx.delegate = pngGateway();
     try {
       assertTrue(f.app.getBean(PropQrImages.class).generate(first));
@@ -829,6 +843,15 @@ class D2CApplicationTest {
     assertTrue(qr.path("instanceStatus").isNull());
     f.store.failSign = true;
     try {
+      for (HttpResponse<byte[]> image : List.of(
+          imageResponse(factoryImage, user, false), imageResponse(adminImage, null, true))) {
+        assertEquals(200, image.statusCode());
+        assertEquals("image/png", image.headers().firstValue("Content-Type").orElseThrow());
+        assertEquals("no-store", image.headers().firstValue("Cache-Control").orElseThrow());
+        assertArrayEquals(pngGateway().miniCode("", "", ""), image.body());
+      }
+      assertEquals(404, imageResponse(factoryImage, supplier(), false).statusCode());
+      assertEquals(401, imageResponse(adminImage, null, false).statusCode());
       for (String root : List.of("/api/me/prop-qr/", "/api/admin/prop-qr/")) {
         User actor = root.contains("/me/") ? user : null;
         call("GET", root + first, null, actor, null, 503);
@@ -893,6 +916,7 @@ class D2CApplicationTest {
       sku = call("GET", "/api/me/factory-props/" + sid, null, user, null, 200);
       assertTrue(sku.path("currentQrId").isNull());
       assertEquals(latest, sku.path("latestQrId").asString());
+      assertEquals(404, imageResponse("/api/admin/prop-qr/" + latest + "/image", null, true).statusCode());
       f.store.failSign = true;
       try {
         assertTrue(
@@ -1877,6 +1901,13 @@ class D2CApplicationTest {
     JsonNode detail = call("GET", path, null, null, null, 200);
     JsonNode locator = detail.path("proposed").path("images").get(0).path("locator");
     call("POST", "/api/me/prop-materials/view", locator, other, null, 404);
+    String factoryImage = "/api/me/prop-materials/content?sourceType=sku_audit&sourceId="
+        + aid + "&section=proposed&index=0";
+    HttpResponse<byte[]> photo = imageResponse(factoryImage, user, false);
+    assertEquals(200, photo.statusCode());
+    assertArrayEquals(D2ApplicationTest.png(), photo.body());
+    assertEquals(401, imageResponse(factoryImage, null, false).statusCode());
+    assertEquals(404, imageResponse(factoryImage, other, false).statusCode());
     java.net.URI imageUri = java.net.URI.create(
         f.base + "/api/admin/prop-materials/content?sourceType=sku_audit&sourceId="
             + aid + "&section=proposed&index=0");
