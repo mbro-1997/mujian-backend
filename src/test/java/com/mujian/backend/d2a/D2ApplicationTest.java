@@ -500,6 +500,8 @@ class D2ApplicationTest {
     String evidence = System.getenv("MJ_EVIDENCE_DIR");
     if (evidence != null) {
       JsonNode redacted = n.deepCopy();
+      if (redacted.path("data").hasNonNull("identityDocuments"))
+        ((tools.jackson.databind.node.ObjectNode) redacted.get("data")).putNull("identityDocuments");
       if (redacted.path("data").hasNonNull("inviteCode"))
         ((tools.jackson.databind.node.ObjectNode) redacted.get("data"))
             .put("inviteCode", "2".repeat(20));
@@ -702,8 +704,16 @@ class D2ApplicationTest {
           null,
           200);
       JsonNode detail = call("GET", adminPath + "/" + id, null, null, null, 200);
-      assertFalse(detail.toString().contains("11010519491231002X"));
-      call("POST", adminPath + "/" + id + "/sensitive-view", Map.of(), null, null, 200);
+      if (d.equals("realname")) {
+        JsonNode documents = detail.path("identityDocuments");
+        assertEquals(body.get("realName"), documents.path("fullName").asString());
+        assertEquals(body.get("idCard"), documents.path("fullIdCard").asString());
+        assertTrue(documents.path("frontUrl").asString().startsWith("https://"));
+        assertTrue(documents.path("backUrl").asString().startsWith("https://"));
+      } else {
+        assertFalse(detail.toString().contains("11010519491231002X"));
+        call("POST", adminPath + "/" + id + "/sensitive-view", Map.of(), null, null, 200);
+      }
       String reject = Ids.next();
       Map<String, Object> rejectBody = reviewBody(detail, false, d);
       JsonNode rejected =
@@ -2666,7 +2676,9 @@ class D2ApplicationTest {
             int bit = permission.endsWith(":read") ? 1 : permission.endsWith(":sensitive") ? 2 : 4;
             if (permission.startsWith("admin:" + d + ":") && (mask & bit) != 0) restoreGrant(g);
           }
-          call("GET", path, null, null, null, (mask & 1) != 0 ? 200 : 403);
+          JsonNode details = call("GET", path, null, null, null, (mask & 1) != 0 ? 200 : 403);
+          if (d.equals("realname") && (mask & 1) != 0)
+            assertEquals((mask & 2) != 0, details.hasNonNull("identityDocuments"));
           call("POST", path + "/sensitive-view", Map.of(), null, null, (mask & 3) == 3 ? 200 : 403);
           Map<String, Object> command =
               view(

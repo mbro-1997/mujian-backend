@@ -5,6 +5,20 @@ import java.util.*;
 
 /** 明确接口字段，保持现有JSON属性与空值契约。 */
 public class RealnameDetailVO {
+  /** 仅向持有实名敏感查看权限的管理员提供原申请材料。 */
+  public record IdentityDocuments(String fullName, String fullIdCard, String frontUrl, String backUrl) {}
+  private IdentityDocuments identityDocuments;
+
+  /** 读取本次授权的姓名、证件号码和照片地址。 */
+  public IdentityDocuments getIdentityDocuments() {
+    return identityDocuments;
+  }
+
+  /** 设置本次已授权的资料。 */
+  public void setIdentityDocuments(IdentityDocuments identityDocuments) {
+    this.identityDocuments = identityDocuments;
+  }
+
   private RealnameApplicationVO application;
   private String userId;
   private String nickname;

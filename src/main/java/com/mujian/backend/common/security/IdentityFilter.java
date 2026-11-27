@@ -50,7 +50,9 @@ public final class IdentityFilter extends OncePerRequestFilter {
         publicShare
             || (path.equals("/api/public/props")
                 || path.equals("/api/public/props/options")
-                || path.matches("/api/public/props/[0-9a-f]{32}"))
+                || path.matches("/api/public/props/[0-9a-f]{32}")
+                || ("GET".equals(r.getMethod())
+                    && path.matches("/api/public/props/[0-9a-f]{32}/images/[0-9a-f]{64}")))
             || path.equals("/api/public/rules")
             || path.matches("/api/public/rules/[0-9a-f]{32}")
             || path.equals("/api/public/auth/wechat-phone-login")

@@ -10,6 +10,7 @@ import com.mujian.backend.common.api.ApiFailure;
 import com.mujian.backend.common.api.PageResult;
 import com.mujian.backend.common.support.*;
 import com.mujian.backend.infrastructure.crypto.VerificationCrypto;
+import com.mujian.backend.infrastructure.storage.PrivateMaterialStore;
 import com.mujian.backend.material.service.*;
 import com.mujian.backend.realname.domain.RealnameVerificationDO;
 import com.mujian.backend.realname.mapper.RealnameMapper;
@@ -30,6 +31,7 @@ public class RealnameQueryServiceImpl implements RealnameQueryService {
   private final LoginMapper loginMapper;
   private final VerificationAccess verificationAccess;
   private final VerificationCrypto verificationCrypto;
+  private final PrivateMaterialStore privateMaterialStore;
   private final VerificationCasework verificationCasework;
   private final Clock clock;
 
@@ -39,12 +41,14 @@ public class RealnameQueryServiceImpl implements RealnameQueryService {
       LoginMapper loginMapper,
       VerificationAccess verificationAccess,
       VerificationCrypto verificationCrypto,
+      PrivateMaterialStore privateMaterialStore,
       VerificationCasework verificationCasework,
       Clock clock) {
     this.realnameMapper = realnameMapper;
     this.loginMapper = loginMapper;
     this.verificationAccess = verificationAccess;
     this.verificationCrypto = verificationCrypto;
+    this.privateMaterialStore = privateMaterialStore;
     this.verificationCasework = verificationCasework;
     this.clock = clock;
   }
@@ -52,18 +56,33 @@ public class RealnameQueryServiceImpl implements RealnameQueryService {
   /** 按既有字段和脱敏规则组装认证申请响应。 */
   public RealnameApplicationVO application(RealnameVerificationDO realnameVerificationDO) {
     if (realnameVerificationDO == null) return null;
-    String name =
-        verificationCrypto.decrypt(
-            realnameVerificationDO.getId(),
-            "real_name_ciphertext",
-            realnameVerificationDO.getEncryptionKeyVersion(),
-            realnameVerificationDO.getRealNameCiphertext());
-    String card =
-        verificationCrypto.decrypt(
-            realnameVerificationDO.getId(),
-            "id_card_ciphertext",
-            realnameVerificationDO.getEncryptionKeyVersion(),
-            realnameVerificationDO.getIdCardCiphertext());
+    return maskedApplication(
+        realnameVerificationDO,
+        decryptName(realnameVerificationDO),
+        decryptCard(realnameVerificationDO));
+  }
+
+  /** 使用申请记录自己的密钥版本解密姓名。 */
+  private String decryptName(RealnameVerificationDO row) {
+    return verificationCrypto.decrypt(
+        row.getId(),
+        "real_name_ciphertext",
+        row.getEncryptionKeyVersion(),
+        row.getRealNameCiphertext());
+  }
+
+  /** 使用申请记录自己的密钥版本解密证件号码。 */
+  private String decryptCard(RealnameVerificationDO row) {
+    return verificationCrypto.decrypt(
+        row.getId(),
+        "id_card_ciphertext",
+        row.getEncryptionKeyVersion(),
+        row.getIdCardCiphertext());
+  }
+
+  /** 使用已解密的值生成各认证入口共用的脱敏摘要。 */
+  private RealnameApplicationVO maskedApplication(
+      RealnameVerificationDO realnameVerificationDO, String name, String card) {
     String status = realnameVerificationDO.getVerificationStatus();
     return new RealnameApplicationVO()
         .id(realnameVerificationDO.getId())
@@ -139,15 +158,18 @@ public class RealnameQueryServiceImpl implements RealnameQueryService {
 
   /** 检查审核权限后返回申请详情和工单信息。 */
   public RealnameDetailVO detail(String actor, String id) {
-    java.util.List<String> permissions = verificationAccess.readPermissions(actor, "admin:realname:read");
+    List<String> permissions = verificationAccess.readPermissions(actor, "admin:realname:read");
     RealnameVerificationDO realnameVerificationDO =
         realnameMapper.selectRealnameVerificationById(id(id));
     if (realnameVerificationDO == null) throw missing();
     AdminCaseDO adminCaseDO =
         verificationCasework.associated("realname", realnameVerificationDO, false);
+    String fullName = decryptName(realnameVerificationDO);
+    String fullIdCard = decryptCard(realnameVerificationDO);
+    boolean canViewSensitive = permissions.contains("admin:realname:sensitive");
     RealnameDetailVO realnameDetailVO =
         new RealnameDetailVO()
-            .application(application(realnameVerificationDO))
+            .application(maskedApplication(realnameVerificationDO, fullName, fullIdCard))
             .userId(realnameVerificationDO.getUserId())
             .nickname(loginMapper.selectUserNicknameById(realnameVerificationDO.getUserId()))
             .phoneMasked(
@@ -157,11 +179,22 @@ public class RealnameQueryServiceImpl implements RealnameQueryService {
             .version(realnameVerificationDO.getVersion())
             .reviewedByAdminUserId(realnameVerificationDO.getReviewedByAdminUserId())
             .auditRemark(realnameVerificationDO.getAuditRemark())
-            .canViewSensitive(permissions.contains("admin:realname:sensitive"))
+            .canViewSensitive(canViewSensitive)
             .canReview(
                 permissions.contains("admin:realname:review")
                     && CODE_PENDING.equals(realnameVerificationDO.getVerificationStatus())
                     && ownerActive(realnameVerificationDO.getUserId()));
+    if (canViewSensitive) {
+      Instant expiresAt = clock.instant().plusSeconds(120);
+      realnameDetailVO.setIdentityDocuments(
+          new RealnameDetailVO.IdentityDocuments(
+              fullName,
+              fullIdCard,
+              privateMaterialStore.sign(
+                  realnameVerificationDO.getIdCardFrontObjectKey(), expiresAt),
+              privateMaterialStore.sign(
+                  realnameVerificationDO.getIdCardBackObjectKey(), expiresAt)));
+    }
     return realnameDetailVO;
   }
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.mujian.backend.prop.mapper.PropSkuMapper">
-  <sql id="candidateFrom">
+  <sql id="publicSkuFrom">
     FROM prop_sku s
     JOIN factory_profile f ON f.id = s.factory_id
     WHERE s.sku_status = 'online' AND f.factory_status = 'active'
@@ -9,6 +9,9 @@
         SELECT 1 FROM prop_sku_audit a
         WHERE a.sku_id = s.id AND a.audit_status = 'pending'
       )
+  </sql>
+  <sql id="candidateFrom">
+    <include refid="publicSkuFrom"/>
     <if test="query.typeCode != null">AND s.type_code = #{query.typeCode}</if>
     <if test="query.assetType != null">AND s.asset_type = #{query.assetType}</if>
     <if test="query.styleCodes != null">

@@ -49,6 +49,8 @@ public class FrameworkSecurityConfiguration {
                         "GET".equals(r.getMethod())
                             && r.getRequestURI().matches("/api/public/scheme-shares/[^/]+"))
                 .permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/public/props/*/images/*")
+                .permitAll()
                 .requestMatchers(
                     "/api/public/props",
                     "/api/public/props/*",

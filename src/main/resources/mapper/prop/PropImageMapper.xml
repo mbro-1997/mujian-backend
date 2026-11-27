@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.mujian.backend.prop.mapper.PropImageMapper">
+  <select id="selectPublicImageKeyBySkuIdAndDigest" resultType="string" useCache="false">
+    SELECT CASE WHEN SHA2(s.image_url, 256) = #{digest} THEN s.image_url
+                ELSE (SELECT i.image_url FROM prop_image i
+                      WHERE i.sku_id = s.id AND SHA2(i.image_url, 256) = #{digest}
+                      LIMIT 1)
+           END
+    <include refid="com.mujian.backend.prop.mapper.PropSkuMapper.publicSkuFrom"/>
+    AND s.id = #{skuId}
+  </select>
 <sql id="columns_prop_image">id,sku_id,image_url,sort_order,created_at</sql>
 <sql id="aliased_prop_image">s.id,s.sku_id,s.image_url,s.sort_order,s.created_at</sql>
 <select id="selectSnapshotPropImageListBySkuId" resultType="com.mujian.backend.prop.domain.PropImageDO" useCache="false" flushCache="true">

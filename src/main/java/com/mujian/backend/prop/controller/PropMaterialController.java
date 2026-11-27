@@ -68,6 +68,13 @@ public class PropMaterialController extends PropEndpointController {
             actor(httpServletRequest), imageLocatorDTO, false, trace(httpServletRequest)));
   }
 
+  /** 为公开列表和详情提供封面与相册图片内容。 */
+  @GetMapping("/api/public/props/{id}/images/{digest}")
+  public ResponseEntity<byte[]> readPublicPropImage(
+      HttpServletResponse response, @PathVariable String id, @PathVariable String digest) {
+    return imageResponse(response, propMaterialService.readPublicImage(id, digest));
+  }
+
   /** 对当前工厂返回已授权的道具照片。 */
   @GetMapping("/api/me/prop-materials/content")
   public ResponseEntity<byte[]> readOwnPropImage(

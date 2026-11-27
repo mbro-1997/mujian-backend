@@ -229,6 +229,15 @@ public class PropMaterialServiceImpl implements PropMaterialService {
     return sign(key);
   }
 
+  /** 从本次可见的公开资料定位对象，再由存储 SDK 读取原图。 */
+  @Override
+  public ImageContent readPublicImage(String skuId, String digest) {
+    if (!digest.matches("[0-9a-f]{64}")) throw ApiFailure.invalid();
+    String imageKey = propImageMapper.selectPublicImageKeyBySkuIdAndDigest(id(skuId), digest);
+    if (imageKey == null) throw missing();
+    return privateMaterialStore.readImage(imageKey);
+  }
+
   /** 使用原材料定位、权限和查看审计，随后从存储读取图片。 */
   @Override
   public ImageContent readImage(String actor, ImageLocatorDTO imageLocatorDTO, boolean admin, String trace) {

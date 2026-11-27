@@ -38,6 +38,9 @@ public interface PropMaterialService {
   /** 验证私有材料权限并记录查看审计，再签发短时链接。 */
   ImageViewVO viewImage(String actor, ImageLocatorDTO imageLocatorDTO, boolean admin, String trace);
 
+  /** 只读取当前可公开查看且仍归属该 SKU 的图片。 */
+  ImageContent readPublicImage(String skuId, String digest);
+
   /** 校验工厂归属或管理员权限后读取私有图片，对管理员访问保留审计。 */
   ImageContent readImage(String actor, ImageLocatorDTO imageLocatorDTO, boolean admin, String trace);
 

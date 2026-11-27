@@ -8,6 +8,9 @@ import org.apache.ibatis.annotations.*;
 @Mapper
 public interface PropImageMapper {
 
+  /** 从当前公开 SKU 的封面与相册中定位指定图片。 */
+  String selectPublicImageKeyBySkuIdAndDigest(@Param("skuId") String skuId, @Param("digest") String digest);
+
   /** 保存道具图片关联。 */
   void insertPropImage(@Param("row") PropImageDO propImageDO);
 
